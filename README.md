@@ -59,11 +59,35 @@ npm run tauri build
 
 ## 환경 설정
 
+### 1. Supabase 프로젝트 설정
+
+1. [Supabase](https://supabase.com)에 로그인하고 새 프로젝트를 생성합니다.
+2. 프로젝트 대시보드에서 `Settings > API`로 이동합니다.
+3. `Project URL`과 `Project API keys`의 `anon public` 키를 복사합니다.
+
+### 2. Google OAuth 설정
+
+1. [Google Cloud Console](https://console.cloud.google.com)에서 새 프로젝트를 생성하거나 기존 프로젝트를 선택합니다.
+2. `APIs & Services > Credentials`로 이동합니다.
+3. `Create Credentials > OAuth 2.0 Client IDs`를 선택합니다.
+4. Application type을 `Web application`으로 설정합니다.
+5. Authorized redirect URIs에 다음을 추가합니다:
+   - `https://[your-project-ref].supabase.co/auth/v1/callback`
+   - `http://localhost:1420/auth/callback` (Tauri 개발용)
+
+### 3. Supabase Authentication 설정
+
+1. Supabase 대시보드에서 `Authentication > Providers`로 이동합니다.
+2. Google provider를 활성화합니다.
+3. Google Cloud Console에서 생성한 `Client ID`와 `Client Secret`을 입력합니다.
+
+### 4. 환경 변수 설정
+
 `.env` 파일을 생성하고 다음 환경 변수를 설정하세요:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 ```
 
 ## 기여하기

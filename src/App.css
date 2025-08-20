@@ -1,3 +1,10 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --color-brand-500: oklch(0.637 0.237 25.331);
+}
+
 .logo.vite:hover {
   filter: drop-shadow(0 0 2em #747bff);
 }

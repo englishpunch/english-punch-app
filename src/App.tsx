@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { onAuthStateChange, getCurrentUser, signOut } from "./lib/auth";
+import { isSupabaseConfigured } from "./lib/supabase";
 import Auth from "./components/Auth";
 import AuthCallback from "./components/AuthCallback";
 import "./App.css";
@@ -9,19 +10,28 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // OAuth 플러그인 사용으로 deep link 핸들러 제거
+    
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
+
     // 현재 사용자 확인
     getCurrentUser().then((user) => {
       setUser(user);
       setLoading(false);
+    }).catch(() => {
+      setLoading(false);
     });
 
     // 인증 상태 변화 감지
-    const { data: { subscription } } = onAuthStateChange((user) => {
+    const authState = onAuthStateChange((user) => {
       setUser(user);
       setLoading(false);
     });
 
-    return () => subscription?.unsubscribe();
+    return () => authState?.data?.subscription?.unsubscribe();
   }, []);
 
   const handleSignOut = async () => {
@@ -44,6 +54,34 @@ function App() {
   // 인증 콜백 처리
   if (window.location.pathname === '/auth/callback') {
     return <AuthCallback />;
+  }
+
+  // Supabase 설정이 안 되어 있는 경우
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="max-w-md w-full space-y-8 text-center">
+          <div>
+            <h2 className="text-3xl font-extrabold text-gray-900">
+              English Punch 🥊
+            </h2>
+            <p className="mt-4 text-gray-600">
+              Supabase 설정이 필요합니다.
+            </p>
+            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-left">
+              <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                설정 방법:
+              </h3>
+              <ol className="text-sm text-yellow-700 space-y-1">
+                <li>1. Supabase 프로젝트를 생성하세요</li>
+                <li>2. .env 파일에 실제 URL과 Key를 입력하세요</li>
+                <li>3. 앱을 다시 시작하세요</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // 로그인하지 않은 경우

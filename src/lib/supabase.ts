@@ -1,13 +1,17 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables')
-}
+// 개발 모드에서 환경변수가 없을 때 더미 클라이언트 생성
+const isDevelopment = !supabaseUrl || supabaseUrl.includes('your-project-ref') || 
+                     !supabasePublishableKey || supabasePublishableKey.includes('your-publishable-key')
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = isDevelopment 
+  ? createClient('https://dummy.supabase.co', 'dummy-key')
+  : createClient(supabaseUrl, supabasePublishableKey)
+
+export const isSupabaseConfigured = !isDevelopment
 
 export type Database = {
   public: {
