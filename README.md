@@ -51,7 +51,7 @@ cd english-punch-app
 npm install
 
 # 개발 서버 실행
-npm run dev
+npm run tauri dev
 
 # Tauri 앱 빌드
 npm run tauri build
