@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "english-punch-app",
+  "productName": "English Punch",
   "version": "0.1.0",
   "identifier": "com.thkim.english-punch-app",
   "build": {
@@ -26,6 +26,12 @@
   "plugins": {
     "deep-link": {
       "desktop": {
+        "schemes": ["english-punch"]
+      },
+      "ios": {
+        "schemes": ["english-punch"]
+      },
+      "android": {
         "schemes": ["english-punch"]
       }
     }
