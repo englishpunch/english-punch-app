@@ -4,28 +4,44 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm-run-all --parallel dev:frontend dev:backend",
+    "dev:frontend": "vite",
+    "dev:backend": "convex dev",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:dev": "npm-run-all --parallel dev:frontend dev:backend tauri:dev:app",
+    "tauri:dev:app": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
+    "@convex-dev/auth": "^0.0.80",
     "@fabianlars/tauri-plugin-oauth": "^2.0.0",
     "@supabase/supabase-js": "^2.55.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-deep-link": "^2.4.1",
     "@tauri-apps/plugin-opener": "^2",
+    "clsx": "^2.1.1",
+    "convex": "^1.26.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "sonner": "^2.0.3",
+    "tailwind-merge": "^3.1.0",
     "tailwindcss": "^4.1.12",
     "ts-fsrs": "^5.2.2"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.12",
     "@tauri-apps/cli": "^2",
+    "@types/node": "^22.13.10",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.6.0",
+    "autoprefixer": "~10",
+    "dotenv": "^16.4.7",
+    "npm-run-all": "^4.1.5",
+    "postcss": "~8",
+    "prettier": "^3.5.3",
     "typescript": "~5.8.3",
     "vite": "^7.0.4"
   }

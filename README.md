@@ -28,7 +28,7 @@ English Punch는 [FSRS (Free Spaced Repetition Scheduler)](https://github.com/op
 - **Tauri**: 데스크톱 애플리케이션 프레임워크 (가볍고 빠른 네이티브 앱)
 
 ### Backend
-- **Supabase**: 백엔드 서비스 (데이터베이스, 인증, 실시간 동기화)
+- **Convex**: 리액티브 백엔드 플랫폼 (실시간 데이터베이스, 서버리스 함수, WebSocket 통신)
 
 ### 핵심 라이브러리
 - **[ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)**: TypeScript로 구현된 FSRS 알고리즘
@@ -59,36 +59,45 @@ npm run tauri build
 
 ## 환경 설정
 
-### 1. Supabase 프로젝트 설정
+### 1. Convex 프로젝트 설정
 
-1. [Supabase](https://supabase.com)에 로그인하고 새 프로젝트를 생성합니다.
-2. 프로젝트 대시보드에서 `Settings > API`로 이동합니다.
-3. `Project URL`과 `Project API keys`의 `anon public` 키를 복사합니다.
+1. Convex 개발 환경을 설치합니다:
+```bash
+npm install convex
+```
 
-### 2. Google OAuth 설정
+2. Convex 프로젝트를 초기화합니다:
+```bash
+npx convex dev
+```
+이 명령어를 실행하면 자동으로 Convex 계정을 생성하거나 로그인하고, 새 프로젝트를 설정합니다.
+
+### 2. Google OAuth 설정 (Convex Auth 사용)
+
+Convex는 내장 인증 시스템인 Convex Auth를 제공합니다. Google OAuth를 설정하려면:
 
 1. [Google Cloud Console](https://console.cloud.google.com)에서 새 프로젝트를 생성하거나 기존 프로젝트를 선택합니다.
 2. `APIs & Services > Credentials`로 이동합니다.
 3. `Create Credentials > OAuth 2.0 Client IDs`를 선택합니다.
 4. Application type을 `Web application`으로 설정합니다.
 5. Authorized redirect URIs에 다음을 추가합니다:
-   - `https://[your-project-ref].supabase.co/auth/v1/callback`
-   - `http://localhost:1420/auth/callback` (Tauri 개발용)
+   - `https://your-project.convex.site/api/auth/callback/google` (프로덕션)
+   - `http://localhost:5173/api/auth/callback/google` (개발용)
 
-### 3. Supabase Authentication 설정
+### 3. 환경 변수 설정
 
-1. Supabase 대시보드에서 `Authentication > Providers`로 이동합니다.
-2. Google provider를 활성화합니다.
-3. Google Cloud Console에서 생성한 `Client ID`와 `Client Secret`을 입력합니다.
-
-### 4. 환경 변수 설정
-
-`.env` 파일을 생성하고 다음 환경 변수를 설정하세요:
+`.env.local` 파일을 생성하고 다음 환경 변수를 설정하세요:
 
 ```env
-VITE_SUPABASE_URL=your_supabase_project_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+# Convex 설정 (npx convex dev 실행 시 자동 생성됨)
+VITE_CONVEX_URL=https://your-project.convex.cloud
+
+# Google OAuth 설정
+AUTH_GOOGLE_ID=your_google_client_id
+AUTH_GOOGLE_SECRET=your_google_client_secret
 ```
+
+Convex Auth 설정 파일 (`convex/auth.config.ts`)이 자동으로 이 환경 변수를 사용합니다.
 
 ## 기여하기
 
@@ -103,4 +112,5 @@ VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 - [FSRS 알고리즘 설명](https://github.com/open-spaced-repetition/fsrs4anki/wiki/ABC-of-FSRS)
 - [ts-fsrs 라이브러리](https://github.com/open-spaced-repetition/ts-fsrs)
 - [Tauri 공식 문서](https://tauri.app/)
-- [Supabase 공식 문서](https://supabase.com/docs)
+- [Convex 공식 문서](https://docs.convex.dev/)
+- [Convex Auth 가이드](https://docs.convex.dev/auth)
