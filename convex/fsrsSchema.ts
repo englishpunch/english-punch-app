@@ -1,5 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
+import { Grades, Rating, State } from "ts-fsrs";
 
 /**
  * FSRS (Free Spaced Repetition Scheduler) 알고리즘을 지원하는 
@@ -61,7 +62,6 @@ export const learningTables = {
     
     // 메타데이터
     tags: v.array(v.string()),
-    createdAt: v.string(), // ISO 날짜 문자열
     lastModified: v.string(),
   })
     .index("by_user", ["userId"])
@@ -81,10 +81,9 @@ export const learningTables = {
     explanation: v.optional(v.string()), // 추가 설명
     
     // FSRS 스케줄링 데이터 (ts-fsrs Card 인터페이스 완전 매칭)
-    due: v.string(), // 다음 복습 예정일 (ISO 날짜 문자열, Date로 변환)
+    due: v.number(), // 다음 복습 예정일 (timestamp, Date로 변환 가능)
     stability: v.number(), // 기억 안정성
     difficulty: v.number(), // 카드 난이도
-    elapsed_days: v.number(), // 마지막 복습 이후 경과일 (deprecated in v6.0.0)
     scheduled_days: v.number(), // 예정된 간격
     learning_steps: v.number(), // 현재 학습 단계
     reps: v.number(), // 총 복습 횟수
@@ -99,20 +98,22 @@ export const learningTables = {
     ),
     
     // 마지막 복습 정보
-    last_review: v.optional(v.string()), // ISO 날짜 문자열 (Date로 변환)
+    last_review: v.optional(v.number()), // 마지막 복습일 (timestamp)
     
     // 메타데이터
     tags: v.array(v.string()),
     source: v.optional(v.string()), // 카드 출처
-    createdAt: v.string(),
     suspended: v.boolean(), // 일시 중지 여부
   })
     .index("by_user", ["userId"])
     .index("by_deck", ["deckId"])
-    .index("by_user_and_due", ["userId", "due"])
+    .index("by_due", ["due"]) // 전체 due 날짜 순 정렬
+    .index("by_user_and_due", ["userId", "due"]) // 사용자별 due 날짜 순
+    .index("by_deck_and_due", ["deckId", "due"]) // 덱별 due 날짜 순
     .index("by_user_and_state", ["userId", "state"])
     .index("by_deck_and_state", ["deckId", "state"])
-    .index("by_user_and_learning_steps", ["userId", "learning_steps"]),
+    .index("by_user_and_learning_steps", ["userId", "learning_steps"])
+    .index("by_due_and_suspended", ["due", "suspended"]), // due 날짜 + 정지 상태
 
   /**
    * 복습 로그 (ts-fsrs ReviewLog 인터페이스 완전 호환)
@@ -123,28 +124,26 @@ export const learningTables = {
     
     // 복습 정보 (ts-fsrs Rating enum: 0=Manual, 1=Again, 2=Hard, 3=Good, 4=Easy)
     rating: v.union(
-      v.literal(0),  // Manual (사용되지 않음, Grade에서 제외)
-      v.literal(1),  // Again
-      v.literal(2),  // Hard
-      v.literal(3),  // Good
-      v.literal(4)   // Easy
+      v.literal(Rating.Manual),  // Manual (사용되지 않음, Grade에서 제외)
+      v.literal(Rating.Again),  // Again
+      v.literal(Rating.Hard),  // Hard
+      v.literal(Rating.Good),  // Good
+      v.literal(Rating.Easy)   // Easy
     ),
     
     // ts-fsrs ReviewLog 인터페이스 매칭
     state: v.union(
-      v.literal(0),  // New
-      v.literal(1),  // Learning
-      v.literal(2),  // Review
-      v.literal(3)   // Relearning
+      v.literal(State.New),  // New
+      v.literal(State.Learning),  // Learning
+      v.literal(State.Review),  // Review
+      v.literal(State.Relearning)   // Relearning
     ),
-    due: v.string(), // 예정되었던 복습일 (ISO 날짜 문자열)
+    due: v.number(), // 예정되었던 복습일 (timestamp)
     stability: v.number(), // 복습 전 안정성
     difficulty: v.number(), // 복습 전 난이도
-    elapsed_days: v.number(), // 실제 경과일 (deprecated in v6.0.0)
-    last_elapsed_days: v.number(), // 이전 경과일 (deprecated in v6.0.0)
     scheduled_days: v.number(), // 예정되었던 간격
     learning_steps: v.number(), // 학습 단계
-    review: v.string(), // 복습 시간 (ISO 날짜 문자열)
+    review: v.number(), // 복습 시간 (timestamp)
     
     // 학습 시간 및 세션 정보 (추가 필드)
     duration: v.number(), // 응답 시간 (밀리초)

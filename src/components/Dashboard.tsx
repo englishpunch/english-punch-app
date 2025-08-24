@@ -42,9 +42,9 @@ export function Dashboard({ onStartStudy, onViewLists, onViewProgress, onStartFS
           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">🧠</span>
           </div>
-          <h2 className="text-2xl font-bold mb-2">FSRS 간격 반복 학습</h2>
+          <h2 className="text-2xl font-bold mb-2">스마트 간격 반복 학습</h2>
           <p className="text-blue-100 mb-6">
-            과학적인 FSRS 알고리즘으로 최적의 학습 효율을 경험하세요.
+            과학적인 알고리즘으로 최적의 학습 효율을 경험하세요.
             <br />
             개인의 기억 패턴에 맞춰 자동으로 복습 간격을 조정합니다.
           </p>
@@ -52,7 +52,7 @@ export function Dashboard({ onStartStudy, onViewLists, onViewProgress, onStartFS
             onClick={onStartFSRS}
             className="bg-white text-blue-600 px-8 py-3 rounded-lg font-bold text-lg hover:bg-blue-50 transition-colors transform hover:scale-105"
           >
-            FSRS 학습 시작하기 🚀
+            스마트 학습 시작하기 🚀
           </button>
         </div>
       </div>

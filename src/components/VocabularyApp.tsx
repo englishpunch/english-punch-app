@@ -62,6 +62,7 @@ export function VocabularyApp() {
         return (
           <DeckManager
             userId={loggedInUser?._id || ""}
+            onBack={() => setCurrentView("dashboard")}
           />
         );
       default:

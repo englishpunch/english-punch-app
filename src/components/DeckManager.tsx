@@ -2,14 +2,15 @@ import React, { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import FSRSStudySession from './FSRSStudySession';
+import DeckStats from './DeckStats';
 
 interface DeckManagerProps {
   userId: string;
   onBack?: () => void;
 }
 
-export default function DeckManager({ userId }: DeckManagerProps) {
-  const [currentView, setCurrentView] = useState<'decks' | 'study'>('decks');
+export default function DeckManager({ userId, onBack }: DeckManagerProps) {
+  const [currentView, setCurrentView] = useState<'decks' | 'study' | 'stats'>('decks');
   const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
@@ -36,7 +37,17 @@ export default function DeckManager({ userId }: DeckManagerProps) {
     setCurrentView('study');
   };
 
+  const handleViewStats = (deckId: string) => {
+    setSelectedDeckId(deckId);
+    setCurrentView('stats');
+  };
+
   const handleCompleteStudy = () => {
+    setCurrentView('decks');
+    setSelectedDeckId(null);
+  };
+
+  const handleBackToDecks = () => {
     setCurrentView('decks');
     setSelectedDeckId(null);
   };
@@ -51,12 +62,37 @@ export default function DeckManager({ userId }: DeckManagerProps) {
     );
   }
 
+  if (currentView === 'stats' && selectedDeckId) {
+    return (
+      <DeckStats
+        userId={userId}
+        deckId={selectedDeckId}
+        onBack={handleBackToDecks}
+      />
+    );
+  }
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       {/* 헤더 */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">영어 학습 덱</h1>
-        <p className="text-gray-600">FSRS 알고리즘으로 효율적인 간격 반복 학습을 시작하세요.</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">영어 학습 덱</h1>
+            <p className="text-gray-600">과학적인 간격 반복 학습으로 효율적으로 암기하세요.</p>
+          </div>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              메인으로 돌아가기
+            </button>
+          )}
+        </div>
       </div>
 
       {/* 샘플 덱 생성 버튼 */}
@@ -70,7 +106,7 @@ export default function DeckManager({ userId }: DeckManagerProps) {
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">첫 학습을 시작해보세요!</h2>
             <p className="text-gray-600 mb-6">
-              영어 기초 표현들로 구성된 샘플 덱으로 FSRS 학습을 체험해보세요.
+              영어 기초 표현들로 구성된 샘플 덱으로 스마트 학습을 체험해보세요.
               10개의 실용적인 영어 문장이 준비되어 있습니다.
             </p>
             <button
@@ -104,6 +140,7 @@ export default function DeckManager({ userId }: DeckManagerProps) {
               key={deck._id}
               deck={deck}
               onStartStudy={() => handleStartStudy(deck._id)}
+              onViewStats={() => handleViewStats(deck._id)}
             />
           ))}
         </div>
@@ -132,9 +169,10 @@ interface DeckCardProps {
     isActive: boolean;
   };
   onStartStudy: () => void;
+  onViewStats: () => void;
 }
 
-function DeckCard({ deck, onStartStudy }: DeckCardProps) {
+function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
   const dueCount = deck.newCards + deck.learningCards; // 간단히 계산
   
   return (
@@ -206,12 +244,23 @@ function DeckCard({ deck, onStartStudy }: DeckCardProps) {
             </div>
           )}
           
-          <button
-            onClick={onStartStudy}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200"
-          >
-            모든 카드 보기
-          </button>
+          <div className="flex space-x-2">
+            <button
+              onClick={onStartStudy}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200"
+            >
+              모든 카드 보기
+            </button>
+            <button
+              onClick={onViewStats}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center"
+            >
+              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              통계
+            </button>
+          </div>
         </div>
       </div>
     </div>

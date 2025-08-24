@@ -12,24 +12,28 @@ export const createSampleDeck = mutation({
   returns: v.id("decks"),
   handler: async (ctx, args) => {
     console.log("🎯 CreateSampleDeck started for userId:", args.userId);
-    
+
     // 사용자 설정 확인/생성
     const userSettings = await ctx.db
       .query("userSettings")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
-    
+
     if (!userSettings) {
       console.log("👤 Creating user settings with default FSRS parameters");
-      
+
       // 기본 FSRS 설정으로 사용자 설정 생성
       const userSettingsId = await ctx.db.insert("userSettings", {
         userId: args.userId,
         fsrsParameters: {
-          w: [0.4072, 1.1829, 3.1262, 15.4722, 7.2102, 0.5316, 1.0651, 0.0234, 1.616, 0.1544, 1.0824, 1.9813, 0.0953, 0.2975, 2.2042, 0.2407, 2.9466, 0.5034, 0.6567], // FSRS-5 기본값
+          w: [
+            0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001,
+            1.8722, 0.1666, 0.796, 1.4835, 0.0614, 0.2629, 1.6483, 0.6014,
+            1.8729, 0.5425, 0.0912, 0.0658, 0.1542,
+          ], // FSRS-6 기본값
           request_retention: 0.9,
           maximum_interval: 36500,
-          enable_fuzz: false,
+          enable_fuzz: true,
           enable_short_term: true,
           learning_steps: ["1m", "10m"],
           relearning_steps: ["10m"],
@@ -59,7 +63,6 @@ export const createSampleDeck = mutation({
       learningCards: 0,
       reviewCards: 0,
       tags: ["기초", "일상회화"],
-      createdAt: new Date().toISOString(),
       lastModified: new Date().toISOString(),
     });
     console.log("✅ Sample deck created:", deckId);
@@ -128,7 +131,9 @@ export const createSampleDeck = mutation({
       },
     ];
 
-    const now = new Date().toISOString();
+    const now = new Date();
+    const nowTimestamp = now.getTime();
+    const nowIsoString = now.toISOString();
     let cardCount = 0;
 
     console.log(`📚 Creating ${sampleCards.length} sample cards`);
@@ -141,27 +146,28 @@ export const createSampleDeck = mutation({
         answer: cardData.answer,
         hint: cardData.hint,
         explanation: cardData.explanation,
-        
+
         // FSRS 초기 상태 (새 카드)
-        due: now,
+        due: nowTimestamp,
         stability: 0,
         difficulty: 0,
-        elapsed_days: 0,
         scheduled_days: 0,
         learning_steps: 0,
         reps: 0,
         lapses: 0,
         state: 0, // New
         last_review: undefined,
-        
+
         // 메타데이터
         tags: ["기초"],
         source: "기본 패키지",
-        createdAt: now,
         suspended: false,
       });
       cardCount++;
-      console.log(`📄 Card ${cardCount} created:`, { cardId, question: cardData.question });
+      console.log(`📄 Card ${cardCount} created:`, {
+        cardId,
+        question: cardData.question,
+      });
     }
 
     // 덱 통계 업데이트
@@ -169,14 +175,14 @@ export const createSampleDeck = mutation({
     await ctx.db.patch(deckId, {
       totalCards: cardCount,
       newCards: cardCount,
-      lastModified: now,
+      lastModified: nowIsoString,
     });
 
-    console.log("✅ CreateSampleDeck completed:", { 
-      deckId, 
-      cardCount, 
+    console.log("✅ CreateSampleDeck completed:", {
+      deckId,
+      cardCount,
       totalCards: cardCount,
-      newCards: cardCount
+      newCards: cardCount,
     });
 
     return deckId;
@@ -190,17 +196,19 @@ export const getUserDecks = query({
   args: {
     userId: v.id("users"),
   },
-  returns: v.array(v.object({
-    _id: v.id("decks"),
-    name: v.string(),
-    description: v.optional(v.string()),
-    totalCards: v.number(),
-    newCards: v.number(),
-    learningCards: v.number(),
-    reviewCards: v.number(),
-    tags: v.array(v.string()),
-    isActive: v.boolean(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("decks"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      totalCards: v.number(),
+      newCards: v.number(),
+      learningCards: v.number(),
+      reviewCards: v.number(),
+      tags: v.array(v.string()),
+      isActive: v.boolean(),
+    })
+  ),
   handler: async (ctx, args) => {
     const decks = await ctx.db
       .query("decks")
@@ -230,24 +238,26 @@ export const getDueCards = query({
     deckId: v.id("decks"),
     limit: v.optional(v.number()),
   },
-  returns: v.array(v.object({
-    _id: v.id("cards"),
-    question: v.string(),
-    answer: v.string(),
-    hint: v.optional(v.string()),
-    explanation: v.optional(v.string()),
-    due: v.string(),
-    state: v.number(),
-    reps: v.number(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("cards"),
+      question: v.string(),
+      answer: v.string(),
+      hint: v.optional(v.string()),
+      explanation: v.optional(v.string()),
+      due: v.number(),
+      state: v.number(),
+      reps: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
-    const now = new Date().toISOString();
+    const nowTimestamp = Date.now();
     const limit = args.limit || 10;
 
     const cards = await ctx.db
       .query("cards")
-      .withIndex("by_user_and_due", (q) => 
-        q.eq("userId", args.userId).lte("due", now)
+      .withIndex("by_user_and_due", (q) =>
+        q.eq("userId", args.userId).lte("due", nowTimestamp)
       )
       .filter((q) => q.eq(q.field("deckId"), args.deckId))
       .filter((q) => q.eq(q.field("suspended"), false))
@@ -276,23 +286,26 @@ export const getNewCards = query({
     deckId: v.id("decks"),
     limit: v.optional(v.number()),
   },
-  returns: v.array(v.object({
-    _id: v.id("cards"),
-    question: v.string(),
-    answer: v.string(),
-    hint: v.optional(v.string()),
-    explanation: v.optional(v.string()),
-    due: v.string(),
-    state: v.number(),
-    reps: v.number(),
-  })),
+  returns: v.array(
+    v.object({
+      _id: v.id("cards"),
+      question: v.string(),
+      answer: v.string(),
+      hint: v.optional(v.string()),
+      explanation: v.optional(v.string()),
+      due: v.number(),
+      state: v.number(),
+      reps: v.number(),
+    })
+  ),
   handler: async (ctx, args) => {
     const limit = args.limit || 10;
 
     const cards = await ctx.db
       .query("cards")
-      .withIndex("by_user_and_state", (q) => 
-        q.eq("userId", args.userId).eq("state", 0) // New cards
+      .withIndex(
+        "by_user_and_state",
+        (q) => q.eq("userId", args.userId).eq("state", 0) // New cards
       )
       .filter((q) => q.eq(q.field("deckId"), args.deckId))
       .filter((q) => q.eq(q.field("suspended"), false))
@@ -328,9 +341,9 @@ export const updateDeckStats = mutation({
 
     const stats = {
       totalCards: allCards.length,
-      newCards: allCards.filter(card => card.state === 0).length,
-      learningCards: allCards.filter(card => card.state === 1).length,
-      reviewCards: allCards.filter(card => card.state === 2).length,
+      newCards: allCards.filter((card) => card.state === 0).length,
+      learningCards: allCards.filter((card) => card.state === 1).length,
+      reviewCards: allCards.filter((card) => card.state === 2).length,
     };
 
     await ctx.db.patch(args.deckId, {
@@ -340,5 +353,144 @@ export const updateDeckStats = mutation({
 
     console.log("📊 Deck statistics updated:", { deckId: args.deckId, stats });
     return null;
+  },
+});
+
+/**
+ * 덱 상세 통계 조회
+ */
+export const getDeckDetailStats = query({
+  args: {
+    userId: v.id("users"),
+    deckId: v.id("decks"),
+  },
+  returns: v.union(v.null(), v.object({
+    deckInfo: v.object({
+      _id: v.id("decks"),
+      name: v.string(),
+      description: v.optional(v.string()),
+      tags: v.array(v.string()),
+      totalCards: v.number(),
+      newCards: v.number(),
+      learningCards: v.number(),
+      reviewCards: v.number(),
+      lastModified: v.string(),
+    }),
+    cardStats: v.object({
+      totalCards: v.number(),
+      newCards: v.number(),
+      learningCards: v.number(),
+      reviewCards: v.number(),
+      relearningCards: v.number(),
+      suspendedCards: v.number(),
+      dueCards: v.number(),
+    }),
+    difficultyDistribution: v.object({
+      veryEasy: v.number(),
+      easy: v.number(),
+      medium: v.number(),
+      hard: v.number(),
+      veryHard: v.number(),
+    }),
+    stabilityDistribution: v.object({
+      veryLow: v.number(),
+      low: v.number(),
+      medium: v.number(),
+      high: v.number(),
+      veryHigh: v.number(),
+    }),
+    repsDistribution: v.object({
+      new: v.number(),
+      beginner: v.number(),
+      intermediate: v.number(),
+      advanced: v.number(),
+      expert: v.number(),
+    }),
+    lapsesDistribution: v.object({
+      perfect: v.number(),
+      occasional: v.number(),
+      frequent: v.number(),
+      problematic: v.number(),
+    }),
+  })),
+  handler: async (ctx, args) => {
+    // 덱 정보 조회
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck || deck.userId !== args.userId) {
+      return null;
+    }
+
+    // 모든 카드 조회
+    const allCards = await ctx.db
+      .query("cards")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .collect();
+
+    const nowTimestamp = Date.now();
+
+    // 기본 카드 통계
+    const cardStats = {
+      totalCards: allCards.length,
+      newCards: allCards.filter(card => card.state === 0).length,
+      learningCards: allCards.filter(card => card.state === 1).length,
+      reviewCards: allCards.filter(card => card.state === 2).length,
+      relearningCards: allCards.filter(card => card.state === 3).length,
+      suspendedCards: allCards.filter(card => card.suspended).length,
+      dueCards: allCards.filter(card => card.due <= nowTimestamp && !card.suspended).length,
+    };
+
+    // 난이도 분포 (0-10 범위)
+    const difficultyDistribution = {
+      veryEasy: allCards.filter(card => card.difficulty <= 2).length,
+      easy: allCards.filter(card => card.difficulty > 2 && card.difficulty <= 4).length,
+      medium: allCards.filter(card => card.difficulty > 4 && card.difficulty <= 6).length,
+      hard: allCards.filter(card => card.difficulty > 6 && card.difficulty <= 8).length,
+      veryHard: allCards.filter(card => card.difficulty > 8).length,
+    };
+
+    // 안정성 분포 (일 단위)
+    const stabilityDistribution = {
+      veryLow: allCards.filter(card => card.stability <= 1).length,
+      low: allCards.filter(card => card.stability > 1 && card.stability <= 7).length,
+      medium: allCards.filter(card => card.stability > 7 && card.stability <= 30).length,
+      high: allCards.filter(card => card.stability > 30 && card.stability <= 90).length,
+      veryHigh: allCards.filter(card => card.stability > 90).length,
+    };
+
+    // 반복 횟수 분포
+    const repsDistribution = {
+      new: allCards.filter(card => card.reps === 0).length,
+      beginner: allCards.filter(card => card.reps > 0 && card.reps <= 3).length,
+      intermediate: allCards.filter(card => card.reps > 3 && card.reps <= 10).length,
+      advanced: allCards.filter(card => card.reps > 10 && card.reps <= 20).length,
+      expert: allCards.filter(card => card.reps > 20).length,
+    };
+
+    // 실수 횟수 분포
+    const lapsesDistribution = {
+      perfect: allCards.filter(card => card.lapses === 0).length,
+      occasional: allCards.filter(card => card.lapses > 0 && card.lapses <= 2).length,
+      frequent: allCards.filter(card => card.lapses > 2 && card.lapses <= 5).length,
+      problematic: allCards.filter(card => card.lapses > 5).length,
+    };
+
+    return {
+      deckInfo: {
+        _id: deck._id,
+        name: deck.name,
+        description: deck.description,
+        tags: deck.tags,
+        totalCards: deck.totalCards,
+        newCards: deck.newCards,
+        learningCards: deck.learningCards,
+        reviewCards: deck.reviewCards,
+        lastModified: deck.lastModified,
+      },
+      cardStats,
+      difficultyDistribution,
+      stabilityDistribution,
+      repsDistribution,
+      lapsesDistribution,
+    };
   },
 });

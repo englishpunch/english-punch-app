@@ -15,6 +15,7 @@ export const reviewCard = mutation({
   },
   returns: v.object({
     nextReviewDate: v.string(),
+    nextReviewTimestamp: v.number(),
     newState: v.number(),
     newStability: v.number(),
     newDifficulty: v.number(),
@@ -72,7 +73,6 @@ export const reviewCard = mutation({
       due: new Date(card.due),
       stability: card.stability,
       difficulty: card.difficulty,
-      elapsed_days: card.elapsed_days,
       scheduled_days: card.scheduled_days,
       learning_steps: card.learning_steps,
       reps: card.reps,
@@ -83,7 +83,7 @@ export const reviewCard = mutation({
 
     // ts-fsrs로 다음 상태 계산 (Rating을 Grade로 변환, Manual=0 제외)
     const grade = args.rating as Grade; // 1=Again, 2=Hard, 3=Good, 4=Easy
-    const recordLogItem = f.next(fsrsCard, now, grade);
+    const recordLogItem = f.next({...fsrsCard, elapsed_days: 0}, now, grade);
     
     console.log("✨ FSRS calculation result:", {
       newCard: recordLogItem.card,
@@ -92,16 +92,15 @@ export const reviewCard = mutation({
 
     // 카드 업데이트
     await ctx.db.patch(args.cardId, {
-      due: recordLogItem.card.due.toISOString(),
+      due: recordLogItem.card.due.getTime(),
       stability: recordLogItem.card.stability,
       difficulty: recordLogItem.card.difficulty,
-      elapsed_days: recordLogItem.card.elapsed_days,
       scheduled_days: recordLogItem.card.scheduled_days,
       learning_steps: recordLogItem.card.learning_steps,
       reps: recordLogItem.card.reps,
       lapses: recordLogItem.card.lapses,
       state: recordLogItem.card.state,
-      last_review: recordLogItem.card.last_review?.toISOString(),
+      last_review: recordLogItem.card.last_review?.getTime(),
     });
 
     // lapses 변화 추적
@@ -109,7 +108,8 @@ export const reviewCard = mutation({
     const repsIncreased = recordLogItem.card.reps > card.reps;
 
     console.log("💾 Card updated successfully with new values:", {
-      due: recordLogItem.card.due.toISOString(),
+      due: new Date(recordLogItem.card.due).toISOString(),
+      dueTimestamp: recordLogItem.card.due.getTime(),
       state: recordLogItem.card.state,
       stability: recordLogItem.card.stability,
       difficulty: recordLogItem.card.difficulty,
@@ -141,14 +141,12 @@ export const reviewCard = mutation({
       cardId: args.cardId,
       rating: recordLogItem.log.rating,
       state: recordLogItem.log.state,
-      due: recordLogItem.log.due.toISOString(),
+      due: recordLogItem.log.due.getTime(),
       stability: recordLogItem.log.stability,
       difficulty: recordLogItem.log.difficulty,
-      elapsed_days: recordLogItem.log.elapsed_days,
-      last_elapsed_days: card.elapsed_days, // 이전 값
       scheduled_days: recordLogItem.log.scheduled_days,
       learning_steps: recordLogItem.log.learning_steps,
-      review: recordLogItem.log.review.toISOString(),
+      review: recordLogItem.log.review.getTime(),
       duration: args.duration,
       sessionId: args.sessionId,
       reviewType: "scheduled",
@@ -157,7 +155,8 @@ export const reviewCard = mutation({
     console.log("📝 ReviewLog created:", reviewLog);
 
     const result = {
-      nextReviewDate: recordLogItem.card.due.toISOString(),
+      nextReviewDate: new Date(recordLogItem.card.due).toISOString(),
+      nextReviewTimestamp: recordLogItem.card.due.getTime(),
       newState: recordLogItem.card.state,
       newStability: recordLogItem.card.stability,
       newDifficulty: recordLogItem.card.difficulty,

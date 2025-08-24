@@ -9,6 +9,17 @@ interface FSRSStudySessionProps {
   onComplete: () => void;
 }
 
+type SessionCard = {
+  _id: string;
+  question: string;
+  answer: string;
+  hint?: string;
+  explanation?: string;
+  due: number;
+  state: number;
+  reps: number;
+};
+
 export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStudySessionProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -54,22 +65,30 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
     initSession().catch(console.error);
   }, [startSession, userId]);
 
-  // 학습할 카드들 결합 (복습 카드 + 새 카드)
-  const allCards = React.useMemo(() => {
-    const due = dueCards || [];
-    const newCardsToAdd = newCards || [];
-    
-    // 복습 카드를 우선하고, 새 카드를 적절히 섞음
-    const combined = [...due];
-    
-    // 새 카드를 복습 카드 사이에 배치 (3:1 비율)
-    newCardsToAdd.forEach((cardItem, index) => {
-      const insertIndex = Math.min((index + 1) * 4, combined.length);
-      combined.splice(insertIndex, 0, cardItem);
-    });
-    
-    return combined;
-  }, [dueCards, newCards]);
+  // 학습할 카드들을 세션 시작 시점에 고정 (실시간 업데이트 방지)
+  const [sessionCards, setSessionCards] = useState<SessionCard[]>([]);
+  
+  // 세션 카드 목록을 한 번만 설정
+  React.useEffect(() => {
+    if ((dueCards || newCards) && sessionCards.length === 0) {
+      const due = dueCards || [];
+      const newCardsToAdd = newCards || [];
+      
+      // 복습 카드를 우선하고, 새 카드를 적절히 섞음
+      const combined = [...due];
+      
+      // 새 카드를 복습 카드 사이에 배치 (3:1 비율)
+      newCardsToAdd.forEach((cardItem, index) => {
+        const insertIndex = Math.min((index + 1) * 4, combined.length);
+        combined.splice(insertIndex, 0, cardItem);
+      });
+      
+      console.log("🎯 Session cards fixed:", combined.length, "cards");
+      setSessionCards(combined);
+    }
+  }, [dueCards, newCards, sessionCards.length]);
+
+  const allCards: SessionCard[] = sessionCards;
 
   const currentCard = allCards?.[currentCardIndex];
   const totalCards = allCards?.length || 0;
@@ -116,10 +135,19 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
     if (sessionId) {
       try {
         await endSession({ sessionId });
+        console.log('✅ Session completed successfully');
       } catch (error) {
-        console.error('Failed to end session:', error);
+        console.error('❌ Failed to end session:', error);
       }
     }
+    // 세션 카드 목록 초기화 (다음 세션을 위해)
+    setSessionCards([]);
+    onComplete();
+  };
+
+  // 뒤로 가기 핸들러 (카드 목록 초기화 포함)
+  const handleBack = () => {
+    setSessionCards([]);
     onComplete();
   };
 
@@ -195,7 +223,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
             모든 카드를 학습했거나 아직 복습 시간이 되지 않았습니다.
           </p>
           <button
-            onClick={onComplete}
+            onClick={handleBack}
             className="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200"
           >
             돌아가기
@@ -212,7 +240,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-2">
             <button
-              onClick={onComplete}
+              onClick={handleBack}
               className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
