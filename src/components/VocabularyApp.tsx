@@ -5,14 +5,16 @@ import { Dashboard } from "./Dashboard";
 import { StudySession } from "./StudySession";
 import { WordLists } from "./WordLists";
 import { Progress } from "./Progress";
+import DeckManager from "./DeckManager";
 
-type View = "dashboard" | "study" | "lists" | "progress";
+type View = "dashboard" | "study" | "lists" | "progress" | "fsrs";
 
 export function VocabularyApp() {
   const [currentView, setCurrentView] = useState<View>("dashboard");
   const [studyMode, setStudyMode] = useState<"flashcards" | "quiz" | "spelling" | "definition_match">("flashcards");
   const [selectedWordListId, setSelectedWordListId] = useState<string | null>(null);
 
+  const loggedInUser = useQuery(api.auth.loggedInUser);
   const userStats = useQuery(api.studySessions.getUserStats);
 
   const renderView = () => {
@@ -27,6 +29,7 @@ export function VocabularyApp() {
             }}
             onViewLists={() => setCurrentView("lists")}
             onViewProgress={() => setCurrentView("progress")}
+            onStartFSRS={() => setCurrentView("fsrs")}
           />
         );
       case "study":
@@ -53,6 +56,12 @@ export function VocabularyApp() {
         return (
           <Progress
             onBack={() => setCurrentView("dashboard")}
+          />
+        );
+      case "fsrs":
+        return (
+          <DeckManager
+            userId={loggedInUser?._id || ""}
           />
         );
       default:
