@@ -1,7 +1,6 @@
 declare global {
   interface Window {
     // Tauri v2 global objects
-    __TAURI__?: any;
     __TAURI_INTERNALS__?: any;
     __TAURI_METADATA__?: any;
     isTauri?: boolean;

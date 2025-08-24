@@ -1,14 +1,23 @@
 interface QuickActionsProps {
-  onStartStudy: (mode: "flashcards" | "quiz" | "spelling" | "definition_match", wordListId?: string) => void;
+  onStartStudy: (
+    mode: "flashcards" | "quiz" | "spelling" | "definition_match",
+    wordListId?: string
+  ) => void;
   onViewLists: () => void;
   onViewProgress: () => void;
   wordsForReview: number;
 }
 
-export function QuickActions({ onStartStudy, onViewLists, onViewProgress, wordsForReview }: QuickActionsProps) {
+export function QuickActions({
+  onStartStudy,
+  onViewLists,
+  wordsForReview,
+}: QuickActionsProps) {
   return (
     <div className="bg-white rounded-lg p-6 shadow-sm border">
-      <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+      <h2 className="text-xl font-semibold text-gray-900 mb-4">
+        Quick Actions
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <button
           onClick={() => onStartStudy("flashcards")}
@@ -51,9 +60,12 @@ export function QuickActions({ onStartStudy, onViewLists, onViewProgress, wordsF
         <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="font-medium text-yellow-900">Words Due for Review</h3>
+              <h3 className="font-medium text-yellow-900">
+                Words Due for Review
+              </h3>
               <p className="text-sm text-yellow-700">
-                You have {wordsForReview} words ready for spaced repetition review
+                You have {wordsForReview} words ready for spaced repetition
+                review
               </p>
             </div>
             <button

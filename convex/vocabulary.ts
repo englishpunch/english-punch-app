@@ -55,7 +55,7 @@ export const searchWords = query({
       throw new Error("Not authenticated");
     }
 
-    let query = ctx.db
+    const query = ctx.db
       .query("words")
       .withSearchIndex("search_words", (q) => {
         let searchQuery = q.search("word", args.searchTerm);
@@ -87,7 +87,7 @@ export const getWordsByDifficulty = query({
       throw new Error("Not authenticated");
     }
 
-    let query = ctx.db
+    const query = ctx.db
       .query("words")
       .withIndex("by_difficulty", (q) => q.eq("difficulty", args.difficulty));
 

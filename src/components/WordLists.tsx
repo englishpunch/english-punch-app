@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Doc, Id } from "../../convex/_generated/dataModel";
+import { Doc } from "../../convex/_generated/dataModel";
 
 interface WordListsProps {
   onBack: () => void;
@@ -64,6 +64,7 @@ export function WordLists({ onBack, onStartStudy }: WordListsProps) {
       {showCreateForm && (
         <div className="bg-white rounded-lg p-6 shadow-sm border">
           <h2 className="text-xl font-semibold mb-4">Create New Word List</h2>
+          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
           <form onSubmit={handleCreateList} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

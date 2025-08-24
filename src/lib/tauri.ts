@@ -41,16 +41,14 @@ export const hasTauriAPI = (): boolean => {
   if (!isTauri()) return false
   
   try {
-    // @ts-ignore - Tauri v2에서 사용 가능한지 확인
-    return typeof window.__TAURI__ !== 'undefined' || 
-           typeof window.__TAURI_INTERNALS__ !== 'undefined'
+    return typeof window.__TAURI_INTERNALS__ !== 'undefined'
   } catch {
     return false
   }
 }
 
 // Tauri 플러그인이 사용 가능한지 확인
-export const hasPlugin = (pluginName: string): boolean => {
+export const hasPlugin = (_pluginName: string): boolean => {
   if (!isTauri()) return false
   
   try {

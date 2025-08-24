@@ -13,7 +13,11 @@ export default function App() {
 
   useEffect(() => {
     if (loggedInUser) {
-      initializeStats();
+      initializeStats().then(() => {
+        console.log("User stats initialized");
+      }).catch((err) => {
+        console.error("Failed to initialize user stats:", err);
+      });
     }
   }, [loggedInUser, initializeStats]);
 

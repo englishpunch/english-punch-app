@@ -10,14 +10,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "tauri:dev": "npm-run-all --parallel dev:frontend dev:backend tauri:dev:app",
-    "tauri:dev:app": "tauri dev",
-    "tauri:build": "tauri build"
+    "lint": "eslint src"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.80",
     "@fabianlars/tauri-plugin-oauth": "^2.0.0",
-    "@supabase/supabase-js": "^2.55.0",
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-deep-link": "^2.4.1",
     "@tauri-apps/plugin-opener": "^2",
@@ -39,10 +36,14 @@
     "@vitejs/plugin-react": "^4.6.0",
     "autoprefixer": "~10",
     "dotenv": "^16.4.7",
+    "eslint": "^9.34.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.20",
     "npm-run-all": "^4.1.5",
     "postcss": "~8",
     "prettier": "^3.5.3",
     "typescript": "~5.8.3",
+    "typescript-eslint": "^8.40.0",
     "vite": "^7.0.4"
   }
 }
