@@ -29,4 +29,10 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  resolve: {
+    alias: {
+      // Allow absolute imports from the `src` directory
+      "@": "/src",
+    },
+  },
 }));

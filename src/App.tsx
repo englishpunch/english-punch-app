@@ -5,7 +5,8 @@ import { SignOutButton } from "./SignOutButton";
 import { Toaster } from "sonner";
 import { VocabularyApp } from "./components/VocabularyApp";
 import { useEffect } from "react";
-import "./App.css";
+import "@/assets/pretendard-variable-gov/pretendardvariable-gov-dynamic-subset.css";
+import "./global.css";
 
 export default function App() {
   const initializeStats = useMutation(api.studySessions.initializeUserStats);
@@ -24,7 +25,7 @@ export default function App() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm h-16 flex justify-between items-center border-b shadow-sm px-4">
-        <h2 className="text-xl font-semibold text-primary">VocabMaster</h2>
+        <h2 className="text-xl font-semibold text-primary">English Punch</h2>
         <Authenticated>
           <SignOutButton />
         </Authenticated>
@@ -56,7 +57,7 @@ function Content() {
       <Unauthenticated>
         <div className="flex flex-col items-center justify-center min-h-[400px] px-4">
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold text-primary mb-4">VocabMaster</h1>
+            <h1 className="text-5xl font-bold text-primary mb-4">English Punch</h1>
             <p className="text-xl text-secondary">Master vocabulary with spaced repetition</p>
           </div>
           <div className="w-full max-w-md">
