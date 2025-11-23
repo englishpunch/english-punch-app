@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { fsrs, generatorParameters, createEmptyCard, Rating, State, Grade } from "ts-fsrs";
+import { fsrs, generatorParameters, createEmptyCard, Rating, State, Grade, Steps } from "ts-fsrs";
 
 /**
  * FSRS 알고리즘을 사용한 카드 복습 처리
@@ -63,8 +63,8 @@ export const reviewCard = mutation({
     // ts-fsrs 인스턴스 생성 (파라미터 타입 안전성 보장)
     const fsrsParams = {
       ...userSettings.fsrsParameters,
-      learning_steps: userSettings.fsrsParameters.learning_steps as any, // Steps 타입으로 캐스팅
-      relearning_steps: userSettings.fsrsParameters.relearning_steps as any, // Steps 타입으로 캐스팅
+      learning_steps: userSettings.fsrsParameters.learning_steps as Steps, // Steps 타입으로 캐스팅
+      relearning_steps: userSettings.fsrsParameters.relearning_steps as Steps, // Steps 타입으로 캐스팅
     };
     const f = fsrs(fsrsParams);
     

@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import StudyCard from './StudyCard';
 
 interface FSRSStudySessionProps {
-  deckId: string;
-  userId: string;
+  deckId: Id<"decks">;
+  userId: Id<"users">;
   onComplete: () => void;
 }
 
 type SessionCard = {
-  _id: string;
+  _id: Id<"cards">;
   question: string;
   answer: string;
   hint?: string;
@@ -34,13 +35,13 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
 
   // Convex 쿼리 및 뮤테이션
   const dueCards = useQuery(api.learning.getDueCards, { 
-    userId: userId as any, 
-    deckId: deckId as any,
+    userId, 
+    deckId,
     limit: 20 
   });
   const newCards = useQuery(api.learning.getNewCards, { 
-    userId: userId as any, 
-    deckId: deckId as any,
+    userId, 
+    deckId,
     limit: 10 
   });
   
@@ -53,7 +54,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
     const initSession = async () => {
       try {
         const newSessionId = await startSession({
-          userId: userId as any,
+          userId,
           sessionType: "daily"
         });
         setSessionId(newSessionId);
@@ -101,8 +102,8 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
     
     try {
       await reviewCard({
-        userId: userId as any,
-        cardId: currentCard._id as any,
+        userId,
+        cardId: currentCard._id,
         rating,
         duration,
         sessionId,

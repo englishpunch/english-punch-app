@@ -1,26 +1,14 @@
-import { Authenticated, Unauthenticated, useQuery, useMutation } from "convex/react";
+import { Authenticated, Unauthenticated, useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import { SignInForm } from "./SignInForm";
 import { SignOutButton } from "./SignOutButton";
 import { Toaster } from "sonner";
 import { VocabularyApp } from "./components/VocabularyApp";
-import { useEffect } from "react";
 import "@/assets/pretendard-variable-gov/pretendardvariable-gov-dynamic-subset.css";
 import "./global.css";
 
 export default function App() {
-  const initializeStats = useMutation(api.studySessions.initializeUserStats);
   const loggedInUser = useQuery(api.auth.loggedInUser);
-
-  useEffect(() => {
-    if (loggedInUser) {
-      initializeStats().then(() => {
-        console.log("User stats initialized");
-      }).catch((err) => {
-        console.error("Failed to initialize user stats:", err);
-      });
-    }
-  }, [loggedInUser, initializeStats]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -52,7 +40,13 @@ function Content() {
   return (
     <div className="w-full">
       <Authenticated>
-        <VocabularyApp />
+        {loggedInUser ? (
+          <VocabularyApp userId={loggedInUser._id} />
+        ) : (
+          <div className="flex justify-center items-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        )}
       </Authenticated>
       <Unauthenticated>
         <div className="flex flex-col items-center justify-center min-h-[400px] px-4">

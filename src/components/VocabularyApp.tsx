@@ -1,78 +1,35 @@
-import { useState } from "react";
-import { useQuery } from "convex/react";
-import { api } from "../../convex/_generated/api";
-import { Dashboard } from "./Dashboard";
-import { StudySession } from "./StudySession";
-import { WordLists } from "./WordLists";
-import { Progress } from "./Progress";
+import { Id } from "../../convex/_generated/dataModel";
 import DeckManager from "./DeckManager";
 
-type View = "dashboard" | "study" | "lists" | "progress" | "fsrs";
+interface VocabularyAppProps {
+  userId: Id<"users">;
+}
 
-export function VocabularyApp() {
-  const [currentView, setCurrentView] = useState<View>("dashboard");
-  const [studyMode, setStudyMode] = useState<"flashcards" | "quiz" | "spelling" | "definition_match">("flashcards");
-  const [selectedWordListId, setSelectedWordListId] = useState<string | null>(null);
-
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-  const userStats = useQuery(api.studySessions.getUserStats);
-
-  const renderView = () => {
-    switch (currentView) {
-      case "dashboard":
-        return (
-          <Dashboard
-            onStartStudy={(mode, wordListId) => {
-              setStudyMode(mode);
-              setSelectedWordListId(wordListId || null);
-              setCurrentView("study");
-            }}
-            onViewLists={() => setCurrentView("lists")}
-            onViewProgress={() => setCurrentView("progress")}
-            onStartFSRS={() => setCurrentView("fsrs")}
-          />
-        );
-      case "study":
-        return (
-          <StudySession
-            mode={studyMode}
-            wordListId={selectedWordListId}
-            onComplete={() => setCurrentView("dashboard")}
-            onBack={() => setCurrentView("dashboard")}
-          />
-        );
-      case "lists":
-        return (
-          <WordLists
-            onBack={() => setCurrentView("dashboard")}
-            onStartStudy={(mode, wordListId) => {
-              setStudyMode(mode);
-              setSelectedWordListId(wordListId || null);
-              setCurrentView("study");
-            }}
-          />
-        );
-      case "progress":
-        return (
-          <Progress
-            onBack={() => setCurrentView("dashboard")}
-          />
-        );
-      case "fsrs":
-        return (
-          <DeckManager
-            userId={loggedInUser?._id || ""}
-            onBack={() => setCurrentView("dashboard")}
-          />
-        );
-      default:
-        return null;
-    }
-  };
-
+export function VocabularyApp({ userId }: VocabularyAppProps) {
   return (
-    <div className="max-w-6xl mx-auto p-4">
-      {renderView()}
+    <div className="max-w-6xl mx-auto p-4 space-y-8">
+      <section className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-8 shadow-lg text-white">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="space-y-3">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-2xl">🧠</div>
+            <h1 className="text-3xl font-bold">스마트 간격 반복 학습</h1>
+            <p className="text-blue-100">
+              플래시카드나 퀴즈 없이, FSRS 기반 간격 반복으로 단어를 가장 효율적으로 익히세요.
+              덱을 선택하고 바로 학습을 시작할 수 있습니다.
+            </p>
+          </div>
+          <div className="self-start md:self-center bg-white/10 backdrop-blur px-4 py-3 rounded-lg text-sm text-blue-50 border border-white/20">
+            <div className="font-semibold">지금 가능한 작업</div>
+            <ul className="mt-2 space-y-1 list-disc list-inside">
+              <li>샘플 덱 생성 후 FSRS 학습</li>
+              <li>새/학습/복습 카드 진행</li>
+              <li>덱별 상세 통계 확인</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <DeckManager userId={userId} />
     </div>
   );
 }

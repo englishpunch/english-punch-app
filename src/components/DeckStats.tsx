@@ -1,10 +1,11 @@
 import React from 'react';
 import { useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 
 interface DeckStatsProps {
-  userId: string;
-  deckId: string;
+  userId: Id<"users">;
+  deckId: Id<"decks">;
   onBack: () => void;
 }
 
@@ -74,7 +75,7 @@ function DistributionBar({ title, data, total }: DistributionBarProps) {
 }
 
 export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
-  const stats = useQuery(api.learning.getDeckDetailStats, { userId: userId as any, deckId: deckId as any });
+  const stats = useQuery(api.learning.getDeckDetailStats, { userId, deckId });
 
   if (stats === undefined) {
     return (

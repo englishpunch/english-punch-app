@@ -19,10 +19,6 @@ import type * as fsrsSchema from "../fsrsSchema.js";
 import type * as http from "../http.js";
 import type * as learning from "../learning.js";
 import type * as router from "../router.js";
-import type * as sampleData from "../sampleData.js";
-import type * as studySessions from "../studySessions.js";
-import type * as vocabulary from "../vocabulary.js";
-import type * as words from "../words.js";
 
 /**
  * A utility for referencing Convex functions in your app's API.
@@ -39,10 +35,6 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   learning: typeof learning;
   router: typeof router;
-  sampleData: typeof sampleData;
-  studySessions: typeof studySessions;
-  vocabulary: typeof vocabulary;
-  words: typeof words;
 }>;
 export declare const api: FilterApi<
   typeof fullApi,

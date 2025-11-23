@@ -1,28 +1,29 @@
 import React, { useState } from 'react';
 import { useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
+import { Id } from '../../convex/_generated/dataModel';
 import FSRSStudySession from './FSRSStudySession';
 import DeckStats from './DeckStats';
 
 interface DeckManagerProps {
-  userId: string;
+  userId: Id<"users">;
   onBack?: () => void;
 }
 
 export default function DeckManager({ userId, onBack }: DeckManagerProps) {
   const [currentView, setCurrentView] = useState<'decks' | 'study' | 'stats'>('decks');
-  const [selectedDeckId, setSelectedDeckId] = useState<string | null>(null);
+  const [selectedDeckId, setSelectedDeckId] = useState<Id<"decks"> | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
   // Convex 쿼리 및 뮤테이션
-  const decks = useQuery(api.learning.getUserDecks, { userId: userId as any });
+  const decks = useQuery(api.learning.getUserDecks, { userId });
   const createSampleDeck = useMutation(api.learning.createSampleDeck);
   const updateDeckStats = useMutation(api.learning.updateDeckStats);
 
   const handleCreateSampleDeck = async () => {
     setIsCreatingSample(true);
     try {
-      const deckId = await createSampleDeck({ userId: userId as any });
+      const deckId = await createSampleDeck({ userId });
       await updateDeckStats({ deckId });
       console.log('Sample deck created:', deckId);
     } catch (error) {
@@ -32,12 +33,12 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
     }
   };
 
-  const handleStartStudy = (deckId: string) => {
+  const handleStartStudy = (deckId: Id<"decks">) => {
     setSelectedDeckId(deckId);
     setCurrentView('study');
   };
 
-  const handleViewStats = (deckId: string) => {
+  const handleViewStats = (deckId: Id<"decks">) => {
     setSelectedDeckId(deckId);
     setCurrentView('stats');
   };
@@ -158,7 +159,7 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
 
 interface DeckCardProps {
   deck: {
-    _id: string;
+    _id: Id<"decks">;
     name: string;
     description?: string;
     totalCards: number;
