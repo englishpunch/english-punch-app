@@ -1,6 +1,5 @@
-import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it, vi, beforeEach, Mock } from "vitest";
 import App from "./App";
 import { useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
@@ -21,8 +20,8 @@ vi.mock("@convex-dev/auth/react", () => ({
   useAuthActions: vi.fn(),
 }));
 
-const mockedUseQuery = useQuery as unknown as vi.Mock;
-const mockedUseAuthActions = useAuthActions as unknown as vi.Mock;
+const mockedUseQuery = useQuery as Mock;
+const mockedUseAuthActions = useAuthActions as Mock;
 
 describe("App shell auth & default tab", () => {
   beforeEach(() => {

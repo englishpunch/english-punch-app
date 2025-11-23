@@ -7,7 +7,7 @@ import { Button } from "./Button";
 import { ArrowLeft, CheckCircle2, FileText } from "lucide-react";
 
 interface FSRSStudySessionProps {
-  deckId: Id<"decks">;
+  bagId: Id<"bags">;
   userId: Id<"users">;
   onComplete: () => void;
 }
@@ -24,7 +24,7 @@ type SessionCard = {
 };
 
 export default function FSRSStudySession({
-  deckId,
+  bagId,
   userId,
   onComplete,
 }: FSRSStudySessionProps) {
@@ -42,12 +42,12 @@ export default function FSRSStudySession({
   // Convex 쿼리 및 뮤테이션
   const dueCards = useQuery(api.learning.getDueCards, {
     userId,
-    deckId,
+    bagId,
     limit: 20,
   });
   const newCards = useQuery(api.learning.getNewCards, {
     userId,
-    deckId,
+    bagId,
     limit: 10,
   });
 

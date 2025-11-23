@@ -42,14 +42,14 @@ export const learningTables = {
   }).index("by_user", ["userId"]),
 
   /**
-   * 학습 덱 (카드 그룹)
+   * 학습 샌드백 (카드 그룹)
    */
-  decks: defineTable({
+  bags: defineTable({
     userId: v.id("users"),
     name: v.string(),
     description: v.optional(v.string()),
 
-    // 덱 설정
+    // 샌드백 설정
     isActive: v.boolean(),
     sortOrder: v.number(),
 
@@ -71,7 +71,7 @@ export const learningTables = {
    */
   cards: defineTable({
     userId: v.id("users"),
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
 
     // 카드 콘텐츠 (빈칸 채우기 형식)
     question: v.string(), // "I'd like to ___ a table for two at 7 pm."
@@ -105,12 +105,12 @@ export const learningTables = {
     suspended: v.boolean(), // 일시 중지 여부
   })
     .index("by_user", ["userId"])
-    .index("by_deck", ["deckId"])
+    .index("by_bag", ["bagId"])
     .index("by_due", ["due"]) // 전체 due 날짜 순 정렬
     .index("by_user_and_due", ["userId", "due"]) // 사용자별 due 날짜 순
-    .index("by_deck_and_due", ["deckId", "due"]) // 덱별 due 날짜 순
+    .index("by_bag_and_due", ["bagId", "due"]) // 샌드백별 due 날짜 순
     .index("by_user_and_state", ["userId", "state"])
-    .index("by_deck_and_state", ["deckId", "state"])
+    .index("by_bag_and_state", ["bagId", "state"])
     .index("by_user_and_learning_steps", ["userId", "learning_steps"])
     .index("by_due_and_suspended", ["due", "suspended"]), // due 날짜 + 정지 상태
 

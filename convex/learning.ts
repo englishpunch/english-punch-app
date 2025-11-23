@@ -1,17 +1,16 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { ConvexError } from "convex/values";
 
 /**
- * 샘플 덱 생성 - 영어 학습용 기본 카드들
+ * 샘플 백 생성 - 영어 학습용 기본 카드들
  */
-export const createSampleDeck = mutation({
+export const createSampleBag = mutation({
   args: {
     userId: v.id("users"),
   },
-  returns: v.id("decks"),
+  returns: v.id("bags"),
   handler: async (ctx, args) => {
-    console.log("🎯 CreateSampleDeck started for userId:", args.userId);
+    console.log("🎯 CreateSampleBag started for userId:", args.userId);
 
     // 사용자 설정 확인/생성
     const userSettings = await ctx.db
@@ -50,9 +49,9 @@ export const createSampleDeck = mutation({
       console.log("📋 User settings already exist");
     }
 
-    // 샘플 덱 생성
-    console.log("📦 Creating sample deck");
-    const deckId = await ctx.db.insert("decks", {
+    // 샘플 백 생성
+    console.log("📦 Creating sample bag");
+    const bagId = await ctx.db.insert("bags", {
       userId: args.userId,
       name: "영어 기초 표현",
       description: "일상생활에서 자주 사용하는 영어 표현들을 학습합니다.",
@@ -65,7 +64,7 @@ export const createSampleDeck = mutation({
       tags: ["기초", "일상회화"],
       lastModified: new Date().toISOString(),
     });
-    console.log("✅ Sample deck created:", deckId);
+    console.log("✅ Sample bag created:", bagId);
 
     // 샘플 카드들
     const sampleCards = [
@@ -141,7 +140,7 @@ export const createSampleDeck = mutation({
     for (const cardData of sampleCards) {
       const cardId = await ctx.db.insert("cards", {
         userId: args.userId,
-        deckId: deckId,
+        bagId: bagId,
         question: cardData.question,
         answer: cardData.answer,
         hint: cardData.hint,
@@ -170,35 +169,35 @@ export const createSampleDeck = mutation({
       });
     }
 
-    // 덱 통계 업데이트
-    console.log("📊 Updating deck statistics");
-    await ctx.db.patch(deckId, {
+    // 백 통계 업데이트
+    console.log("📊 Updating bag statistics");
+    await ctx.db.patch(bagId, {
       totalCards: cardCount,
       newCards: cardCount,
       lastModified: nowIsoString,
     });
 
-    console.log("✅ CreateSampleDeck completed:", {
-      deckId,
+    console.log("✅ CreateSampleBag completed:", {
+      bagId,
       cardCount,
       totalCards: cardCount,
       newCards: cardCount,
     });
 
-    return deckId;
+    return bagId;
   },
 });
 
 /**
- * 사용자의 덱 목록 조회
+ * 사용자의 백 목록 조회
  */
-export const getUserDecks = query({
+export const getUserBags = query({
   args: {
     userId: v.id("users"),
   },
   returns: v.array(
     v.object({
-      _id: v.id("decks"),
+      _id: v.id("bags"),
       name: v.string(),
       description: v.optional(v.string()),
       totalCards: v.number(),
@@ -207,35 +206,35 @@ export const getUserDecks = query({
       reviewCards: v.number(),
       tags: v.array(v.string()),
       isActive: v.boolean(),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
-    const decks = await ctx.db
-      .query("decks")
+    const bags = await ctx.db
+      .query("bags")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .collect();
 
-    return decks.map((deck) => ({
-      _id: deck._id,
-      name: deck.name,
-      description: deck.description,
-      totalCards: deck.totalCards,
-      newCards: deck.newCards,
-      learningCards: deck.learningCards,
-      reviewCards: deck.reviewCards,
-      tags: deck.tags,
-      isActive: deck.isActive,
+    return bags.map((bag) => ({
+      _id: bag._id,
+      name: bag.name,
+      description: bag.description,
+      totalCards: bag.totalCards,
+      newCards: bag.newCards,
+      learningCards: bag.learningCards,
+      reviewCards: bag.reviewCards,
+      tags: bag.tags,
+      isActive: bag.isActive,
     }));
   },
 });
 
 /**
- * 덱의 학습 가능한 카드들 조회 (due date 기준)
+ * 백의 학습 가능한 카드들 조회 (due date 기준)
  */
 export const getDueCards = query({
   args: {
     userId: v.id("users"),
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
     limit: v.optional(v.number()),
   },
   returns: v.array(
@@ -248,7 +247,7 @@ export const getDueCards = query({
       due: v.number(),
       state: v.number(),
       reps: v.number(),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
     const nowTimestamp = Date.now();
@@ -257,9 +256,9 @@ export const getDueCards = query({
     const cards = await ctx.db
       .query("cards")
       .withIndex("by_user_and_due", (q) =>
-        q.eq("userId", args.userId).lte("due", nowTimestamp),
+        q.eq("userId", args.userId).lte("due", nowTimestamp)
       )
-      .filter((q) => q.eq(q.field("deckId"), args.deckId))
+      .filter((q) => q.eq(q.field("bagId"), args.bagId))
       .filter((q) => q.eq(q.field("suspended"), false))
       .order("asc")
       .take(limit);
@@ -283,7 +282,7 @@ export const getDueCards = query({
 export const getNewCards = query({
   args: {
     userId: v.id("users"),
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
     limit: v.optional(v.number()),
   },
   returns: v.array(
@@ -296,7 +295,7 @@ export const getNewCards = query({
       due: v.number(),
       state: v.number(),
       reps: v.number(),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
     const limit = args.limit || 10;
@@ -305,9 +304,9 @@ export const getNewCards = query({
       .query("cards")
       .withIndex(
         "by_user_and_state",
-        (q) => q.eq("userId", args.userId).eq("state", 0), // New cards
+        (q) => q.eq("userId", args.userId).eq("state", 0) // New cards
       )
-      .filter((q) => q.eq(q.field("deckId"), args.deckId))
+      .filter((q) => q.eq(q.field("bagId"), args.bagId))
       .filter((q) => q.eq(q.field("suspended"), false))
       .take(limit);
 
@@ -325,18 +324,18 @@ export const getNewCards = query({
 });
 
 /**
- * 덱 통계 업데이트
+ * 백 통계 업데이트
  */
-export const updateDeckStats = mutation({
+export const updateBagStats = mutation({
   args: {
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
   },
   returns: v.null(),
   handler: async (ctx, args) => {
     // 각 상태별 카드 수 계산
     const allCards = await ctx.db
       .query("cards")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
       .collect();
 
     const stats = {
@@ -346,29 +345,29 @@ export const updateDeckStats = mutation({
       reviewCards: allCards.filter((card) => card.state === 2).length,
     };
 
-    await ctx.db.patch(args.deckId, {
+    await ctx.db.patch(args.bagId, {
       ...stats,
       lastModified: new Date().toISOString(),
     });
 
-    console.log("📊 Deck statistics updated:", { deckId: args.deckId, stats });
+    console.log("📊 Bag statistics updated:", { bagId: args.bagId, stats });
     return null;
   },
 });
 
 /**
- * 덱 상세 통계 조회
+ * 백 상세 통계 조회
  */
-export const getDeckDetailStats = query({
+export const getBagDetailStats = query({
   args: {
     userId: v.id("users"),
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
   },
   returns: v.union(
     v.null(),
     v.object({
-      deckInfo: v.object({
-        _id: v.id("decks"),
+      bagInfo: v.object({
+        _id: v.id("bags"),
         name: v.string(),
         description: v.optional(v.string()),
         tags: v.array(v.string()),
@@ -414,19 +413,19 @@ export const getDeckDetailStats = query({
         frequent: v.number(),
         problematic: v.number(),
       }),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
-    // 덱 정보 조회
-    const deck = await ctx.db.get(args.deckId);
-    if (!deck || deck.userId !== args.userId) {
+    // 백 정보 조회
+    const bag = await ctx.db.get(args.bagId);
+    if (!bag || bag.userId !== args.userId) {
       return null;
     }
 
     // 모든 카드 조회
     const allCards = await ctx.db
       .query("cards")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
       .collect();
 
     const nowTimestamp = Date.now();
@@ -440,7 +439,7 @@ export const getDeckDetailStats = query({
       relearningCards: allCards.filter((card) => card.state === 3).length,
       suspendedCards: allCards.filter((card) => card.suspended).length,
       dueCards: allCards.filter(
-        (card) => card.due <= nowTimestamp && !card.suspended,
+        (card) => card.due <= nowTimestamp && !card.suspended
       ).length,
     };
 
@@ -448,13 +447,13 @@ export const getDeckDetailStats = query({
     const difficultyDistribution = {
       veryEasy: allCards.filter((card) => card.difficulty <= 2).length,
       easy: allCards.filter(
-        (card) => card.difficulty > 2 && card.difficulty <= 4,
+        (card) => card.difficulty > 2 && card.difficulty <= 4
       ).length,
       medium: allCards.filter(
-        (card) => card.difficulty > 4 && card.difficulty <= 6,
+        (card) => card.difficulty > 4 && card.difficulty <= 6
       ).length,
       hard: allCards.filter(
-        (card) => card.difficulty > 6 && card.difficulty <= 8,
+        (card) => card.difficulty > 6 && card.difficulty <= 8
       ).length,
       veryHard: allCards.filter((card) => card.difficulty > 8).length,
     };
@@ -465,10 +464,10 @@ export const getDeckDetailStats = query({
       low: allCards.filter((card) => card.stability > 1 && card.stability <= 7)
         .length,
       medium: allCards.filter(
-        (card) => card.stability > 7 && card.stability <= 30,
+        (card) => card.stability > 7 && card.stability <= 30
       ).length,
       high: allCards.filter(
-        (card) => card.stability > 30 && card.stability <= 90,
+        (card) => card.stability > 30 && card.stability <= 90
       ).length,
       veryHigh: allCards.filter((card) => card.stability > 90).length,
     };
@@ -496,16 +495,16 @@ export const getDeckDetailStats = query({
     };
 
     return {
-      deckInfo: {
-        _id: deck._id,
-        name: deck.name,
-        description: deck.description,
-        tags: deck.tags,
-        totalCards: deck.totalCards,
-        newCards: deck.newCards,
-        learningCards: deck.learningCards,
-        reviewCards: deck.reviewCards,
-        lastModified: deck.lastModified,
+      bagInfo: {
+        _id: bag._id,
+        name: bag.name,
+        description: bag.description,
+        tags: bag.tags,
+        totalCards: bag.totalCards,
+        newCards: bag.newCards,
+        learningCards: bag.learningCards,
+        reviewCards: bag.reviewCards,
+        lastModified: bag.lastModified,
       },
       cardStats,
       difficultyDistribution,
@@ -517,16 +516,16 @@ export const getDeckDetailStats = query({
 });
 
 /**
- * 새로운 덱 생성
+ * 새로운 백 생성
  */
-export const createDeck = mutation({
+export const createBag = mutation({
   args: {
     userId: v.id("users"),
     name: v.string(),
   },
   handler: async (ctx, args) => {
     const nowIso = new Date().toISOString();
-    const deckId = await ctx.db.insert("decks", {
+    const bagId = await ctx.db.insert("bags", {
       userId: args.userId,
       name: args.name,
       description: undefined,
@@ -539,34 +538,34 @@ export const createDeck = mutation({
       tags: [],
       lastModified: nowIso,
     });
-    return deckId;
+    return bagId;
   },
 });
 
-/** 삭제: 덱과 카드 */
-export const deleteDeck = mutation({
+/** 삭제: 백과 카드 */
+export const deleteBag = mutation({
   args: {
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
   },
   handler: async (ctx, args) => {
-    const deck = await ctx.db.get(args.deckId);
-    if (!deck) return null;
+    const bag = await ctx.db.get(args.bagId);
+    if (!bag) return null;
 
     const cards = await ctx.db
       .query("cards")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
       .collect();
 
     await Promise.all(cards.map((c) => ctx.db.delete(c._id)));
-    await ctx.db.delete(args.deckId);
+    await ctx.db.delete(args.bagId);
     return null;
   },
 });
 
-/** 덱의 카드 전체 조회 (관리용) */
-export const getDeckCards = query({
+/** 백의 카드 전체 조회 (관리용) */
+export const getBagCards = query({
   args: {
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
     userId: v.id("users"),
   },
   returns: v.array(
@@ -576,12 +575,12 @@ export const getDeckCards = query({
       answer: v.string(),
       hint: v.optional(v.string()),
       explanation: v.optional(v.string()),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
     const cards = await ctx.db
       .query("cards")
-      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
       .filter((q) => q.eq(q.field("userId"), args.userId))
       .collect();
 
@@ -603,7 +602,7 @@ const initialSchedule = (now: number) => ({
   learning_steps: 0,
   reps: 0,
   lapses: 0,
-  state: 0,
+  state: 0 as const,
   last_review: undefined,
   suspended: false,
 });
@@ -611,7 +610,7 @@ const initialSchedule = (now: number) => ({
 /** 카드 생성 */
 export const createCard = mutation({
   args: {
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
     userId: v.id("users"),
     question: v.string(),
     answer: v.string(),
@@ -621,7 +620,7 @@ export const createCard = mutation({
   handler: async (ctx, args) => {
     const now = Date.now();
     await ctx.db.insert("cards", {
-      deckId: args.deckId,
+      bagId: args.bagId,
       userId: args.userId,
       question: args.question,
       answer: args.answer,
@@ -632,11 +631,11 @@ export const createCard = mutation({
       ...initialSchedule(now),
     });
 
-    const deck = await ctx.db.get(args.deckId);
-    if (deck) {
-      await ctx.db.patch(args.deckId, {
-        totalCards: deck.totalCards + 1,
-        newCards: deck.newCards + 1,
+    const bag = await ctx.db.get(args.bagId);
+    if (bag) {
+      await ctx.db.patch(args.bagId, {
+        totalCards: bag.totalCards + 1,
+        newCards: bag.newCards + 1,
         lastModified: new Date(now).toISOString(),
       });
     }
@@ -647,7 +646,7 @@ export const createCard = mutation({
 /** 카드 수정 + 스케줄 초기화 */
 export const updateCard = mutation({
   args: {
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
     cardId: v.id("cards"),
     question: v.string(),
     answer: v.string(),
@@ -660,11 +659,13 @@ export const updateCard = mutation({
     learning_steps: v.optional(v.number()),
     reps: v.optional(v.number()),
     lapses: v.optional(v.number()),
-    state: v.optional(v.union(v.literal(0), v.literal(1), v.literal(2), v.literal(3))),
+    state: v.optional(
+      v.union(v.literal(0), v.literal(1), v.literal(2), v.literal(3))
+    ),
   },
   handler: async (ctx, args) => {
     const card = await ctx.db.get(args.cardId);
-    if (!card || card.deckId !== args.deckId) return null;
+    if (!card || card.bagId !== args.bagId) return null;
 
     const now = Date.now();
     await ctx.db.patch(args.cardId, {
@@ -675,13 +676,13 @@ export const updateCard = mutation({
       ...initialSchedule(now),
     });
 
-    const deck = await ctx.db.get(args.deckId);
-    if (deck) {
+    const bag = await ctx.db.get(args.bagId);
+    if (bag) {
       // 이전 상태가 0이 아니면 newCards 증가, 다른 상태 감소는 생략 (간단 집계)
-      const newCards = deck.newCards + (card.state === 0 ? 0 : 1);
-      const learningCards = deck.learningCards - (card.state === 1 ? 1 : 0);
-      const reviewCards = deck.reviewCards - (card.state === 2 ? 1 : 0);
-      await ctx.db.patch(args.deckId, {
+      const newCards = bag.newCards + (card.state === 0 ? 0 : 1);
+      const learningCards = bag.learningCards - (card.state === 1 ? 1 : 0);
+      const reviewCards = bag.reviewCards - (card.state === 2 ? 1 : 0);
+      await ctx.db.patch(args.bagId, {
         newCards,
         learningCards,
         reviewCards,
@@ -696,21 +697,21 @@ export const updateCard = mutation({
 export const deleteCard = mutation({
   args: {
     cardId: v.id("cards"),
-    deckId: v.id("decks"),
+    bagId: v.id("bags"),
   },
   handler: async (ctx, args) => {
     const card = await ctx.db.get(args.cardId);
-    const deck = await ctx.db.get(args.deckId);
-    if (!card || !deck) return null;
+    const bag = await ctx.db.get(args.bagId);
+    if (!card || !bag) return null;
     await ctx.db.delete(args.cardId);
 
     const counts = {
-      totalCards: deck.totalCards - 1,
-      newCards: deck.newCards - (card.state === 0 ? 1 : 0),
-      learningCards: deck.learningCards - (card.state === 1 ? 1 : 0),
-      reviewCards: deck.reviewCards - (card.state === 2 ? 1 : 0),
+      totalCards: bag.totalCards - 1,
+      newCards: bag.newCards - (card.state === 0 ? 1 : 0),
+      learningCards: bag.learningCards - (card.state === 1 ? 1 : 0),
+      reviewCards: bag.reviewCards - (card.state === 2 ? 1 : 0),
     };
-    await ctx.db.patch(args.deckId, {
+    await ctx.db.patch(args.bagId, {
       ...counts,
       lastModified: new Date().toISOString(),
     });

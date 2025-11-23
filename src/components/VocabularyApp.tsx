@@ -1,6 +1,6 @@
 import { Brain } from "lucide-react";
 import { Id } from "../../convex/_generated/dataModel";
-import DeckManager from "./DeckManager";
+import BagManager from "./BagManager";
 
 interface VocabularyAppProps {
   userId: Id<"users">;
@@ -24,12 +24,13 @@ export function VocabularyApp({ userId }: VocabularyAppProps) {
           </h1>
           <p className="text-base leading-6 text-gray-600">
             플래시카드나 퀴즈 없이도, FSRS 기반 간격 반복으로 단어를 가장
-            효율적으로 익히세요. 덱을 선택하면 바로 학습을 시작할 수 있어요.
+            효율적으로 익히세요. 샌드백을 선택하면 바로 학습을 시작할 수
+            있어요.
           </p>
         </div>
       </section>
 
-      <DeckManager userId={userId} />
+      <BagManager userId={userId} />
     </div>
   );
 }

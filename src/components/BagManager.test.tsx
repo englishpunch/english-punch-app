@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import DeckManager from "./DeckManager";
+import BagManager from "./BagManager";
 import { Id } from "../../convex/_generated/dataModel";
 
 const useQueryMock = vi.fn();
@@ -14,10 +14,10 @@ vi.mock("convex/react", () => ({
 
 const userId = "user_123" as Id<"users">;
 
-const sampleDeck = {
-  _id: "deck_1" as Id<"decks">,
-  name: "샘플 덱",
-  description: "기본 표현 덱",
+const sampleBag = {
+  _id: "bag_1" as Id<"bags">,
+  name: "샘플 샌드백",
+  description: "기본 표현 샌드백",
   totalCards: 12,
   newCards: 4,
   learningCards: 3,
@@ -26,15 +26,15 @@ const sampleDeck = {
   isActive: true,
 };
 
-describe("DeckManager design", () => {
+describe("BagManager design", () => {
   beforeEach(() => {
-    useQueryMock.mockReturnValue([sampleDeck]);
+    useQueryMock.mockReturnValue([sampleBag]);
     useMutationMock.mockReturnValue(vi.fn());
   });
 
   it("keeps actions on the primary palette and avoids responsive class prefixes", async () => {
     const user = userEvent.setup();
-    const { container } = render(<DeckManager userId={userId} />);
+    const { container } = render(<BagManager userId={userId} />);
 
     const studyButton = screen.getByRole("button", { name: /학습하기/i });
     expect(studyButton.className).not.toMatch(/bg-blue|bg-green|bg-orange/);

@@ -1,14 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import {
-  fsrs,
-  generatorParameters,
-  createEmptyCard,
-  Rating,
-  State,
-  Grade,
-  Steps,
-} from "ts-fsrs";
+import { fsrs, State, Grade, Steps } from "ts-fsrs";
 
 /**
  * FSRS 알고리즘을 사용한 카드 복습 처리
@@ -54,7 +46,6 @@ export const reviewCard = mutation({
     }
 
     const now = new Date();
-    const reviewTime = now.toISOString();
 
     console.log("📊 Card before review:", {
       state: card.state,
@@ -206,7 +197,7 @@ export const getRecentReviewLogs = query({
       review: v.number(),
       duration: v.number(),
       question: v.optional(v.string()),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
     const limit = args.limit ?? 50;
@@ -229,7 +220,7 @@ export const getRecentReviewLogs = query({
           duration: log.duration,
           question: card?.question,
         };
-      }),
+      })
     );
 
     return enriched;
@@ -261,7 +252,7 @@ export const getUserSettings = query({
       totalReviews: v.number(),
       currentStreak: v.number(),
       longestStreak: v.number(),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
     const settings = await ctx.db
@@ -292,7 +283,7 @@ export const startSession = mutation({
     sessionType: v.union(
       v.literal("daily"),
       v.literal("custom"),
-      v.literal("cramming"),
+      v.literal("cramming")
     ),
   },
   returns: v.string(), // sessionId

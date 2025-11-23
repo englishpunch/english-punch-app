@@ -1,9 +1,8 @@
-import React, { useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
-import { cn } from "@/lib/utils";
 import { Plus, Trash2, Edit2, ArrowLeft } from "lucide-react";
 
 interface PlansPageProps {
@@ -11,27 +10,30 @@ interface PlansPageProps {
 }
 
 export default function PlansPage({ userId }: PlansPageProps) {
-  const decks = useQuery((api as any).learning.getUserDecks, { userId });
-  const createDeck = useMutation((api as any).learning.createDeck);
-  const deleteDeck = useMutation((api as any).learning.deleteDeck);
+  const bags = useQuery(api.learning.getUserBags, { userId });
+  const createBag = useMutation(api.learning.createBag);
+  const deleteBag = useMutation(api.learning.deleteBag);
 
-  const [newDeckName, setNewDeckName] = useState("");
-  const [activeDeckId, setActiveDeckId] = useState<Id<"decks"> | null>(null);
+  const [newBagName, setNewBagName] = useState("");
+  const [activeBagId, setActiveBagId] = useState<Id<"bags"> | null>(null);
 
-  const handleAddDeck = async () => {
-    const name = newDeckName.trim();
+  const handleAddBag = async () => {
+    const name = newBagName.trim();
     if (!name) return;
-    await createDeck({ userId, name });
-    setNewDeckName("");
+    await createBag({ userId, name });
+    setNewBagName("");
   };
 
-  const activeDeck = useMemo(() => decks?.find((d) => d._id === activeDeckId) || null, [decks, activeDeckId]);
+  const activeBag = useMemo(
+    () => bags?.find((d) => d._id === activeBagId) || null,
+    [bags, activeBagId]
+  );
 
-  if (activeDeck) {
+  if (activeBag) {
     return (
-      <DeckDetail
-        deck={activeDeck}
-        onBack={() => setActiveDeckId(null)}
+      <BagDetail
+        bag={activeBag}
+        onBack={() => setActiveBagId(null)}
         userId={userId}
       />
     );
@@ -40,68 +42,87 @@ export default function PlansPage({ userId }: PlansPageProps) {
   return (
     <div className="space-y-4">
       <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
-        <h2 className="text-base font-semibold text-gray-900">덱 추가</h2>
+        <h2 className="text-base font-semibold text-gray-900">샌드백 추가</h2>
         <div className="mt-3 flex gap-2">
           <input
             className="flex-1 px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
-            placeholder="새 덱 이름"
-            value={newDeckName}
-            onChange={(e) => setNewDeckName(e.target.value)}
+            placeholder="새 샌드백 이름"
+            value={newBagName}
+            onChange={(e) => setNewBagName(e.target.value)}
           />
-          <Button onClick={handleAddDeck} className="gap-2">
-            <Plus className="h-4 w-4" aria-hidden /> 덱 추가
+          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
+          <Button onClick={handleAddBag} className="gap-2">
+            <Plus className="h-4 w-4" aria-hidden /> 샌드백 추가
           </Button>
         </div>
       </div>
 
       <div className="space-y-2">
-        {decks?.map((deck) => (
+        {bags?.map((bag) => (
           <div
-            key={deck._id}
+            key={bag._id}
             className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
           >
             <div>
-              <p className="text-sm font-semibold text-gray-900">{deck.name}</p>
-              <p className="text-xs text-gray-500">카드 {deck.totalCards}장</p>
+              <p className="text-sm font-semibold text-gray-900">{bag.name}</p>
+              <p className="text-xs text-gray-500">카드 {bag.totalCards}장</p>
             </div>
             <div className="flex gap-2">
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => setActiveDeckId(deck._id)}
-                aria-label={`관리 ${deck.name}`}
+                onClick={() => setActiveBagId(bag._id)}
+                aria-label={`관리 ${bag.name}`}
               >
                 관리
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => void deleteDeck({ deckId: deck._id })}
-                aria-label={`삭제 ${deck.name}`}
+                onClick={() => void deleteBag({ bagId: bag._id })}
+                aria-label={`삭제 ${bag.name}`}
               >
                 <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
               </Button>
             </div>
           </div>
         ))}
-        {!decks && (
-          <div className="text-sm text-gray-500">덱을 불러오는 중...</div>
+        {!bags && (
+          <div className="text-sm text-gray-500">샌드백을 불러오는 중...</div>
         )}
-        {decks?.length === 0 && (
-          <div className="text-sm text-gray-500">덱이 없습니다. 새로 추가해보세요.</div>
+        {bags?.length === 0 && (
+          <div className="text-sm text-gray-500">
+            샌드백이 없습니다. 새로 추가해보세요.
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-function DeckDetail({ deck, onBack, userId }: { deck: { _id: Id<"decks">; name: string }; onBack: () => void; userId: Id<"users"> }) {
-  const cards = useQuery((api as any).learning.getDeckCards, { deckId: deck._id, userId });
+function BagDetail({
+  bag,
+  onBack,
+  userId,
+}: {
+  bag: { _id: Id<"bags">; name: string };
+  onBack: () => void;
+  userId: Id<"users">;
+}) {
+  const cards = useQuery((api as any).learning.getBagCards, {
+    bagId: bag._id,
+    userId,
+  });
   const createCard = useMutation((api as any).learning.createCard);
   const updateCard = useMutation((api as any).learning.updateCard);
   const deleteCard = useMutation((api as any).learning.deleteCard);
 
-  const [form, setForm] = useState({ question: "", answer: "", hint: "", explanation: "" });
+  const [form, setForm] = useState({
+    question: "",
+    answer: "",
+    hint: "",
+    explanation: "",
+  });
   const [editingId, setEditingId] = useState<Id<"cards"> | null>(null);
 
   const handleSubmit = async () => {
@@ -121,7 +142,7 @@ function DeckDetail({ deck, onBack, userId }: { deck: { _id: Id<"decks">; name: 
     if (editingId) {
       await updateCard({
         cardId: editingId,
-        deckId: deck._id,
+        bagId: bag._id,
         question: form.question,
         answer: form.answer,
         hint: form.hint,
@@ -130,7 +151,7 @@ function DeckDetail({ deck, onBack, userId }: { deck: { _id: Id<"decks">; name: 
       });
     } else {
       await createCard({
-        deckId: deck._id,
+        bagId: bag._id,
         userId,
         question: form.question,
         answer: form.answer,
@@ -158,7 +179,7 @@ function DeckDetail({ deck, onBack, userId }: { deck: { _id: Id<"decks">; name: 
         <Button variant="ghost" size="sm" className="px-2" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" aria-hidden />
         </Button>
-        <h2 className="text-base font-semibold text-gray-900">{deck.name}</h2>
+        <h2 className="text-base font-semibold text-gray-900">{bag.name}</h2>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-3">
@@ -184,26 +205,45 @@ function DeckDetail({ deck, onBack, userId }: { deck: { _id: Id<"decks">; name: 
           className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
           placeholder="설명 (선택)"
           value={form.explanation}
-          onChange={(e) => setForm((f) => ({ ...f, explanation: e.target.value }))}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, explanation: e.target.value }))
+          }
         />
-        <Button onClick={handleSubmit} className="w-full" aria-label={editingId ? `저장 ${editingId}` : "카드 추가"}>
+        <Button
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          onClick={handleSubmit}
+          className="w-full"
+          aria-label={editingId ? `저장 ${editingId}` : "카드 추가"}
+        >
           {editingId ? "저장" : "카드 추가"}
         </Button>
       </div>
 
       <div className="space-y-2">
         {cards?.map((card: any) => (
-          <div key={card._id} className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-            <p className="text-sm font-semibold text-gray-900">{card.question}</p>
+          <div
+            key={card._id}
+            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+          >
+            <p className="text-sm font-semibold text-gray-900">
+              {card.question}
+            </p>
             <p className="text-xs text-gray-600 mt-1">정답: {card.answer}</p>
             <div className="flex gap-2 mt-2">
-              <Button size="sm" variant="secondary" onClick={() => startEdit(card)} aria-label={`수정 ${card._id}`}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => startEdit(card)}
+                aria-label={`수정 ${card._id}`}
+              >
                 <Edit2 className="h-4 w-4" aria-hidden />
               </Button>
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => void deleteCard({ cardId: card._id, deckId: deck._id })}
+                onClick={() =>
+                  void deleteCard({ cardId: card._id, bagId: bag._id })
+                }
                 aria-label={`삭제 ${card._id}`}
               >
                 <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
@@ -211,8 +251,12 @@ function DeckDetail({ deck, onBack, userId }: { deck: { _id: Id<"decks">; name: 
             </div>
           </div>
         ))}
-        {!cards && <p className="text-sm text-gray-500">카드를 불러오는 중...</p>}
-        {cards?.length === 0 && <p className="text-sm text-gray-500">카드가 없습니다.</p>}
+        {!cards && (
+          <p className="text-sm text-gray-500">카드를 불러오는 중...</p>
+        )}
+        {cards?.length === 0 && (
+          <p className="text-sm text-gray-500">카드가 없습니다.</p>
+        )}
       </div>
     </div>
   );

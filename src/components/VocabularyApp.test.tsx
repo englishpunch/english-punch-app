@@ -3,9 +3,9 @@ import { describe, expect, it, vi } from "vitest";
 import { VocabularyApp } from "./VocabularyApp";
 import { Id } from "../../convex/_generated/dataModel";
 
-vi.mock("./DeckManager", () => ({
+vi.mock("./BagManager", () => ({
   __esModule: true,
-  default: () => <div data-testid="deck-manager" />,
+  default: () => <div data-testid="bag-manager" />,
 }));
 
 const userId = "user_123" as Id<"users">;

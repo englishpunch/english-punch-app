@@ -1,4 +1,3 @@
-import React from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -14,7 +13,10 @@ export default function ActivityPage({ userId }: ActivityPageProps) {
   if (logs === undefined) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-primary-600" aria-hidden />
+        <Loader2
+          className="h-6 w-6 animate-spin text-primary-600"
+          aria-hidden
+        />
       </div>
     );
   }
@@ -22,8 +24,12 @@ export default function ActivityPage({ userId }: ActivityPageProps) {
   if (!logs || logs.length === 0) {
     return (
       <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-8 text-center space-y-3">
-        <p className="text-lg font-semibold text-gray-900">최근 리뷰 로그가 없습니다</p>
-        <p className="text-sm text-gray-600">학습을 시작하면 기록이 여기에 표시됩니다.</p>
+        <p className="text-lg font-semibold text-gray-900">
+          최근 리뷰 로그가 없습니다
+        </p>
+        <p className="text-sm text-gray-600">
+          학습을 시작하면 기록이 여기에 표시됩니다.
+        </p>
       </div>
     );
   }
@@ -65,7 +71,9 @@ function RatingPill({ rating }: { rating: number }) {
   } as const;
   const entry = config[rating as 1 | 2 | 3 | 4] || config[1];
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${entry.className}`}>
+    <span
+      className={`px-2 py-1 rounded-full text-xs font-semibold ${entry.className}`}
+    >
       {entry.label}
     </span>
   );

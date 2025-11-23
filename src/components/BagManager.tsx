@@ -3,78 +3,78 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import FSRSStudySession from "./FSRSStudySession";
-import DeckStats from "./DeckStats";
+import BagStats from "./BagStats";
 import { Button } from "./Button";
 import { ArrowLeft, BarChart3, Eye, Loader2, Plus } from "lucide-react";
 
-interface DeckManagerProps {
+interface BagManagerProps {
   userId: Id<"users">;
   onBack?: () => void;
 }
 
-export default function DeckManager({ userId, onBack }: DeckManagerProps) {
-  const [currentView, setCurrentView] = useState<"decks" | "study" | "stats">(
-    "decks",
+export default function BagManager({ userId, onBack }: BagManagerProps) {
+  const [currentView, setCurrentView] = useState<"bags" | "study" | "stats">(
+    "bags",
   );
-  const [selectedDeckId, setSelectedDeckId] = useState<Id<"decks"> | null>(
+  const [selectedBagId, setSelectedBagId] = useState<Id<"bags"> | null>(
     null,
   );
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
   // Convex 쿼리 및 뮤테이션
-  const decks = useQuery(api.learning.getUserDecks, { userId });
-  const createSampleDeck = useMutation(api.learning.createSampleDeck);
-  const updateDeckStats = useMutation(api.learning.updateDeckStats);
+  const bags = useQuery(api.learning.getUserBags, { userId });
+  const createSampleBag = useMutation(api.learning.createSampleBag);
+  const updateBagStats = useMutation(api.learning.updateBagStats);
 
-  const handleCreateSampleDeck = async () => {
+  const handleCreateSampleBag = async () => {
     setIsCreatingSample(true);
     try {
-      const deckId = await createSampleDeck({ userId });
-      await updateDeckStats({ deckId });
-      console.log("Sample deck created:", deckId);
+      const bagId = await createSampleBag({ userId });
+      await updateBagStats({ bagId });
+      console.log("Sample bag created:", bagId);
     } catch (error) {
-      console.error("Failed to create sample deck:", error);
+      console.error("Failed to create sample bag:", error);
     } finally {
       setIsCreatingSample(false);
     }
   };
 
-  const handleStartStudy = (deckId: Id<"decks">) => {
-    setSelectedDeckId(deckId);
+  const handleStartStudy = (bagId: Id<"bags">) => {
+    setSelectedBagId(bagId);
     setCurrentView("study");
   };
 
-  const handleViewStats = (deckId: Id<"decks">) => {
-    setSelectedDeckId(deckId);
+  const handleViewStats = (bagId: Id<"bags">) => {
+    setSelectedBagId(bagId);
     setCurrentView("stats");
   };
 
   const handleCompleteStudy = () => {
-    setCurrentView("decks");
-    setSelectedDeckId(null);
+    setCurrentView("bags");
+    setSelectedBagId(null);
   };
 
-  const handleBackToDecks = () => {
-    setCurrentView("decks");
-    setSelectedDeckId(null);
+  const handleBackToBags = () => {
+    setCurrentView("bags");
+    setSelectedBagId(null);
   };
 
-  if (currentView === "study" && selectedDeckId) {
+  if (currentView === "study" && selectedBagId) {
     return (
       <FSRSStudySession
-        deckId={selectedDeckId}
+        bagId={selectedBagId}
         userId={userId}
         onComplete={handleCompleteStudy}
       />
     );
   }
 
-  if (currentView === "stats" && selectedDeckId) {
+  if (currentView === "stats" && selectedBagId) {
     return (
-      <DeckStats
+      <BagStats
         userId={userId}
-        deckId={selectedDeckId}
-        onBack={handleBackToDecks}
+        bagId={selectedBagId}
+        onBack={handleBackToBags}
       />
     );
   }
@@ -84,7 +84,7 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
       {/* 헤더 */}
       <div className="flex items-start justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold text-gray-900">영어 학습 덱</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">영어 학습 샌드백</h1>
           <p className="text-base leading-6 text-gray-600">
             과학적인 간격 반복 학습으로 효율적으로 암기하세요. 한 번에 하나의
             주요 행동만 보이도록 단순하게 유지합니다.
@@ -103,8 +103,8 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
         )}
       </div>
 
-      {/* 샘플 덱 생성 버튼 */}
-      {(!decks || decks.length === 0) && (
+      {/* 샘플 샌드백 생성 버튼 */}
+      {(!bags || bags.length === 0) && (
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-sm">
           <div className="text-center space-y-4">
             <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-700 text-xl">
@@ -115,13 +115,13 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
                 첫 학습을 시작해보세요!
               </h2>
               <p className="text-sm leading-6 text-gray-600">
-                영어 기초 표현들로 구성된 샘플 덱으로 스마트 학습을
+                영어 기초 표현들로 구성된 샘플 샌드백으로 스마트 학습을
                 체험해보세요. 10개의 실용적인 영어 문장이 준비되어 있습니다.
               </p>
             </div>
             <Button
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
-              onClick={handleCreateSampleDeck}
+              onClick={handleCreateSampleBag}
               disabled={isCreatingSample}
               className="mx-auto px-6"
             >
@@ -133,7 +133,7 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
               ) : (
                 <>
                   <Plus className="h-4 w-4" aria-hidden />
-                  <span>샘플 덱 생성하기</span>
+                  <span>샘플 샌드백 생성하기</span>
                 </>
               )}
             </Button>
@@ -141,22 +141,22 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
         </div>
       )}
 
-      {/* 덱 목록 */}
-      {decks && decks.length > 0 && (
+      {/* 샌드백 목록 */}
+      {bags && bags.length > 0 && (
         <div className="grid grid-cols-1 gap-4">
-          {decks.map((deck) => (
-            <DeckCard
-              key={deck._id}
-              deck={deck}
-              onStartStudy={() => handleStartStudy(deck._id)}
-              onViewStats={() => handleViewStats(deck._id)}
+          {bags.map((bag) => (
+            <BagCard
+              key={bag._id}
+              bag={bag}
+              onStartStudy={() => handleStartStudy(bag._id)}
+              onViewStats={() => handleViewStats(bag._id)}
             />
           ))}
         </div>
       )}
 
       {/* 로딩 상태 */}
-      {!decks && (
+      {!bags && (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
         </div>
@@ -165,9 +165,9 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
   );
 }
 
-interface DeckCardProps {
-  deck: {
-    _id: Id<"decks">;
+interface BagCardProps {
+  bag: {
+    _id: Id<"bags">;
     name: string;
     description?: string;
     totalCards: number;
@@ -181,17 +181,17 @@ interface DeckCardProps {
   onViewStats: () => void;
 }
 
-function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
-  const dueCount = deck.newCards + deck.learningCards; // 간단히 계산
+function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
+  const dueCount = bag.newCards + bag.learningCards; // 간단히 계산
 
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow transition-shadow duration-200">
       <div className="p-6">
-        {/* 덱 헤더 */}
+        {/* 샌드백 헤더 */}
         <div className="flex items-start justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900">{deck.name}</h3>
+          <h3 className="text-lg font-semibold text-gray-900">{bag.name}</h3>
           <div className="flex items-center space-x-2">
-            {!deck.isActive && (
+            {!bag.isActive && (
               <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                 비활성
               </span>
@@ -199,15 +199,15 @@ function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
           </div>
         </div>
 
-        {/* 덱 설명 */}
-        {deck.description && (
-          <p className="text-sm text-gray-600 mb-4">{deck.description}</p>
+        {/* 샌드백 설명 */}
+        {bag.description && (
+          <p className="text-sm text-gray-600 mb-4">{bag.description}</p>
         )}
 
         {/* 태그 */}
-        {deck.tags.length > 0 && (
+        {bag.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
-            {deck.tags.map((tag) => (
+            {bag.tags.map((tag) => (
               <span
                 key={tag}
                 className="px-2 py-1 bg-primary-50 text-primary-700 text-xs rounded-full"
@@ -222,24 +222,24 @@ function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
         <div className="space-y-2 mb-6">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">전체 카드:</span>
-            <span className="font-medium">{deck.totalCards}</span>
+            <span className="font-medium">{bag.totalCards}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">새 카드:</span>
             <span className="font-semibold text-primary-700">
-              {deck.newCards}
+              {bag.newCards}
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">학습 중:</span>
             <span className="font-semibold text-primary-700">
-              {deck.learningCards}
+              {bag.learningCards}
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">복습:</span>
             <span className="font-semibold text-primary-700">
-              {deck.reviewCards}
+              {bag.reviewCards}
             </span>
           </div>
         </div>

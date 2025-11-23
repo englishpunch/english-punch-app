@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -11,19 +11,16 @@ import { Loader2 } from "lucide-react";
 export default function App() {
   const { signIn } = useAuthActions();
   const loggedInUser = useQuery(api.auth.loggedInUser);
-  const [isSigningIn, setIsSigningIn] = useState(false);
   const autoSignRef = useRef(false);
 
   useEffect(() => {
     if (loggedInUser === null && !autoSignRef.current) {
       autoSignRef.current = true;
-      setIsSigningIn(true);
-      void signIn("anonymous").finally(() => setIsSigningIn(false));
+      void signIn("anonymous");
     }
   }, [loggedInUser, signIn]);
 
-  const isLoading =
-    loggedInUser === undefined || loggedInUser === null || isSigningIn;
+  const isLoading = loggedInUser === undefined || loggedInUser === null;
 
   if (isLoading) {
     return (

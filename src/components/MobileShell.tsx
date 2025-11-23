@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Id } from "../../convex/_generated/dataModel";
-import DeckManager from "./DeckManager";
+import BagManager from "./BagManager";
 import ActivityPage from "./ActivityPage";
 import PlansPage from "./PlansPage";
 import { Button } from "./Button";
@@ -14,8 +14,8 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { SignOutButton } from "../SignOutButton";
 import { useAuthActions } from "@convex-dev/auth/react";
+import { toast } from "sonner";
 
 interface MobileShellProps {
   user: { _id: Id<"users">; email?: string; name?: string };
@@ -150,7 +150,7 @@ function ComingSoon({ label }: { label: string }) {
 function RunTab({ userId }: { userId: Id<"users"> }) {
   return (
     <div className="space-y-4">
-      <DeckManager userId={userId} />
+      <BagManager userId={userId} />
     </div>
   );
 }
@@ -208,7 +208,18 @@ function ProfileDrawer({
               fd.set("email", email);
               fd.set("password", password);
               fd.set("flow", "signIn");
-              void signIn("password", fd);
+              const signInResult = signIn("password", fd);
+              Promise.resolve(signInResult)
+                .then(() => {
+                  toast.success("Signed in");
+                  setEmail("");
+                  setPassword("");
+                  onClose();
+                })
+                .catch((error) => {
+                  console.error("Sign-in error:", error);
+                  toast.error("로그인에 실패했어요. 다시 시도해주세요.");
+                });
             }}
           >
             <input

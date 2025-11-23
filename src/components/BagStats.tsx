@@ -1,4 +1,3 @@
-import React from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -15,9 +14,9 @@ import {
   Target,
 } from "lucide-react";
 
-interface DeckStatsProps {
+interface BagStatsProps {
   userId: Id<"users">;
-  deckId: Id<"decks">;
+  bagId: Id<"bags">;
   onBack: () => void;
 }
 
@@ -105,8 +104,8 @@ function DistributionBar({ title, data, total }: DistributionBarProps) {
   );
 }
 
-export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
-  const stats = useQuery(api.learning.getDeckDetailStats, { userId, deckId });
+export default function BagStats({ userId, bagId, onBack }: BagStatsProps) {
+  const stats = useQuery(api.learning.getBagDetailStats, { userId, bagId });
 
   if (stats === undefined) {
     return (
@@ -124,10 +123,10 @@ export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
             <AlertCircle className="w-8 h-8" aria-hidden />
           </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            덱을 찾을 수 없습니다
+            샌드백을 찾을 수 없습니다
           </h2>
           <p className="text-gray-600 mb-6">
-            요청하신 덱이 존재하지 않거나 접근 권한이 없습니다.
+            요청하신 샌드백이 존재하지 않거나 접근 권한이 없습니다.
           </p>
           <Button onClick={onBack} className="px-6">
             돌아가기
@@ -138,7 +137,7 @@ export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
   }
 
   const {
-    deckInfo,
+    bagInfo,
     cardStats,
     difficultyDistribution,
     stabilityDistribution,
@@ -260,17 +259,18 @@ export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
           size="sm"
           className="gap-2 text-primary-700 hover:text-primary-800"
         >
-          <ArrowLeft className="w-4 h-4" aria-hidden />덱 목록으로 돌아가기
+          <ArrowLeft className="w-4 h-4" aria-hidden />
+          샌드백 목록으로 돌아가기
         </Button>
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold text-gray-900">
-            {deckInfo.name} 통계
+            {bagInfo.name} 통계
           </h1>
           <p className="text-base leading-6 text-gray-600">
-            {deckInfo.description}
+            {bagInfo.description}
           </p>
           <div className="flex flex-wrap gap-2">
-            {deckInfo.tags.map((tag) => (
+            {bagInfo.tags.map((tag) => (
               <span
                 key={tag}
                 className="px-2 py-1 bg-primary-50 text-primary-700 text-sm rounded-full"
@@ -362,14 +362,16 @@ export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
         />
       </div>
 
-      {/* 덱 정보 */}
+      {/* 샌드백 정보 */}
       <div className="bg-gray-50 rounded-lg p-6 border border-gray-200 shadow-inner">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">덱 정보</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          샌드백 정보
+        </h3>
         <div className="text-sm">
           <div>
             <span className="text-gray-600">마지막 수정:</span>
             <span className="ml-2 font-medium">
-              {new Date(deckInfo.lastModified).toLocaleDateString("ko-KR")}
+              {new Date(bagInfo.lastModified).toLocaleDateString("ko-KR")}
             </span>
           </div>
         </div>
