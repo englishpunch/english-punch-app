@@ -51,8 +51,8 @@ function Content() {
       <Unauthenticated>
         <div className="flex flex-col items-center justify-center min-h-[400px] px-4">
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold text-primary mb-4">English Punch</h1>
-            <p className="text-xl text-secondary">Master vocabulary with spaced repetition</p>
+            <h1 className="text-5xl font-bold text-primary mb-4">English Punch 🥊</h1>
+            <p className="text-xl text-gray-500">Master vocabulary with spaced repetition</p>
           </div>
           <div className="w-full max-w-md">
             <SignInForm />

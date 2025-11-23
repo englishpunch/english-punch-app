@@ -18,14 +18,6 @@ export function VocabularyApp({ userId }: VocabularyAppProps) {
               덱을 선택하고 바로 학습을 시작할 수 있습니다.
             </p>
           </div>
-          <div className="self-start md:self-center bg-white/10 backdrop-blur px-4 py-3 rounded-lg text-sm text-blue-50 border border-white/20">
-            <div className="font-semibold">지금 가능한 작업</div>
-            <ul className="mt-2 space-y-1 list-disc list-inside">
-              <li>샘플 덱 생성 후 FSRS 학습</li>
-              <li>새/학습/복습 카드 진행</li>
-              <li>덱별 상세 통계 확인</li>
-            </ul>
-          </div>
         </div>
       </section>
 

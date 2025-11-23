@@ -76,4 +76,22 @@ export default tseslint.config(
       "@typescript-eslint/no-misused-promises": "warn",
     },
   },
+  {
+    files: ["**/*.test.{ts,tsx}"],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+        ...globals.vitest,
+      },
+      parserOptions: {
+        project: [
+          "./tsconfig.node.json",
+          "./tsconfig.app.json",
+          "./convex/tsconfig.json",
+        ],
+      },
+    },
+  },
 );

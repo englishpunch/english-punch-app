@@ -1,12 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Pretendard GOV Variable", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-  --color-brand-500: oklch(0.637 0.237 25.331);
-  --color-primary: oklch(0.637 0.237 25.331);
-  --color-primary-hover: oklch(0.537 0.237 25.331);
-  --color-primary-active: oklch(0.437 0.237 25.331);
+  --font-sans:
+    "Pretendard GOV Variable", -apple-system, BlinkMacSystemFont, system-ui,
+    Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR",
+    "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+    sans-serif;
+
+  --color-primary-50: oklch(0.959 0.017 17.56);
+  --color-primary-100: oklch(0.918 0.036 17.86);
+  --color-primary-200: oklch(0.837 0.077 18.84);
+  --color-primary-300: oklch(0.749 0.133 20.16);
+  --color-primary-400: oklch(0.669 0.192 23.53);
+  --color-primary-500: oklch(0.587 0.217 26.96);
+  --color-primary-600: oklch(0.496 0.183 27.13);
+  --color-primary-700: oklch(0.406 0.15 27.13);
+  --color-primary-800: oklch(0.325 0.12 26.78);
+  --color-primary-900: oklch(0.236 0.087 27.07);
+  --color-primary-950: oklch(0.184 0.069 27.38);
+
   
+}
+
+@theme inline {
+  --color-primary: var(--color-primary-500);
+  --color-primary-hover: var(--color-primary-600);
+  --color-primary-active: var(--color-primary-700);
 }
 
 .logo.vite:hover {
