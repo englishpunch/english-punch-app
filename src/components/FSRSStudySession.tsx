@@ -274,7 +274,7 @@ export default function FSRSStudySession({
       </div>
 
       {/* 학습 카드 */}
-      <div className="flex items-center justify-center min-h-[calc(100vh-120px)] p-4">
+      <div className="flex items-center justify-center p-4">
         <div className="w-full">
           {currentCard && (
             <StudyCard

@@ -190,6 +190,53 @@ export const reviewCard = mutation({
 });
 
 /**
+ * 최근 리뷰 로그 조회 (activity 화면용)
+ */
+export const getRecentReviewLogs = query({
+  args: {
+    userId: v.id("users"),
+    limit: v.optional(v.number()),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("reviewLogs"),
+      cardId: v.id("cards"),
+      rating: v.number(),
+      state: v.number(),
+      review: v.number(),
+      duration: v.number(),
+      question: v.optional(v.string()),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const limit = args.limit ?? 50;
+
+    const logs = await ctx.db
+      .query("reviewLogs")
+      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .order("desc")
+      .take(limit);
+
+    const enriched = await Promise.all(
+      logs.map(async (log) => {
+        const card = await ctx.db.get(log.cardId);
+        return {
+          _id: log._id,
+          cardId: log.cardId,
+          rating: log.rating,
+          state: log.state,
+          review: log.review,
+          duration: log.duration,
+          question: card?.question,
+        };
+      }),
+    );
+
+    return enriched;
+  },
+});
+
+/**
  * 사용자 설정 조회
  */
 export const getUserSettings = query({

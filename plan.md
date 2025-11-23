@@ -13,3 +13,6 @@ Follow the checklist below in order. When told “go”, take the next unchecked
 - [x] Test: Feedback & Interaction States cover input/error/disabled, loading, and empty states with gray palette examples.
 - [x] Test: Microcopy guidance covers action verbs, friendly tone, and helper text usage.
 - [x] Test: Palette rules explicitly allow semantic feedback colors (e.g., red) alongside primary and gray.
+- [x] Test: Unauthenticated users are auto-signed in anonymously and land on the run tab by default.
+- [x] Test: Activity tab shows recent review logs (rating, question, time) fetched for the user.
+- [x] Test: Profile button opens a full-screen drawer with profile info.
