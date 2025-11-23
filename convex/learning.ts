@@ -515,3 +515,205 @@ export const getDeckDetailStats = query({
     };
   },
 });
+
+/**
+ * 새로운 덱 생성
+ */
+export const createDeck = mutation({
+  args: {
+    userId: v.id("users"),
+    name: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const nowIso = new Date().toISOString();
+    const deckId = await ctx.db.insert("decks", {
+      userId: args.userId,
+      name: args.name,
+      description: undefined,
+      isActive: true,
+      sortOrder: 0,
+      totalCards: 0,
+      newCards: 0,
+      learningCards: 0,
+      reviewCards: 0,
+      tags: [],
+      lastModified: nowIso,
+    });
+    return deckId;
+  },
+});
+
+/** 삭제: 덱과 카드 */
+export const deleteDeck = mutation({
+  args: {
+    deckId: v.id("decks"),
+  },
+  handler: async (ctx, args) => {
+    const deck = await ctx.db.get(args.deckId);
+    if (!deck) return null;
+
+    const cards = await ctx.db
+      .query("cards")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .collect();
+
+    await Promise.all(cards.map((c) => ctx.db.delete(c._id)));
+    await ctx.db.delete(args.deckId);
+    return null;
+  },
+});
+
+/** 덱의 카드 전체 조회 (관리용) */
+export const getDeckCards = query({
+  args: {
+    deckId: v.id("decks"),
+    userId: v.id("users"),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("cards"),
+      question: v.string(),
+      answer: v.string(),
+      hint: v.optional(v.string()),
+      explanation: v.optional(v.string()),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const cards = await ctx.db
+      .query("cards")
+      .withIndex("by_deck", (q) => q.eq("deckId", args.deckId))
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .collect();
+
+    return cards.map((c) => ({
+      _id: c._id,
+      question: c.question,
+      answer: c.answer,
+      hint: c.hint,
+      explanation: c.explanation,
+    }));
+  },
+});
+
+const initialSchedule = (now: number) => ({
+  due: now,
+  stability: 0,
+  difficulty: 0,
+  scheduled_days: 0,
+  learning_steps: 0,
+  reps: 0,
+  lapses: 0,
+  state: 0,
+  last_review: undefined,
+  suspended: false,
+});
+
+/** 카드 생성 */
+export const createCard = mutation({
+  args: {
+    deckId: v.id("decks"),
+    userId: v.id("users"),
+    question: v.string(),
+    answer: v.string(),
+    hint: v.optional(v.string()),
+    explanation: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    await ctx.db.insert("cards", {
+      deckId: args.deckId,
+      userId: args.userId,
+      question: args.question,
+      answer: args.answer,
+      hint: args.hint,
+      explanation: args.explanation,
+      tags: [],
+      source: "manual",
+      ...initialSchedule(now),
+    });
+
+    const deck = await ctx.db.get(args.deckId);
+    if (deck) {
+      await ctx.db.patch(args.deckId, {
+        totalCards: deck.totalCards + 1,
+        newCards: deck.newCards + 1,
+        lastModified: new Date(now).toISOString(),
+      });
+    }
+    return null;
+  },
+});
+
+/** 카드 수정 + 스케줄 초기화 */
+export const updateCard = mutation({
+  args: {
+    deckId: v.id("decks"),
+    cardId: v.id("cards"),
+    question: v.string(),
+    answer: v.string(),
+    hint: v.optional(v.string()),
+    explanation: v.optional(v.string()),
+    due: v.optional(v.number()),
+    stability: v.optional(v.number()),
+    difficulty: v.optional(v.number()),
+    scheduled_days: v.optional(v.number()),
+    learning_steps: v.optional(v.number()),
+    reps: v.optional(v.number()),
+    lapses: v.optional(v.number()),
+    state: v.optional(v.union(v.literal(0), v.literal(1), v.literal(2), v.literal(3))),
+  },
+  handler: async (ctx, args) => {
+    const card = await ctx.db.get(args.cardId);
+    if (!card || card.deckId !== args.deckId) return null;
+
+    const now = Date.now();
+    await ctx.db.patch(args.cardId, {
+      question: args.question,
+      answer: args.answer,
+      hint: args.hint,
+      explanation: args.explanation,
+      ...initialSchedule(now),
+    });
+
+    const deck = await ctx.db.get(args.deckId);
+    if (deck) {
+      // 이전 상태가 0이 아니면 newCards 증가, 다른 상태 감소는 생략 (간단 집계)
+      const newCards = deck.newCards + (card.state === 0 ? 0 : 1);
+      const learningCards = deck.learningCards - (card.state === 1 ? 1 : 0);
+      const reviewCards = deck.reviewCards - (card.state === 2 ? 1 : 0);
+      await ctx.db.patch(args.deckId, {
+        newCards,
+        learningCards,
+        reviewCards,
+        lastModified: new Date(now).toISOString(),
+      });
+    }
+    return null;
+  },
+});
+
+/** 카드 삭제 */
+export const deleteCard = mutation({
+  args: {
+    cardId: v.id("cards"),
+    deckId: v.id("decks"),
+  },
+  handler: async (ctx, args) => {
+    const card = await ctx.db.get(args.cardId);
+    const deck = await ctx.db.get(args.deckId);
+    if (!card || !deck) return null;
+    await ctx.db.delete(args.cardId);
+
+    const counts = {
+      totalCards: deck.totalCards - 1,
+      newCards: deck.newCards - (card.state === 0 ? 1 : 0),
+      learningCards: deck.learningCards - (card.state === 1 ? 1 : 0),
+      reviewCards: deck.reviewCards - (card.state === 2 ? 1 : 0),
+    };
+    await ctx.db.patch(args.deckId, {
+      ...counts,
+      lastModified: new Date().toISOString(),
+    });
+    return null;
+  },
+});

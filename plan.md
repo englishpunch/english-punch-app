@@ -16,3 +16,7 @@ Follow the checklist below in order. When told “go”, take the next unchecked
 - [x] Test: Unauthenticated users are auto-signed in anonymously and land on the run tab by default.
 - [x] Test: Activity tab shows recent review logs (rating, question, time) fetched for the user.
 - [x] Test: Profile button opens a full-screen drawer with profile info.
+ - [x] Test: Plans tab lets me create and delete decks from the list view.
+ - [x] Test: Inside a deck on Plans tab, I can add/edit/delete cards.
+- [x] Test: Editing a card resets its FSRS scheduling fields to initial values.
+ - [x] Test: Profile drawer allows entering email/password and triggers sign in.
