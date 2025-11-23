@@ -112,6 +112,7 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
               </p>
             </div>
             <Button
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onClick={handleCreateSampleDeck}
               disabled={isCreatingSample}
               className="mx-auto px-6"

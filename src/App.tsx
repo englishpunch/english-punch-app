@@ -8,7 +8,6 @@ import "@/assets/pretendard-variable-gov/pretendardvariable-gov-dynamic-subset.c
 import "./global.css";
 
 export default function App() {
-  const loggedInUser = useQuery(api.auth.loggedInUser);
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">

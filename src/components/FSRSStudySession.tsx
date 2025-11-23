@@ -4,7 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import StudyCard from "./StudyCard";
 import { Button } from "./Button";
-import { ArrowLeft, CheckCircle2, FileText, Loader2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileText } from "lucide-react";
 
 interface FSRSStudySessionProps {
   deckId: Id<"decks">;
@@ -197,6 +197,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
               </div>
             </div>
 
+            {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
             <Button fullWidth onClick={handleCompleteSession}>
               완료
             </Button>
@@ -263,6 +264,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
           {currentCard && (
             <StudyCard
               card={currentCard}
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onGrade={handleGrade}
               isLoading={isReviewing}
             />
