@@ -5,7 +5,6 @@ Here is what you need to know about Tailwind CSS v4 (May 2025)
 1.  **New Engine - Performance First:**
     - V4 ships with a completely rewritten engine. Expect drastically reduced build times – typically sub-10ms for most projects, even large ones often under 100ms. This is achieved by more efficiently parsing sources and generating CSS on-demand.
 2.  **CSS-First Configuration via `@theme`:**
-
     - The primary configuration mechanism shifts from `tailwind.config.js` (for theme values) to your main CSS file using the `@theme` directive.
 
       ```css

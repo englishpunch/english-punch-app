@@ -13,8 +13,12 @@ interface DeckManagerProps {
 }
 
 export default function DeckManager({ userId, onBack }: DeckManagerProps) {
-  const [currentView, setCurrentView] = useState<'decks' | 'study' | 'stats'>('decks');
-  const [selectedDeckId, setSelectedDeckId] = useState<Id<"decks"> | null>(null);
+  const [currentView, setCurrentView] = useState<"decks" | "study" | "stats">(
+    "decks",
+  );
+  const [selectedDeckId, setSelectedDeckId] = useState<Id<"decks"> | null>(
+    null,
+  );
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
   // Convex 쿼리 및 뮤테이션
@@ -27,9 +31,9 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
     try {
       const deckId = await createSampleDeck({ userId });
       await updateDeckStats({ deckId });
-      console.log('Sample deck created:', deckId);
+      console.log("Sample deck created:", deckId);
     } catch (error) {
-      console.error('Failed to create sample deck:', error);
+      console.error("Failed to create sample deck:", error);
     } finally {
       setIsCreatingSample(false);
     }
@@ -37,25 +41,25 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
 
   const handleStartStudy = (deckId: Id<"decks">) => {
     setSelectedDeckId(deckId);
-    setCurrentView('study');
+    setCurrentView("study");
   };
 
   const handleViewStats = (deckId: Id<"decks">) => {
     setSelectedDeckId(deckId);
-    setCurrentView('stats');
+    setCurrentView("stats");
   };
 
   const handleCompleteStudy = () => {
-    setCurrentView('decks');
+    setCurrentView("decks");
     setSelectedDeckId(null);
   };
 
   const handleBackToDecks = () => {
-    setCurrentView('decks');
+    setCurrentView("decks");
     setSelectedDeckId(null);
   };
 
-  if (currentView === 'study' && selectedDeckId) {
+  if (currentView === "study" && selectedDeckId) {
     return (
       <FSRSStudySession
         deckId={selectedDeckId}
@@ -65,7 +69,7 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
     );
   }
 
-  if (currentView === 'stats' && selectedDeckId) {
+  if (currentView === "stats" && selectedDeckId) {
     return (
       <DeckStats
         userId={userId}
@@ -82,7 +86,8 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold text-gray-900">영어 학습 덱</h1>
           <p className="text-base leading-6 text-gray-600">
-            과학적인 간격 반복 학습으로 효율적으로 암기하세요. 한 번에 하나의 주요 행동만 보이도록 단순하게 유지합니다.
+            과학적인 간격 반복 학습으로 효율적으로 암기하세요. 한 번에 하나의
+            주요 행동만 보이도록 단순하게 유지합니다.
           </p>
         </div>
         {onBack && (
@@ -106,9 +111,12 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
               <Plus className="h-6 w-6" aria-hidden />
             </div>
             <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-gray-900">첫 학습을 시작해보세요!</h2>
+              <h2 className="text-xl font-semibold text-gray-900">
+                첫 학습을 시작해보세요!
+              </h2>
               <p className="text-sm leading-6 text-gray-600">
-                영어 기초 표현들로 구성된 샘플 덱으로 스마트 학습을 체험해보세요. 10개의 실용적인 영어 문장이 준비되어 있습니다.
+                영어 기초 표현들로 구성된 샘플 덱으로 스마트 학습을
+                체험해보세요. 10개의 실용적인 영어 문장이 준비되어 있습니다.
               </p>
             </div>
             <Button
@@ -175,7 +183,7 @@ interface DeckCardProps {
 
 function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
   const dueCount = deck.newCards + deck.learningCards; // 간단히 계산
-  
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow transition-shadow duration-200">
       <div className="p-6">
@@ -218,25 +226,28 @@ function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">새 카드:</span>
-            <span className="font-semibold text-primary-700">{deck.newCards}</span>
+            <span className="font-semibold text-primary-700">
+              {deck.newCards}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">학습 중:</span>
-            <span className="font-semibold text-primary-700">{deck.learningCards}</span>
+            <span className="font-semibold text-primary-700">
+              {deck.learningCards}
+            </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">복습:</span>
-            <span className="font-semibold text-primary-700">{deck.reviewCards}</span>
+            <span className="font-semibold text-primary-700">
+              {deck.reviewCards}
+            </span>
           </div>
         </div>
 
         {/* 액션 버튼 */}
         <div className="space-y-2">
           {dueCount > 0 ? (
-            <Button
-              onClick={onStartStudy}
-              fullWidth
-            >
+            <Button onClick={onStartStudy} fullWidth>
               학습하기 ({dueCount}장)
             </Button>
           ) : (
@@ -244,7 +255,7 @@ function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
               학습할 카드가 없습니다
             </Button>
           )}
-          
+
           <div className="flex gap-2">
             <Button
               onClick={onStartStudy}

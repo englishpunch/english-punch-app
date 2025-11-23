@@ -10,5 +10,5 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <ConvexAuthProvider client={convex}>
       <App />
     </ConvexAuthProvider>
-  </React.StrictMode>
+  </React.StrictMode>,
 );

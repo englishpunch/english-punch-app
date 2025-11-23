@@ -6,9 +6,9 @@ import { Toaster } from "sonner";
 import { VocabularyApp } from "./components/VocabularyApp";
 import "@/assets/pretendard-variable-gov/pretendardvariable-gov-dynamic-subset.css";
 import "./global.css";
+import { Loader2 } from "lucide-react";
 
 export default function App() {
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-sm h-16 flex justify-between items-center border-b shadow-sm px-4">
@@ -31,7 +31,7 @@ function Content() {
   if (loggedInUser === undefined) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
       </div>
     );
   }
@@ -43,15 +43,19 @@ function Content() {
           <VocabularyApp userId={loggedInUser._id} />
         ) : (
           <div className="flex justify-center items-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
           </div>
         )}
       </Authenticated>
       <Unauthenticated>
         <div className="flex flex-col items-center justify-center min-h-[400px] px-4">
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold text-primary mb-4">English Punch 🥊</h1>
-            <p className="text-xl text-gray-500">Master vocabulary with spaced repetition</p>
+            <h1 className="text-5xl font-bold text-primary mb-4">
+              English Punch 🥊
+            </h1>
+            <p className="text-xl text-gray-500">
+              Master vocabulary with spaced repetition
+            </p>
           </div>
           <div className="w-full max-w-md">
             <SignInForm />

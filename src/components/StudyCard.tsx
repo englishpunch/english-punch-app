@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
+import { Loader2 } from "lucide-react";
 
 interface StudyCardProps {
   card: {
@@ -16,25 +17,35 @@ interface StudyCardProps {
   isLoading?: boolean;
 }
 
-export default function StudyCard({ card, onGrade, isLoading = false }: StudyCardProps) {
+export default function StudyCard(props: StudyCardProps) {
+  return <StudyCardContent key={props.card._id} {...props} />;
+}
+
+function StudyCardContent({
+  card,
+  onGrade,
+  isLoading = false,
+}: StudyCardProps) {
   const [showAnswer, setShowAnswer] = useState(false);
-  const [startTime, setStartTime] = useState<number | null>(null);
+  const startTimeRef = useRef<number>(0);
 
   useEffect(() => {
-    setShowAnswer(false);
-    setStartTime(Date.now());
-  }, [card._id]);
+    startTimeRef.current = Date.now();
+  }, []);
 
-  const handleShowAnswer = () => {
+  const handleShowAnswer = useCallback(() => {
     setShowAnswer(true);
-  };
+  }, []);
 
-  const handleGrade = (rating: 1 | 2 | 3 | 4) => {
-    if (!startTime) return;
-    
-    const duration = Date.now() - startTime;
-    onGrade(rating, duration);
-  };
+  const handleGrade = useCallback(
+    (rating: 1 | 2 | 3 | 4) => {
+      const duration = startTimeRef.current
+        ? Date.now() - startTimeRef.current
+        : 0;
+      onGrade(rating, duration);
+    },
+    [onGrade],
+  );
 
   const getRatingConfig = (rating: 1 | 2 | 3 | 4) => {
     const configs = {
@@ -74,7 +85,7 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
       if (!showAnswer) {
-        if (event.code === 'Space') {
+        if (event.code === "Space") {
           event.preventDefault();
           handleShowAnswer();
         }
@@ -82,30 +93,30 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
       }
 
       // 답이 보일 때만 평가 가능
-      if (event.key >= '1' && event.key <= '4') {
+      if (event.key >= "1" && event.key <= "4") {
         event.preventDefault();
         const rating = parseInt(event.key) as 1 | 2 | 3 | 4;
         handleGrade(rating);
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [showAnswer, startTime]);
+    window.addEventListener("keydown", handleKeyPress);
+    return () => window.removeEventListener("keydown", handleKeyPress);
+  }, [handleGrade, handleShowAnswer, showAnswer]);
 
   const getStateLabel = (state: number) => {
-    const labels = ['새 카드', '학습 중', '복습', '재학습'];
-    return labels[state] || '알 수 없음';
+    const labels = ["새 카드", "학습 중", "복습", "재학습"];
+    return labels[state] || "알 수 없음";
   };
 
   const getStateColor = (state: number) => {
     const colors = [
-      'bg-gray-100 text-gray-800', // New
-      'bg-primary-50 text-primary-700', // Learning
-      'bg-primary-100 text-primary-700', // Review
-      'bg-gray-200 text-gray-800', // Relearning
+      "bg-gray-100 text-gray-800", // New
+      "bg-primary-50 text-primary-700", // Learning
+      "bg-primary-100 text-primary-700", // Review
+      "bg-gray-200 text-gray-800", // Relearning
     ];
-    return colors[state] || 'bg-gray-100 text-gray-800';
+    return colors[state] || "bg-gray-100 text-gray-800";
   };
 
   return (
@@ -116,8 +127,8 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
           <div className="flex items-center gap-3">
             <span
               className={cn(
-                'px-2 py-1 rounded-full text-xs font-medium',
-                getStateColor(card.state)
+                "px-2 py-1 rounded-full text-xs font-medium",
+                getStateColor(card.state),
               )}
             >
               {getStateLabel(card.state)}
@@ -125,8 +136,8 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
             <span className="text-sm text-gray-600">복습 {card.reps}회</span>
           </div>
           <div className="text-xs font-medium text-gray-600">
-            {!showAnswer && 'Space: 답 보기'}
-            {showAnswer && '1-4: 평가하기'}
+            {!showAnswer && "Space: 답 보기"}
+            {showAnswer && "1-4: 평가하기"}
           </div>
         </div>
       </div>
@@ -145,10 +156,8 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
         {card.hint && !showAnswer && (
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-500 mb-2">힌트</h3>
-          <p className="text-gray-600 italic">
-            {card.hint}
-          </p>
-        </div>
+            <p className="text-gray-600 italic">{card.hint}</p>
+          </div>
         )}
 
         {/* 답 영역 */}
@@ -176,9 +185,7 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
             {card.explanation && (
               <div>
                 <h3 className="text-sm font-medium text-gray-500 mb-2">설명</h3>
-                <p className="text-gray-700">
-                  {card.explanation}
-                </p>
+                <p className="text-gray-700">{card.explanation}</p>
               </div>
             )}
 
@@ -199,7 +206,7 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
                       className={cn(
                         "px-4 py-3 text-white",
                         "transform hover:scale-[1.02] active:scale-95 shadow-sm",
-                        config.className
+                        config.className,
                       )}
                     >
                       <div className="text-center">
@@ -218,12 +225,22 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
 
               {/* 평가 가이드 */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">평가 가이드</h4>
+                <h4 className="text-sm font-medium text-gray-700 mb-2">
+                  평가 가이드
+                </h4>
                 <div className="text-xs text-gray-600 space-y-1">
-                  <div><strong>다시:</strong> 전혀 기억나지 않았음</div>
-                  <div><strong>어려움:</strong> 기억하는데 어려움이 있었음</div>
-                  <div><strong>보통:</strong> 적절한 노력으로 기억함</div>
-                  <div><strong>쉬움:</strong> 매우 쉽게 기억함</div>
+                  <div>
+                    <strong>다시:</strong> 전혀 기억나지 않았음
+                  </div>
+                  <div>
+                    <strong>어려움:</strong> 기억하는데 어려움이 있었음
+                  </div>
+                  <div>
+                    <strong>보통:</strong> 적절한 노력으로 기억함
+                  </div>
+                  <div>
+                    <strong>쉬움:</strong> 매우 쉽게 기억함
+                  </div>
                 </div>
               </div>
             </div>
@@ -234,7 +251,7 @@ export default function StudyCard({ card, onGrade, isLoading = false }: StudyCar
       {/* 로딩 오버레이 */}
       {isLoading && (
         <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+          <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
         </div>
       )}
     </div>

@@ -11,5 +11,9 @@ export function SignOutButton() {
     return null;
   }
 
-  return <Button variant="secondary" size="sm" onClick={() => void signOut()}>Sign out</Button>;
+  return (
+    <Button variant="secondary" size="sm" onClick={() => void signOut()}>
+      Sign out
+    </Button>
+  );
 }

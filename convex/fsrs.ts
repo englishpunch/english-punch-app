@@ -1,6 +1,14 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { fsrs, generatorParameters, createEmptyCard, Rating, State, Grade, Steps } from "ts-fsrs";
+import {
+  fsrs,
+  generatorParameters,
+  createEmptyCard,
+  Rating,
+  State,
+  Grade,
+  Steps,
+} from "ts-fsrs";
 
 /**
  * FSRS 알고리즘을 사용한 카드 복습 처리
@@ -21,7 +29,11 @@ export const reviewCard = mutation({
     newDifficulty: v.number(),
   }),
   handler: async (ctx, args) => {
-    console.log("🔄 ReviewCard started:", { cardId: args.cardId, rating: args.rating, userId: args.userId });
+    console.log("🔄 ReviewCard started:", {
+      cardId: args.cardId,
+      rating: args.rating,
+      userId: args.userId,
+    });
 
     const card = await ctx.db.get(args.cardId);
     if (!card || card.userId !== args.userId) {
@@ -43,21 +55,26 @@ export const reviewCard = mutation({
 
     const now = new Date();
     const reviewTime = now.toISOString();
-    
+
     console.log("📊 Card before review:", {
       state: card.state,
       stability: card.stability,
       difficulty: card.difficulty,
       reps: card.reps,
-      lapses: card.lapses
+      lapses: card.lapses,
     });
 
     console.log("🎯 Review input:", {
       rating: args.rating,
       grade: args.rating,
-      ratingName: args.rating === 1 ? "Again" : 
-                   args.rating === 2 ? "Hard" : 
-                   args.rating === 3 ? "Good" : "Easy"
+      ratingName:
+        args.rating === 1
+          ? "Again"
+          : args.rating === 2
+            ? "Hard"
+            : args.rating === 3
+              ? "Good"
+              : "Easy",
     });
 
     // ts-fsrs 인스턴스 생성 (파라미터 타입 안전성 보장)
@@ -67,7 +84,7 @@ export const reviewCard = mutation({
       relearning_steps: userSettings.fsrsParameters.relearning_steps as Steps, // Steps 타입으로 캐스팅
     };
     const f = fsrs(fsrsParams);
-    
+
     // 현재 카드를 ts-fsrs Card 형식으로 변환
     const fsrsCard = {
       due: new Date(card.due),
@@ -83,11 +100,11 @@ export const reviewCard = mutation({
 
     // ts-fsrs로 다음 상태 계산 (Rating을 Grade로 변환, Manual=0 제외)
     const grade = args.rating as Grade; // 1=Again, 2=Hard, 3=Good, 4=Easy
-    const recordLogItem = f.next({...fsrsCard, elapsed_days: 0}, now, grade);
-    
+    const recordLogItem = f.next({ ...fsrsCard, elapsed_days: 0 }, now, grade);
+
     console.log("✨ FSRS calculation result:", {
       newCard: recordLogItem.card,
-      log: recordLogItem.log
+      log: recordLogItem.log,
     });
 
     // 카드 업데이트
@@ -114,7 +131,7 @@ export const reviewCard = mutation({
       stability: recordLogItem.card.stability,
       difficulty: recordLogItem.card.difficulty,
       reps: recordLogItem.card.reps,
-      lapses: recordLogItem.card.lapses
+      lapses: recordLogItem.card.lapses,
     });
 
     if (lapsesChanged) {
@@ -122,16 +139,21 @@ export const reviewCard = mutation({
         before: card.lapses,
         after: recordLogItem.card.lapses,
         rating: args.rating,
-        ratingName: args.rating === 1 ? "Again" : 
-                   args.rating === 2 ? "Hard" : 
-                   args.rating === 3 ? "Good" : "Easy"
+        ratingName:
+          args.rating === 1
+            ? "Again"
+            : args.rating === 2
+              ? "Hard"
+              : args.rating === 3
+                ? "Good"
+                : "Easy",
       });
     }
 
     if (repsIncreased) {
       console.log("📈 REPS INCREASED:", {
         before: card.reps,
-        after: recordLogItem.card.reps
+        after: recordLogItem.card.reps,
       });
     }
 
@@ -167,7 +189,6 @@ export const reviewCard = mutation({
   },
 });
 
-
 /**
  * 사용자 설정 조회
  */
@@ -175,23 +196,26 @@ export const getUserSettings = query({
   args: {
     userId: v.id("users"),
   },
-  returns: v.union(v.null(), v.object({
-    fsrsParameters: v.object({
-      w: v.array(v.number()),
-      request_retention: v.number(),
-      maximum_interval: v.number(),
-      enable_fuzz: v.boolean(),
-      enable_short_term: v.boolean(),
-      learning_steps: v.array(v.string()),
-      relearning_steps: v.array(v.string()),
+  returns: v.union(
+    v.null(),
+    v.object({
+      fsrsParameters: v.object({
+        w: v.array(v.number()),
+        request_retention: v.number(),
+        maximum_interval: v.number(),
+        enable_fuzz: v.boolean(),
+        enable_short_term: v.boolean(),
+        learning_steps: v.array(v.string()),
+        relearning_steps: v.array(v.string()),
+      }),
+      dailyNewCards: v.number(),
+      dailyReviewCards: v.number(),
+      timezone: v.string(),
+      totalReviews: v.number(),
+      currentStreak: v.number(),
+      longestStreak: v.number(),
     }),
-    dailyNewCards: v.number(),
-    dailyReviewCards: v.number(),
-    timezone: v.string(),
-    totalReviews: v.number(),
-    currentStreak: v.number(),
-    longestStreak: v.number(),
-  })),
+  ),
   handler: async (ctx, args) => {
     const settings = await ctx.db
       .query("userSettings")
@@ -218,14 +242,18 @@ export const getUserSettings = query({
 export const startSession = mutation({
   args: {
     userId: v.id("users"),
-    sessionType: v.union(v.literal("daily"), v.literal("custom"), v.literal("cramming")),
+    sessionType: v.union(
+      v.literal("daily"),
+      v.literal("custom"),
+      v.literal("cramming"),
+    ),
   },
   returns: v.string(), // sessionId
   handler: async (ctx, args) => {
     console.log("🚀 StartSession called:", args);
-    
+
     const sessionId = `session_${args.userId}_${Date.now()}`;
-    
+
     const sessionResult = await ctx.db.insert("sessions", {
       userId: args.userId,
       startTime: new Date().toISOString(),
@@ -258,7 +286,7 @@ export const endSession = mutation({
   returns: v.null(),
   handler: async (ctx, args) => {
     console.log("🏁 EndSession called:", args);
-    
+
     const session = await ctx.db
       .query("sessions")
       .filter((q) => q.eq(q.field("startTime"), args.sessionId.split("_")[2]))
@@ -290,7 +318,8 @@ export const endSession = mutation({
     }
 
     const averageDuration = logs.length > 0 ? totalDuration / logs.length : 0;
-    const averageDifficulty = logs.length > 0 ? totalDifficulty / logs.length : 0;
+    const averageDifficulty =
+      logs.length > 0 ? totalDifficulty / logs.length : 0;
 
     const sessionStats = {
       endTime: new Date().toISOString(),
@@ -307,8 +336,11 @@ export const endSession = mutation({
     console.log("📈 Session statistics:", sessionStats);
 
     await ctx.db.patch(session._id, sessionStats);
-    
-    console.log("✅ Session ended successfully:", { sessionId: args.sessionId, stats: sessionStats });
+
+    console.log("✅ Session ended successfully:", {
+      sessionId: args.sessionId,
+      stats: sessionStats,
+    });
     return null;
   },
 });

@@ -12,8 +12,15 @@ describe("cn", () => {
   });
 
   it("drops falsy values before merging", () => {
-    // eslint-disable-next-line no-constant-binary-expression
-    const result = cn("text-base", undefined, null, "", false && "hidden", "font-bold");
+    const result = cn(
+      "text-base",
+      undefined,
+      null,
+      "",
+      // eslint-disable-next-line no-constant-binary-expression
+      false && "hidden",
+      "font-bold"
+    );
 
     expect(result).toBe("text-base font-bold");
   });

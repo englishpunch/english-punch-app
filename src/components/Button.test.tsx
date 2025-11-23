@@ -16,7 +16,7 @@ describe("Button", () => {
     render(
       <Button variant="secondary" disabled>
         Cancel
-      </Button>
+      </Button>,
     );
 
     const button = screen.getByRole("button", { name: /cancel/i });

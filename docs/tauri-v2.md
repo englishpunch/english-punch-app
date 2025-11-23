@@ -5,6 +5,7 @@
 This index links to documentation that covers everything from getting started to advanced concepts, and distribution of Tauri applications.
 
 The index is organized into key sections:
+
 - **start**: Information for getting up and running with Tauri, including prerequisites and installation instructions
 - **core concepts**: Topics that you should get more intimately familiar with if you want to get the most out of the framework.
 - **security**: High-level concepts and security features at the core of Tauri's design and ecosystem that make you, your applications and your users more secure by default
@@ -19,6 +20,7 @@ Each section contains links to detailed markdown files that provide comprehensiv
 **Table of Contents**
 
 ## Start
+
 - [Create a Project](https://v2.tauri.app/start/create-project)
 - [Project Structure](https://v2.tauri.app/start/project-structure)
 - [What is Tauri?](https://v2.tauri.app/start)
@@ -36,6 +38,7 @@ Each section contains links to detailed markdown files that provide comprehensiv
 - [Vite](https://v2.tauri.app/start/frontend/vite)
 
 ## Concept
+
 - [Core Concepts](https://v2.tauri.app/concept)
 - [Tauri Architecture](https://v2.tauri.app/concept/architecture)
 - [App Size](https://v2.tauri.app/concept/size)
@@ -45,6 +48,7 @@ Each section contains links to detailed markdown files that provide comprehensiv
 - [Isolation Pattern](https://v2.tauri.app/concept/inter-process-communication/isolation)
 
 ## Security
+
 - [Content Security Policy (CSP)](https://v2.tauri.app/security/csp)
 - [Capabilities](https://v2.tauri.app/security/capabilities)
 - [Tauri Ecosystem Security](https://v2.tauri.app/security/ecosystem)
@@ -57,6 +61,7 @@ Each section contains links to detailed markdown files that provide comprehensiv
 - [Command Scopes](https://v2.tauri.app/security/scope)
 
 ## Develop
+
 - [Calling the Frontend from Rust](https://v2.tauri.app/develop/calling-frontend)
 - [Calling Rust from the Frontend](https://v2.tauri.app/develop/calling-rust)
 - [Configuration Files](https://v2.tauri.app/develop/configuration-files)
@@ -82,6 +87,7 @@ Each section contains links to detailed markdown files that provide comprehensiv
 - [WebdriverIO](https://v2.tauri.app/develop/tests/webdriver/example/webdriverio)
 
 ## Distribute
+
 - [App Store](https://v2.tauri.app/distribute/app-store)
 - [AppImage](https://v2.tauri.app/distribute/appimage)
 - [Distributing with CrabNebula Cloud](https://v2.tauri.app/distribute/crabnebula-cloud)
@@ -105,6 +111,7 @@ Each section contains links to detailed markdown files that provide comprehensiv
 - [Windows Code Signing](https://v2.tauri.app/distribute/sign/windows)
 
 ## Learn
+
 - [Node.js as a sidecar](https://v2.tauri.app/learn/sidecar-nodejs)
 - [Learn](https://v2.tauri.app/learn)
 - [Splashscreen](https://v2.tauri.app/learn/splashscreen)

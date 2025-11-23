@@ -23,7 +23,11 @@ type SessionCard = {
   reps: number;
 };
 
-export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStudySessionProps) {
+export default function FSRSStudySession({
+  deckId,
+  userId,
+  onComplete,
+}: FSRSStudySessionProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -36,17 +40,17 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
   });
 
   // Convex 쿼리 및 뮤테이션
-  const dueCards = useQuery(api.learning.getDueCards, { 
-    userId, 
+  const dueCards = useQuery(api.learning.getDueCards, {
+    userId,
     deckId,
-    limit: 20 
+    limit: 20,
   });
-  const newCards = useQuery(api.learning.getNewCards, { 
-    userId, 
+  const newCards = useQuery(api.learning.getNewCards, {
+    userId,
     deckId,
-    limit: 10 
+    limit: 10,
   });
-  
+
   const startSession = useMutation(api.fsrs.startSession);
   const endSession = useMutation(api.fsrs.endSession);
   const reviewCard = useMutation(api.fsrs.reviewCard);
@@ -57,11 +61,11 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
       try {
         const newSessionId = await startSession({
           userId,
-          sessionType: "daily"
+          sessionType: "daily",
         });
         setSessionId(newSessionId);
       } catch (error) {
-        console.error('Failed to start session:', error);
+        console.error("Failed to start session:", error);
       }
     };
 
@@ -70,22 +74,22 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
 
   // 학습할 카드들을 세션 시작 시점에 고정 (실시간 업데이트 방지)
   const [sessionCards, setSessionCards] = useState<SessionCard[]>([]);
-  
+
   // 세션 카드 목록을 한 번만 설정
   React.useEffect(() => {
     if ((dueCards || newCards) && sessionCards.length === 0) {
       const due = dueCards || [];
       const newCardsToAdd = newCards || [];
-      
+
       // 복습 카드를 우선하고, 새 카드를 적절히 섞음
       const combined = [...due];
-      
+
       // 새 카드를 복습 카드 사이에 배치 (3:1 비율)
       newCardsToAdd.forEach((cardItem, index) => {
         const insertIndex = Math.min((index + 1) * 4, combined.length);
         combined.splice(insertIndex, 0, cardItem);
       });
-      
+
       console.log("🎯 Session cards fixed:", combined.length, "cards");
       setSessionCards(combined);
     }
@@ -101,7 +105,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
     if (!currentCard || !sessionId || isReviewing) return;
 
     setIsReviewing(true);
-    
+
     try {
       await reviewCard({
         userId,
@@ -112,7 +116,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
       });
 
       // 통계 업데이트
-      setSessionStats(prev => ({
+      setSessionStats((prev) => ({
         ...prev,
         again: prev.again + (rating === 1 ? 1 : 0),
         hard: prev.hard + (rating === 2 ? 1 : 0),
@@ -120,16 +124,15 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
         easy: prev.easy + (rating === 4 ? 1 : 0),
       }));
 
-      setCompletedCount(prev => prev + 1);
+      setCompletedCount((prev) => prev + 1);
 
       // 다음 카드로 이동
       setTimeout(() => {
-        setCurrentCardIndex(prev => prev + 1);
+        setCurrentCardIndex((prev) => prev + 1);
         setIsReviewing(false);
       }, 500);
-
     } catch (error) {
-      console.error('Failed to review card:', error);
+      console.error("Failed to review card:", error);
       setIsReviewing(false);
     }
   };
@@ -138,9 +141,9 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
     if (sessionId) {
       try {
         await endSession({ sessionId });
-        console.log('✅ Session completed successfully');
+        console.log("✅ Session completed successfully");
       } catch (error) {
-        console.error('❌ Failed to end session:', error);
+        console.error("❌ Failed to end session:", error);
       }
     }
     // 세션 카드 목록 초기화 (다음 세션을 위해)
@@ -172,7 +175,9 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
             <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4 text-primary-700">
               <CheckCircle2 className="h-8 w-8" aria-hidden />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">학습 완료!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+              학습 완료!
+            </h2>
             <p className="text-gray-600 mb-6">
               총 {completedCount}장의 카드를 학습했습니다.
             </p>
@@ -180,19 +185,27 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
             {/* 세션 통계 */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="rounded-lg border border-gray-200 bg-red-50 p-3">
-                <div className="text-red-600 font-semibold text-lg">{sessionStats.again}</div>
+                <div className="text-red-600 font-semibold text-lg">
+                  {sessionStats.again}
+                </div>
                 <div className="text-red-600 text-sm">다시</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">{sessionStats.hard}</div>
+                <div className="text-primary-700 font-semibold text-lg">
+                  {sessionStats.hard}
+                </div>
                 <div className="text-gray-700 text-sm">어려움</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">{sessionStats.good}</div>
+                <div className="text-primary-700 font-semibold text-lg">
+                  {sessionStats.good}
+                </div>
                 <div className="text-gray-700 text-sm">보통</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">{sessionStats.easy}</div>
+                <div className="text-primary-700 font-semibold text-lg">
+                  {sessionStats.easy}
+                </div>
                 <div className="text-gray-700 text-sm">쉬움</div>
               </div>
             </div>
@@ -215,7 +228,9 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
             <FileText className="w-8 h-8" aria-hidden />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">학습할 카드가 없습니다</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">
+            학습할 카드가 없습니다
+          </h2>
           <p className="text-gray-600 mb-6">
             모든 카드를 학습했거나 아직 복습 시간이 되지 않았습니다.
           </p>
@@ -242,17 +257,17 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
               <ArrowLeft className="w-4 h-4" aria-hidden />
               <span className="text-sm font-medium">홈으로</span>
             </Button>
-            <span className="text-sm font-medium text-gray-700">
-              진행률
-            </span>
+            <span className="text-sm font-medium text-gray-700">진행률</span>
             <span className="text-sm text-gray-500">
               {currentCardIndex + 1} / {totalCards}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentCardIndex + 1) / totalCards) * 100}%` }}
+              style={{
+                width: `${((currentCardIndex + 1) / totalCards) * 100}%`,
+              }}
             />
           </div>
         </div>

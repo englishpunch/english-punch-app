@@ -38,6 +38,9 @@ async function main() {
 }
 
 const thisFile = fileURLToPath(import.meta.url);
-if (process.argv[1] === thisFile || pathToFileURL(process.argv[1]).href === import.meta.url) {
+if (
+  process.argv[1] === thisFile ||
+  pathToFileURL(process.argv[1]).href === import.meta.url
+) {
   void main();
 }

@@ -17,17 +17,14 @@ describe("StudyCard design", () => {
   it("uses primary/gray palette for rating buttons and avoids responsive classes", async () => {
     const user = userEvent.setup();
     const { container } = render(
-      <StudyCard card={baseCard} onGrade={vi.fn()} />
+      <StudyCard card={baseCard} onGrade={vi.fn()} />,
     );
 
     await user.click(screen.getByRole("button", { name: /답 보기/i }));
 
-    const ratingButtons = [
-      /다시/i,
-      /어려움/i,
-      /보통/i,
-      /쉬움/i,
-    ].map((label) => screen.getByRole("button", { name: label }));
+    const ratingButtons = [/다시/i, /어려움/i, /보통/i, /쉬움/i].map((label) =>
+      screen.getByRole("button", { name: label }),
+    );
 
     ratingButtons.forEach((button) => {
       expect(button.className).not.toMatch(/bg-(?:blue|green|orange|purple)/);

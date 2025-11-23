@@ -29,15 +29,22 @@ interface StatCardProps {
   icon?: React.ReactNode;
 }
 
-function StatCard({ title, value, total, tone = "primary", icon }: StatCardProps) {
-  const percentage = total && total > 0 ? (value / total * 100).toFixed(1) : null;
+function StatCard({
+  title,
+  value,
+  total,
+  tone = "primary",
+  icon,
+}: StatCardProps) {
+  const percentage =
+    total && total > 0 ? ((value / total) * 100).toFixed(1) : null;
   const accentClass =
     tone === "danger"
       ? "text-red-600"
       : tone === "muted"
         ? "text-gray-700"
         : "text-primary-700";
-  
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
       <div className="flex items-center justify-between mb-2">
@@ -68,11 +75,13 @@ function DistributionBar({ title, data, total }: DistributionBarProps) {
       <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
       <div className="space-y-3">
         {data.map((item) => {
-          const percentage = total > 0 ? (item.value / total * 100) : 0;
+          const percentage = total > 0 ? (item.value / total) * 100 : 0;
           return (
             <div key={item.label} className="flex items-center justify-between">
               <div className="flex items-center space-x-3 flex-1">
-                <span className="text-sm font-medium text-gray-700 w-20">{item.label}</span>
+                <span className="text-sm font-medium text-gray-700 w-20">
+                  {item.label}
+                </span>
                 <div className="flex-1 bg-gray-200 rounded-full h-2">
                   <div
                     className={`h-2 rounded-full ${item.barClass}`}
@@ -81,8 +90,12 @@ function DistributionBar({ title, data, total }: DistributionBarProps) {
                 </div>
               </div>
               <div className="flex items-center space-x-2 ml-3">
-                <span className="text-sm font-semibold text-gray-900">{item.value}</span>
-                <span className="text-xs text-gray-500">({percentage.toFixed(1)}%)</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {item.value}
+                </span>
+                <span className="text-xs text-gray-500">
+                  ({percentage.toFixed(1)}%)
+                </span>
               </div>
             </div>
           );
@@ -110,8 +123,12 @@ export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
           <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8" aria-hidden />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">덱을 찾을 수 없습니다</h2>
-          <p className="text-gray-600 mb-6">요청하신 덱이 존재하지 않거나 접근 권한이 없습니다.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            덱을 찾을 수 없습니다
+          </h2>
+          <p className="text-gray-600 mb-6">
+            요청하신 덱이 존재하지 않거나 접근 권한이 없습니다.
+          </p>
           <Button onClick={onBack} className="px-6">
             돌아가기
           </Button>
@@ -120,38 +137,117 @@ export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
     );
   }
 
-  const { deckInfo, cardStats, difficultyDistribution, stabilityDistribution, repsDistribution, lapsesDistribution } = stats;
+  const {
+    deckInfo,
+    cardStats,
+    difficultyDistribution,
+    stabilityDistribution,
+    repsDistribution,
+    lapsesDistribution,
+  } = stats;
 
   // 분포 데이터 정리
   const difficultyData = [
-    { label: '매우 쉬움', value: difficultyDistribution.veryEasy, barClass: 'bg-primary-700' },
-    { label: '쉬움', value: difficultyDistribution.easy, barClass: 'bg-primary-600' },
-    { label: '보통', value: difficultyDistribution.medium, barClass: 'bg-primary-500' },
-    { label: '어려움', value: difficultyDistribution.hard, barClass: 'bg-primary-400' },
-    { label: '매우 어려움', value: difficultyDistribution.veryHard, barClass: 'bg-primary-300' },
+    {
+      label: "매우 쉬움",
+      value: difficultyDistribution.veryEasy,
+      barClass: "bg-primary-700",
+    },
+    {
+      label: "쉬움",
+      value: difficultyDistribution.easy,
+      barClass: "bg-primary-600",
+    },
+    {
+      label: "보통",
+      value: difficultyDistribution.medium,
+      barClass: "bg-primary-500",
+    },
+    {
+      label: "어려움",
+      value: difficultyDistribution.hard,
+      barClass: "bg-primary-400",
+    },
+    {
+      label: "매우 어려움",
+      value: difficultyDistribution.veryHard,
+      barClass: "bg-primary-300",
+    },
   ];
 
   const stabilityData = [
-    { label: '매우 낮음', value: stabilityDistribution.veryLow, barClass: 'bg-primary-300' },
-    { label: '낮음', value: stabilityDistribution.low, barClass: 'bg-primary-400' },
-    { label: '보통', value: stabilityDistribution.medium, barClass: 'bg-primary-500' },
-    { label: '높음', value: stabilityDistribution.high, barClass: 'bg-primary-600' },
-    { label: '매우 높음', value: stabilityDistribution.veryHigh, barClass: 'bg-primary-700' },
+    {
+      label: "매우 낮음",
+      value: stabilityDistribution.veryLow,
+      barClass: "bg-primary-300",
+    },
+    {
+      label: "낮음",
+      value: stabilityDistribution.low,
+      barClass: "bg-primary-400",
+    },
+    {
+      label: "보통",
+      value: stabilityDistribution.medium,
+      barClass: "bg-primary-500",
+    },
+    {
+      label: "높음",
+      value: stabilityDistribution.high,
+      barClass: "bg-primary-600",
+    },
+    {
+      label: "매우 높음",
+      value: stabilityDistribution.veryHigh,
+      barClass: "bg-primary-700",
+    },
   ];
 
   const repsData = [
-    { label: '새 카드', value: repsDistribution.new, barClass: 'bg-gray-400' },
-    { label: '초급 (1-3회)', value: repsDistribution.beginner, barClass: 'bg-primary-400' },
-    { label: '중급 (4-10회)', value: repsDistribution.intermediate, barClass: 'bg-primary-500' },
-    { label: '고급 (11-20회)', value: repsDistribution.advanced, barClass: 'bg-primary-600' },
-    { label: '전문가 (21회+)', value: repsDistribution.expert, barClass: 'bg-primary-700' },
+    { label: "새 카드", value: repsDistribution.new, barClass: "bg-gray-400" },
+    {
+      label: "초급 (1-3회)",
+      value: repsDistribution.beginner,
+      barClass: "bg-primary-400",
+    },
+    {
+      label: "중급 (4-10회)",
+      value: repsDistribution.intermediate,
+      barClass: "bg-primary-500",
+    },
+    {
+      label: "고급 (11-20회)",
+      value: repsDistribution.advanced,
+      barClass: "bg-primary-600",
+    },
+    {
+      label: "전문가 (21회+)",
+      value: repsDistribution.expert,
+      barClass: "bg-primary-700",
+    },
   ];
 
   const lapsesData = [
-    { label: '완벽 (0회)', value: lapsesDistribution.perfect, barClass: 'bg-primary-700' },
-    { label: '가끔 (1-2회)', value: lapsesDistribution.occasional, barClass: 'bg-primary-500' },
-    { label: '자주 (3-5회)', value: lapsesDistribution.frequent, barClass: 'bg-primary-400' },
-    { label: '문제 (6회+)', value: lapsesDistribution.problematic, barClass: 'bg-red-500' },
+    {
+      label: "완벽 (0회)",
+      value: lapsesDistribution.perfect,
+      barClass: "bg-primary-700",
+    },
+    {
+      label: "가끔 (1-2회)",
+      value: lapsesDistribution.occasional,
+      barClass: "bg-primary-500",
+    },
+    {
+      label: "자주 (3-5회)",
+      value: lapsesDistribution.frequent,
+      barClass: "bg-primary-400",
+    },
+    {
+      label: "문제 (6회+)",
+      value: lapsesDistribution.problematic,
+      barClass: "bg-red-500",
+    },
   ];
 
   return (
@@ -164,12 +260,15 @@ export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
           size="sm"
           className="gap-2 text-primary-700 hover:text-primary-800"
         >
-          <ArrowLeft className="w-4 h-4" aria-hidden />
-          덱 목록으로 돌아가기
+          <ArrowLeft className="w-4 h-4" aria-hidden />덱 목록으로 돌아가기
         </Button>
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold text-gray-900">{deckInfo.name} 통계</h1>
-          <p className="text-base leading-6 text-gray-600">{deckInfo.description}</p>
+          <h1 className="text-3xl font-semibold text-gray-900">
+            {deckInfo.name} 통계
+          </h1>
+          <p className="text-base leading-6 text-gray-600">
+            {deckInfo.description}
+          </p>
           <div className="flex flex-wrap gap-2">
             {deckInfo.tags.map((tag) => (
               <span
@@ -270,7 +369,7 @@ export default function DeckStats({ userId, deckId, onBack }: DeckStatsProps) {
           <div>
             <span className="text-gray-600">마지막 수정:</span>
             <span className="ml-2 font-medium">
-              {new Date(deckInfo.lastModified).toLocaleDateString('ko-KR')}
+              {new Date(deckInfo.lastModified).toLocaleDateString("ko-KR")}
             </span>
           </div>
         </div>

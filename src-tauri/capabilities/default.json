@@ -11,10 +11,7 @@
     "oauth:allow-cancel",
     {
       "identifier": "opener:allow-open-path",
-      "allow": [
-        { "path": "https://**" },
-        { "path": "http://**" }
-      ]
+      "allow": [{ "path": "https://**" }, { "path": "http://**" }]
     }
   ]
 }

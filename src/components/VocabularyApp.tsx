@@ -15,14 +15,16 @@ export function VocabularyApp({ userId }: VocabularyAppProps) {
             <div className="h-12 w-12 rounded-full bg-primary-50 text-primary-700 flex items-center justify-center">
               <Brain className="h-6 w-6" aria-hidden />
             </div>
-            <span className="text-sm font-medium text-primary-700">FSRS spaced repetition</span>
+            <span className="text-sm font-medium text-primary-700">
+              FSRS spaced repetition
+            </span>
           </div>
           <h1 className="text-3xl font-semibold text-gray-900 leading-tight">
             스마트 간격 반복 학습
           </h1>
           <p className="text-base leading-6 text-gray-600">
-            플래시카드나 퀴즈 없이도, FSRS 기반 간격 반복으로 단어를 가장 효율적으로 익히세요.
-            덱을 선택하면 바로 학습을 시작할 수 있어요.
+            플래시카드나 퀴즈 없이도, FSRS 기반 간격 반복으로 단어를 가장
+            효율적으로 익히세요. 덱을 선택하면 바로 학습을 시작할 수 있어요.
           </p>
         </div>
       </section>

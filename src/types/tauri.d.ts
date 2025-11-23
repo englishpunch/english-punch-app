@@ -4,7 +4,7 @@ declare global {
     __TAURI_INTERNALS__?: any;
     __TAURI_METADATA__?: any;
     isTauri?: boolean;
-    
+
     // Tauri v2 API
     __TAURI_IPC__?: any;
   }

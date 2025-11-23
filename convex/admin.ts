@@ -1,4 +1,7 @@
-import { modifyAccountCredentials, invalidateSessions } from "@convex-dev/auth/server";
+import {
+  modifyAccountCredentials,
+  invalidateSessions,
+} from "@convex-dev/auth/server";
 import { v } from "convex/values";
 
 import type { Id } from "./_generated/dataModel";

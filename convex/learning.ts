@@ -207,7 +207,7 @@ export const getUserDecks = query({
       reviewCards: v.number(),
       tags: v.array(v.string()),
       isActive: v.boolean(),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const decks = await ctx.db
@@ -248,7 +248,7 @@ export const getDueCards = query({
       due: v.number(),
       state: v.number(),
       reps: v.number(),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const nowTimestamp = Date.now();
@@ -257,7 +257,7 @@ export const getDueCards = query({
     const cards = await ctx.db
       .query("cards")
       .withIndex("by_user_and_due", (q) =>
-        q.eq("userId", args.userId).lte("due", nowTimestamp)
+        q.eq("userId", args.userId).lte("due", nowTimestamp),
       )
       .filter((q) => q.eq(q.field("deckId"), args.deckId))
       .filter((q) => q.eq(q.field("suspended"), false))
@@ -296,7 +296,7 @@ export const getNewCards = query({
       due: v.number(),
       state: v.number(),
       reps: v.number(),
-    })
+    }),
   ),
   handler: async (ctx, args) => {
     const limit = args.limit || 10;
@@ -305,7 +305,7 @@ export const getNewCards = query({
       .query("cards")
       .withIndex(
         "by_user_and_state",
-        (q) => q.eq("userId", args.userId).eq("state", 0) // New cards
+        (q) => q.eq("userId", args.userId).eq("state", 0), // New cards
       )
       .filter((q) => q.eq(q.field("deckId"), args.deckId))
       .filter((q) => q.eq(q.field("suspended"), false))
@@ -364,55 +364,58 @@ export const getDeckDetailStats = query({
     userId: v.id("users"),
     deckId: v.id("decks"),
   },
-  returns: v.union(v.null(), v.object({
-    deckInfo: v.object({
-      _id: v.id("decks"),
-      name: v.string(),
-      description: v.optional(v.string()),
-      tags: v.array(v.string()),
-      totalCards: v.number(),
-      newCards: v.number(),
-      learningCards: v.number(),
-      reviewCards: v.number(),
-      lastModified: v.string(),
+  returns: v.union(
+    v.null(),
+    v.object({
+      deckInfo: v.object({
+        _id: v.id("decks"),
+        name: v.string(),
+        description: v.optional(v.string()),
+        tags: v.array(v.string()),
+        totalCards: v.number(),
+        newCards: v.number(),
+        learningCards: v.number(),
+        reviewCards: v.number(),
+        lastModified: v.string(),
+      }),
+      cardStats: v.object({
+        totalCards: v.number(),
+        newCards: v.number(),
+        learningCards: v.number(),
+        reviewCards: v.number(),
+        relearningCards: v.number(),
+        suspendedCards: v.number(),
+        dueCards: v.number(),
+      }),
+      difficultyDistribution: v.object({
+        veryEasy: v.number(),
+        easy: v.number(),
+        medium: v.number(),
+        hard: v.number(),
+        veryHard: v.number(),
+      }),
+      stabilityDistribution: v.object({
+        veryLow: v.number(),
+        low: v.number(),
+        medium: v.number(),
+        high: v.number(),
+        veryHigh: v.number(),
+      }),
+      repsDistribution: v.object({
+        new: v.number(),
+        beginner: v.number(),
+        intermediate: v.number(),
+        advanced: v.number(),
+        expert: v.number(),
+      }),
+      lapsesDistribution: v.object({
+        perfect: v.number(),
+        occasional: v.number(),
+        frequent: v.number(),
+        problematic: v.number(),
+      }),
     }),
-    cardStats: v.object({
-      totalCards: v.number(),
-      newCards: v.number(),
-      learningCards: v.number(),
-      reviewCards: v.number(),
-      relearningCards: v.number(),
-      suspendedCards: v.number(),
-      dueCards: v.number(),
-    }),
-    difficultyDistribution: v.object({
-      veryEasy: v.number(),
-      easy: v.number(),
-      medium: v.number(),
-      hard: v.number(),
-      veryHard: v.number(),
-    }),
-    stabilityDistribution: v.object({
-      veryLow: v.number(),
-      low: v.number(),
-      medium: v.number(),
-      high: v.number(),
-      veryHigh: v.number(),
-    }),
-    repsDistribution: v.object({
-      new: v.number(),
-      beginner: v.number(),
-      intermediate: v.number(),
-      advanced: v.number(),
-      expert: v.number(),
-    }),
-    lapsesDistribution: v.object({
-      perfect: v.number(),
-      occasional: v.number(),
-      frequent: v.number(),
-      problematic: v.number(),
-    }),
-  })),
+  ),
   handler: async (ctx, args) => {
     // 덱 정보 조회
     const deck = await ctx.db.get(args.deckId);
@@ -431,47 +434,65 @@ export const getDeckDetailStats = query({
     // 기본 카드 통계
     const cardStats = {
       totalCards: allCards.length,
-      newCards: allCards.filter(card => card.state === 0).length,
-      learningCards: allCards.filter(card => card.state === 1).length,
-      reviewCards: allCards.filter(card => card.state === 2).length,
-      relearningCards: allCards.filter(card => card.state === 3).length,
-      suspendedCards: allCards.filter(card => card.suspended).length,
-      dueCards: allCards.filter(card => card.due <= nowTimestamp && !card.suspended).length,
+      newCards: allCards.filter((card) => card.state === 0).length,
+      learningCards: allCards.filter((card) => card.state === 1).length,
+      reviewCards: allCards.filter((card) => card.state === 2).length,
+      relearningCards: allCards.filter((card) => card.state === 3).length,
+      suspendedCards: allCards.filter((card) => card.suspended).length,
+      dueCards: allCards.filter(
+        (card) => card.due <= nowTimestamp && !card.suspended,
+      ).length,
     };
 
     // 난이도 분포 (0-10 범위)
     const difficultyDistribution = {
-      veryEasy: allCards.filter(card => card.difficulty <= 2).length,
-      easy: allCards.filter(card => card.difficulty > 2 && card.difficulty <= 4).length,
-      medium: allCards.filter(card => card.difficulty > 4 && card.difficulty <= 6).length,
-      hard: allCards.filter(card => card.difficulty > 6 && card.difficulty <= 8).length,
-      veryHard: allCards.filter(card => card.difficulty > 8).length,
+      veryEasy: allCards.filter((card) => card.difficulty <= 2).length,
+      easy: allCards.filter(
+        (card) => card.difficulty > 2 && card.difficulty <= 4,
+      ).length,
+      medium: allCards.filter(
+        (card) => card.difficulty > 4 && card.difficulty <= 6,
+      ).length,
+      hard: allCards.filter(
+        (card) => card.difficulty > 6 && card.difficulty <= 8,
+      ).length,
+      veryHard: allCards.filter((card) => card.difficulty > 8).length,
     };
 
     // 안정성 분포 (일 단위)
     const stabilityDistribution = {
-      veryLow: allCards.filter(card => card.stability <= 1).length,
-      low: allCards.filter(card => card.stability > 1 && card.stability <= 7).length,
-      medium: allCards.filter(card => card.stability > 7 && card.stability <= 30).length,
-      high: allCards.filter(card => card.stability > 30 && card.stability <= 90).length,
-      veryHigh: allCards.filter(card => card.stability > 90).length,
+      veryLow: allCards.filter((card) => card.stability <= 1).length,
+      low: allCards.filter((card) => card.stability > 1 && card.stability <= 7)
+        .length,
+      medium: allCards.filter(
+        (card) => card.stability > 7 && card.stability <= 30,
+      ).length,
+      high: allCards.filter(
+        (card) => card.stability > 30 && card.stability <= 90,
+      ).length,
+      veryHigh: allCards.filter((card) => card.stability > 90).length,
     };
 
     // 반복 횟수 분포
     const repsDistribution = {
-      new: allCards.filter(card => card.reps === 0).length,
-      beginner: allCards.filter(card => card.reps > 0 && card.reps <= 3).length,
-      intermediate: allCards.filter(card => card.reps > 3 && card.reps <= 10).length,
-      advanced: allCards.filter(card => card.reps > 10 && card.reps <= 20).length,
-      expert: allCards.filter(card => card.reps > 20).length,
+      new: allCards.filter((card) => card.reps === 0).length,
+      beginner: allCards.filter((card) => card.reps > 0 && card.reps <= 3)
+        .length,
+      intermediate: allCards.filter((card) => card.reps > 3 && card.reps <= 10)
+        .length,
+      advanced: allCards.filter((card) => card.reps > 10 && card.reps <= 20)
+        .length,
+      expert: allCards.filter((card) => card.reps > 20).length,
     };
 
     // 실수 횟수 분포
     const lapsesDistribution = {
-      perfect: allCards.filter(card => card.lapses === 0).length,
-      occasional: allCards.filter(card => card.lapses > 0 && card.lapses <= 2).length,
-      frequent: allCards.filter(card => card.lapses > 2 && card.lapses <= 5).length,
-      problematic: allCards.filter(card => card.lapses > 5).length,
+      perfect: allCards.filter((card) => card.lapses === 0).length,
+      occasional: allCards.filter((card) => card.lapses > 0 && card.lapses <= 2)
+        .length,
+      frequent: allCards.filter((card) => card.lapses > 2 && card.lapses <= 5)
+        .length,
+      problematic: allCards.filter((card) => card.lapses > 5).length,
     };
 
     return {

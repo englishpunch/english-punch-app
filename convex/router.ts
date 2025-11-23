@@ -9,13 +9,16 @@ http.route({
   path: "/health",
   method: "GET",
   handler: httpAction(async (ctx, request) => {
-    return new Response(JSON.stringify({ status: "ok", timestamp: Date.now() }), {
-      status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
+    return new Response(
+      JSON.stringify({ status: "ok", timestamp: Date.now() }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*",
+        },
       },
-    });
+    );
   }),
 });
 

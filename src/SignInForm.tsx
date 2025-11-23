@@ -16,7 +16,8 @@ export function SignInForm() {
           {flow === "signIn" ? "Welcome back" : "Create your account"}
         </h2>
         <p className="text-sm text-gray-600 leading-5">
-          Use your email and a password to continue. You can explore quickly with the anonymous option below.
+          Use your email and a password to continue. You can explore quickly
+          with the anonymous option below.
         </p>
       </div>
       <form
@@ -57,7 +58,10 @@ export function SignInForm() {
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="password" className="text-sm font-medium text-gray-700">
+          <label
+            htmlFor="password"
+            className="text-sm font-medium text-gray-700"
+          >
             Password
           </label>
           <input
@@ -67,9 +71,13 @@ export function SignInForm() {
             name="password"
             placeholder="At least 8 characters"
             required
-            autoComplete={flow === "signUp" ? "new-password" : "current-password"}
+            autoComplete={
+              flow === "signUp" ? "new-password" : "current-password"
+            }
           />
-          <p className="text-xs text-gray-500">Use 8+ characters with letters and numbers.</p>
+          <p className="text-xs text-gray-500">
+            Use 8+ characters with letters and numbers.
+          </p>
         </div>
 
         <Button fullWidth type="submit" disabled={submitting}>

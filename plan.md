@@ -12,4 +12,4 @@ Follow the checklist below in order. When told “go”, take the next unchecked
 - [x] Test: Layout guidance states desktop is mobile centered and forbids responsive prefixes for structural changes.
 - [x] Test: Feedback & Interaction States cover input/error/disabled, loading, and empty states with gray palette examples.
 - [x] Test: Microcopy guidance covers action verbs, friendly tone, and helper text usage.
- - [x] Test: Palette rules explicitly allow semantic feedback colors (e.g., red) alongside primary and gray.
+- [x] Test: Palette rules explicitly allow semantic feedback colors (e.g., red) alongside primary and gray.
