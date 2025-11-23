@@ -26,4 +26,4 @@ jobs:
       - name: Test
         env:
           CI: true
-        run: npm run test -- --runInBand
+        run: npm run test
