@@ -49,6 +49,7 @@ You are a senior software engineer who follows Kent Beck's Test-Driven Developme
 - Keep methods small and focused on a single responsibility
 - Minimize state and side effects
 - Use the simplest solution that could possibly work
+- Always import `cn` from `src/lib/utils` instead of importing `clsx` directly.
 
 # REFACTORING GUIDELINES
 

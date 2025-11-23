@@ -34,6 +34,9 @@
 ## Motion
 - Use `transition-all duration-200 ease-out` for hover/focus. Respect `motion-reduce` by disabling non-essential animation.
 
+## Icons
+- Use `lucide-react` icons instead of emoji.
+
 ## Accessibility
 - Maintain contrast ≥ 4.5:1; keep focus visible on all interactive elements.
 - Touch targets ≥ `h-11`/`min-w-[44px]`; logical tab order; announce auth errors with `aria-live`. Never rely on color alone.

@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
 import type * as fsrs from "../fsrs.js";
 import type * as fsrsSchema from "../fsrsSchema.js";
@@ -29,6 +30,7 @@ import type * as router from "../router.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  admin: typeof admin;
   auth: typeof auth;
   fsrs: typeof fsrs;
   fsrsSchema: typeof fsrsSchema;

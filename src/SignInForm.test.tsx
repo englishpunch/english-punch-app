@@ -27,8 +27,8 @@ describe("SignInForm", () => {
     const user = userEvent.setup();
     render(<SignInForm />);
 
-    await user.type(screen.getByPlaceholderText(/email/i), "user@example.com");
-    await user.type(screen.getByPlaceholderText(/password/i), "secret123");
+    await user.type(screen.getByLabelText(/email/i), "user@example.com");
+    await user.type(screen.getByLabelText(/password/i), "secret123");
     await user.click(screen.getByRole("button", { name: /^sign in$/i }));
 
     expect(signInMock).toHaveBeenCalledTimes(1);
@@ -45,13 +45,23 @@ describe("SignInForm", () => {
     await user.click(screen.getByRole("button", { name: /sign up instead/i }));
     const submitButton = screen.getByRole("button", { name: /sign up/i });
 
-    await user.type(screen.getByPlaceholderText(/email/i), "new@example.com");
-    await user.type(screen.getByPlaceholderText(/password/i), "newsecret");
+    await user.type(screen.getByLabelText(/email/i), "new@example.com");
+    await user.type(screen.getByLabelText(/password/i), "newsecret");
     await user.click(submitButton);
 
     expect(submitButton).toBeDisabled();
     expect(signInMock).toHaveBeenCalledTimes(1);
     const [, formData] = signInMock.mock.calls[0] as [string, FormData];
     expect(formData.get("flow")).toBe("signUp");
+  });
+
+  it("shows visible labels for both email and password fields", () => {
+    render(<SignInForm />);
+
+    const emailInput = screen.getByLabelText(/email/i);
+    const passwordInput = screen.getByLabelText(/password/i);
+
+    expect(emailInput).toHaveAttribute("type", "email");
+    expect(passwordInput).toHaveAttribute("type", "password");
   });
 });

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
-import FSRSStudySession from './FSRSStudySession';
-import DeckStats from './DeckStats';
+import React, { useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
+import FSRSStudySession from "./FSRSStudySession";
+import DeckStats from "./DeckStats";
+import { Button } from "./Button";
+import { ArrowLeft, BarChart3, Eye, Loader2, Plus } from "lucide-react";
 
 interface DeckManagerProps {
   userId: Id<"users">;
@@ -74,68 +76,65 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
       {/* 헤더 */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">영어 학습 덱</h1>
-            <p className="text-gray-600">과학적인 간격 반복 학습으로 효율적으로 암기하세요.</p>
-          </div>
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              메인으로 돌아가기
-            </button>
-          )}
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold text-gray-900">영어 학습 덱</h1>
+          <p className="text-base leading-6 text-gray-600">
+            과학적인 간격 반복 학습으로 효율적으로 암기하세요. 한 번에 하나의 주요 행동만 보이도록 단순하게 유지합니다.
+          </p>
         </div>
+        {onBack && (
+          <Button
+            onClick={onBack}
+            variant="secondary"
+            size="sm"
+            className="gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+            메인으로 돌아가기
+          </Button>
+        )}
       </div>
 
       {/* 샘플 덱 생성 버튼 */}
       {(!decks || decks.length === 0) && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <div className="text-center">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-sm">
+          <div className="text-center space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-700 text-xl">
+              <Plus className="h-6 w-6" aria-hidden />
             </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">첫 학습을 시작해보세요!</h2>
-            <p className="text-gray-600 mb-6">
-              영어 기초 표현들로 구성된 샘플 덱으로 스마트 학습을 체험해보세요.
-              10개의 실용적인 영어 문장이 준비되어 있습니다.
-            </p>
-            <button
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold text-gray-900">첫 학습을 시작해보세요!</h2>
+              <p className="text-sm leading-6 text-gray-600">
+                영어 기초 표현들로 구성된 샘플 덱으로 스마트 학습을 체험해보세요. 10개의 실용적인 영어 문장이 준비되어 있습니다.
+              </p>
+            </div>
+            <Button
               onClick={handleCreateSampleDeck}
               disabled={isCreatingSample}
-              className="bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white px-8 py-3 rounded-lg font-medium transition-colors duration-200 flex items-center space-x-2 mx-auto"
+              className="mx-auto px-6"
             >
               {isCreatingSample ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                   <span>생성 중...</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
+                  <Plus className="h-4 w-4" aria-hidden />
                   <span>샘플 덱 생성하기</span>
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
       )}
 
       {/* 덱 목록 */}
       {decks && decks.length > 0 && (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4">
           {decks.map((deck) => (
             <DeckCard
               key={deck._id}
@@ -150,7 +149,7 @@ export default function DeckManager({ userId, onBack }: DeckManagerProps) {
       {/* 로딩 상태 */}
       {!decks && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
         </div>
       )}
     </div>
@@ -177,14 +176,14 @@ function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
   const dueCount = deck.newCards + deck.learningCards; // 간단히 계산
   
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow transition-shadow duration-200">
       <div className="p-6">
         {/* 덱 헤더 */}
         <div className="flex items-start justify-between mb-3">
           <h3 className="text-lg font-semibold text-gray-900">{deck.name}</h3>
           <div className="flex items-center space-x-2">
             {!deck.isActive && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-500 text-xs rounded-full">
+              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
                 비활성
               </span>
             )}
@@ -202,7 +201,7 @@ function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
             {deck.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 bg-blue-100 text-blue-600 text-xs rounded-full"
+                className="px-2 py-1 bg-primary-50 text-primary-700 text-xs rounded-full"
               >
                 {tag}
               </span>
@@ -217,50 +216,53 @@ function DeckCard({ deck, onStartStudy, onViewStats }: DeckCardProps) {
             <span className="font-medium">{deck.totalCards}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-blue-600">새 카드:</span>
-            <span className="font-medium text-blue-600">{deck.newCards}</span>
+            <span className="text-gray-600">새 카드:</span>
+            <span className="font-semibold text-primary-700">{deck.newCards}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-orange-600">학습 중:</span>
-            <span className="font-medium text-orange-600">{deck.learningCards}</span>
+            <span className="text-gray-600">학습 중:</span>
+            <span className="font-semibold text-primary-700">{deck.learningCards}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-green-600">복습:</span>
-            <span className="font-medium text-green-600">{deck.reviewCards}</span>
+            <span className="text-gray-600">복습:</span>
+            <span className="font-semibold text-primary-700">{deck.reviewCards}</span>
           </div>
         </div>
 
         {/* 액션 버튼 */}
         <div className="space-y-2">
           {dueCount > 0 ? (
-            <button
+            <Button
               onClick={onStartStudy}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200"
+              fullWidth
             >
               학습하기 ({dueCount}장)
-            </button>
+            </Button>
           ) : (
-            <div className="w-full bg-gray-100 text-gray-500 py-3 px-4 rounded-lg text-center">
+            <Button fullWidth variant="secondary" disabled>
               학습할 카드가 없습니다
-            </div>
+            </Button>
           )}
           
-          <div className="flex space-x-2">
-            <button
+          <div className="flex gap-2">
+            <Button
               onClick={onStartStudy}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200"
+              variant="secondary"
+              size="sm"
+              className="flex-1 gap-2"
             >
+              <Eye className="h-4 w-4" aria-hidden />
               모든 카드 보기
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={onViewStats}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center justify-center"
+              variant="secondary"
+              size="sm"
+              className="flex-1 gap-2"
             >
-              <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-              </svg>
+              <BarChart3 className="h-4 w-4" aria-hidden />
               통계
-            </button>
+            </Button>
           </div>
         </div>
       </div>

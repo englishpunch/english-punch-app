@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useMutation, useQuery } from 'convex/react';
-import { api } from '../../convex/_generated/api';
-import { Id } from '../../convex/_generated/dataModel';
-import StudyCard from './StudyCard';
+import React, { useState, useEffect } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
+import StudyCard from "./StudyCard";
+import { Button } from "./Button";
+import { ArrowLeft, CheckCircle2, FileText, Loader2 } from "lucide-react";
 
 interface FSRSStudySessionProps {
   deckId: Id<"decks">;
@@ -156,7 +158,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
   if (!allCards) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
       </div>
     );
   }
@@ -165,12 +167,10 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
   if (isSessionComplete) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full">
+        <div className="bg-white rounded-lg shadow p-8 max-w-md w-full border border-gray-200">
           <div className="text-center">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
+            <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4 text-primary-700">
+              <CheckCircle2 className="h-8 w-8" aria-hidden />
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-2">학습 완료!</h2>
             <p className="text-gray-600 mb-6">
@@ -179,30 +179,27 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
 
             {/* 세션 통계 */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-red-50 p-3 rounded-lg">
-                <div className="text-red-600 font-bold text-lg">{sessionStats.again}</div>
-                <div className="text-red-500 text-sm">다시</div>
+              <div className="rounded-lg border border-gray-200 bg-red-50 p-3">
+                <div className="text-red-600 font-semibold text-lg">{sessionStats.again}</div>
+                <div className="text-red-600 text-sm">다시</div>
               </div>
-              <div className="bg-orange-50 p-3 rounded-lg">
-                <div className="text-orange-600 font-bold text-lg">{sessionStats.hard}</div>
-                <div className="text-orange-500 text-sm">어려움</div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="text-primary-700 font-semibold text-lg">{sessionStats.hard}</div>
+                <div className="text-gray-700 text-sm">어려움</div>
               </div>
-              <div className="bg-green-50 p-3 rounded-lg">
-                <div className="text-green-600 font-bold text-lg">{sessionStats.good}</div>
-                <div className="text-green-500 text-sm">보통</div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="text-primary-700 font-semibold text-lg">{sessionStats.good}</div>
+                <div className="text-gray-700 text-sm">보통</div>
               </div>
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <div className="text-blue-600 font-bold text-lg">{sessionStats.easy}</div>
-                <div className="text-blue-500 text-sm">쉬움</div>
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+                <div className="text-primary-700 font-semibold text-lg">{sessionStats.easy}</div>
+                <div className="text-gray-700 text-sm">쉬움</div>
               </div>
             </div>
 
-            <button
-              onClick={handleCompleteSession}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200"
-            >
+            <Button fullWidth onClick={handleCompleteSession}>
               완료
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -213,22 +210,17 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
   if (totalCards === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
+        <div className="bg-white rounded-lg shadow p-8 max-w-md w-full text-center border border-gray-200">
+          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
+            <FileText className="w-8 h-8" aria-hidden />
           </div>
           <h2 className="text-xl font-bold text-gray-900 mb-2">학습할 카드가 없습니다</h2>
           <p className="text-gray-600 mb-6">
             모든 카드를 학습했거나 아직 복습 시간이 되지 않았습니다.
           </p>
-          <button
-            onClick={handleBack}
-            className="w-full bg-gray-500 hover:bg-gray-600 text-white py-3 px-4 rounded-lg font-medium transition-colors duration-200"
-          >
+          <Button fullWidth onClick={handleBack} variant="secondary">
             돌아가기
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -240,15 +232,15 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-2">
-            <button
+            <Button
               onClick={handleBack}
-              className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
+              variant="secondary"
+              size="sm"
+              className="gap-2"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
+              <ArrowLeft className="w-4 h-4" aria-hidden />
               <span className="text-sm font-medium">홈으로</span>
-            </button>
+            </Button>
             <span className="text-sm font-medium text-gray-700">
               진행률
             </span>
@@ -258,7 +250,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
-              className="bg-blue-500 h-2 rounded-full transition-all duration-300"
+              className="bg-primary-600 h-2 rounded-full transition-all duration-300"
               style={{ width: `${((currentCardIndex + 1) / totalCards) * 100}%` }}
             />
           </div>
@@ -279,7 +271,7 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
       </div>
 
       {/* 하단 통계 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow">
         <div className="max-w-4xl mx-auto px-4 py-2">
           <div className="flex justify-center space-x-6 text-sm">
             <div className="flex items-center space-x-1">
@@ -287,15 +279,15 @@ export default function FSRSStudySession({ deckId, userId, onComplete }: FSRSStu
               <span>{sessionStats.again}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-primary-500 rounded-full"></div>
               <span>{sessionStats.hard}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-primary-600 rounded-full"></div>
               <span>{sessionStats.good}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-primary-700 rounded-full"></div>
               <span>{sessionStats.easy}</span>
             </div>
           </div>
