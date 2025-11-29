@@ -83,6 +83,7 @@ export const learningTables = {
     due: v.number(), // 다음 복습 예정일 (timestamp, Date로 변환 가능)
     stability: v.number(), // 기억 안정성
     difficulty: v.number(), // 카드 난이도
+    elapsed_days: v.optional(v.number()), // 마지막 복습 간 경과 일수
     scheduled_days: v.number(), // 예정된 간격
     learning_steps: v.number(), // 현재 학습 단계
     reps: v.number(), // 총 복습 횟수
@@ -143,6 +144,8 @@ export const learningTables = {
     scheduled_days: v.number(), // 예정되었던 간격
     learning_steps: v.number(), // 학습 단계
     review: v.number(), // 복습 시간 (timestamp)
+    elapsed_days: v.optional(v.number()), // 이번 복습에서 경과 일수
+    last_elapsed_days: v.optional(v.number()), // 이전 복습 간격
 
     // 학습 시간 및 세션 정보 (추가 필드)
     duration: v.number(), // 응답 시간 (밀리초)

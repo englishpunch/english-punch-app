@@ -1,13 +1,23 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQuery } from "convex/react";
+import { ReactMutation, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
 import { Plus, Trash2, Edit2, ArrowLeft } from "lucide-react";
+import { getGlobalLogger } from "@/lib/globalLogger";
+const logger = getGlobalLogger();
 
 interface PlansPageProps {
   userId: Id<"users">;
 }
+
+type Card = {
+  _id: Id<"cards">;
+  question: string;
+  answer: string;
+  hint?: string;
+  explanation?: string;
+};
 
 export default function PlansPage({ userId }: PlansPageProps) {
   const bags = useQuery(api.learning.getUserBags, { userId });
@@ -109,47 +119,125 @@ function BagDetail({
   onBack: () => void;
   userId: Id<"users">;
 }) {
-  const cards = useQuery((api as any).learning.getBagCards, {
+  const cards = useQuery(api.learning.getBagCards, {
     bagId: bag._id,
     userId,
   });
-  const createCard = useMutation((api as any).learning.createCard);
-  const updateCard = useMutation((api as any).learning.updateCard);
-  const deleteCard = useMutation((api as any).learning.deleteCard);
+  const createCard = useMutation(api.learning.createCard);
+  const updateCard = useMutation(api.learning.updateCard);
+  const deleteCard = useMutation(api.learning.deleteCard);
 
+  const [cardEditor, setCardEditor] = useState<
+    { mode: "create" } | { mode: "edit"; card: Card } | null
+  >(null);
+
+  if (cardEditor) {
+    return (
+      <CardEditorPage
+        mode={cardEditor.mode}
+        bag={bag}
+        card={"card" in cardEditor ? cardEditor.card : undefined}
+        userId={userId}
+        onBack={() => setCardEditor(null)}
+        onSaved={() => setCardEditor(null)}
+        createCard={createCard}
+        updateCard={updateCard}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="px-2" onClick={onBack}>
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+          </Button>
+          <h2 className="text-base font-semibold text-gray-900">{bag.name}</h2>
+        </div>
+        <Button
+          size="sm"
+          className="gap-2"
+          onClick={() => setCardEditor({ mode: "create" })}
+          aria-label="카드 추가"
+        >
+          <Plus className="h-4 w-4" aria-hidden /> 카드 추가
+        </Button>
+      </div>
+
+      <div className="space-y-2">
+        {cards?.map((card) => (
+          <div
+            key={card._id}
+            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+          >
+            <p className="text-sm font-semibold text-gray-900">
+              {card.question}
+            </p>
+            <p className="text-xs text-gray-600 mt-1">정답: {card.answer}</p>
+            <div className="flex gap-2 mt-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setCardEditor({ mode: "edit", card })}
+                aria-label={`수정 ${card._id}`}
+              >
+                <Edit2 className="h-4 w-4" aria-hidden />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  void deleteCard({ cardId: card._id, bagId: bag._id })
+                }
+                aria-label={`삭제 ${card._id}`}
+              >
+                <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
+              </Button>
+            </div>
+          </div>
+        ))}
+        {!cards && (
+          <p className="text-sm text-gray-500">카드를 불러오는 중...</p>
+        )}
+        {cards?.length === 0 && (
+          <p className="text-sm text-gray-500">카드가 없습니다.</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CardEditorPage({
+  mode,
+  bag,
+  card,
+  userId,
+  onBack,
+  onSaved,
+  createCard,
+  updateCard,
+}: {
+  mode: "create" | "edit";
+  bag: { _id: Id<"bags">; name: string };
+  card?: Card;
+  userId: Id<"users">;
+  onBack: () => void;
+  onSaved: () => void;
+  createCard: ReactMutation<typeof api.learning.createCard>;
+  updateCard: ReactMutation<typeof api.learning.updateCard>;
+}) {
   const [form, setForm] = useState({
-    question: "",
-    answer: "",
-    hint: "",
-    explanation: "",
+    question: card?.question || "",
+    answer: card?.answer || "",
+    hint: card?.hint || "",
+    explanation: card?.explanation || "",
   });
-  const [editingId, setEditingId] = useState<Id<"cards"> | null>(null);
 
-  const handleSubmit = async () => {
+  const handleSave = async () => {
     if (!form.question.trim() || !form.answer.trim()) return;
-    const reset = {
-      due: Date.now(),
-      stability: 0,
-      difficulty: 0,
-      scheduled_days: 0,
-      learning_steps: 0,
-      reps: 0,
-      lapses: 0,
-      state: 0,
-      last_review: undefined,
-      suspended: false,
-    };
-    if (editingId) {
-      await updateCard({
-        cardId: editingId,
-        bagId: bag._id,
-        question: form.question,
-        answer: form.answer,
-        hint: form.hint,
-        explanation: form.explanation,
-        ...reset,
-      });
-    } else {
+
+    if (mode === "create") {
       await createCard({
         bagId: bag._id,
         userId,
@@ -158,19 +246,32 @@ function BagDetail({
         hint: form.hint,
         explanation: form.explanation,
       });
-    }
-    setForm({ question: "", answer: "", hint: "", explanation: "" });
-    setEditingId(null);
-  };
+    } else {
+      if (!card) {
+        logger.warn("CardEditorPage", "No card to update");
+        return;
+      }
 
-  const startEdit = (card: any) => {
-    setEditingId(card._id);
-    setForm({
-      question: card.question,
-      answer: card.answer,
-      hint: card.hint || "",
-      explanation: card.explanation || "",
-    });
+      await updateCard({
+        cardId: card._id,
+        bagId: bag._id,
+        question: form.question,
+        answer: form.answer,
+        hint: form.hint,
+        explanation: form.explanation,
+        // 이하 리셋
+        due: Date.now(),
+        stability: 0,
+        difficulty: 0,
+        scheduled_days: 0,
+        learning_steps: 0,
+        reps: 0,
+        lapses: 0,
+        state: 0,
+      });
+    }
+
+    onSaved();
   };
 
   return (
@@ -179,7 +280,9 @@ function BagDetail({
         <Button variant="ghost" size="sm" className="px-2" onClick={onBack}>
           <ArrowLeft className="h-4 w-4" aria-hidden />
         </Button>
-        <h2 className="text-base font-semibold text-gray-900">{bag.name}</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          {mode === "create" ? "카드 추가" : "카드 편집"}
+        </h2>
       </div>
 
       <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-3">
@@ -211,52 +314,12 @@ function BagDetail({
         />
         <Button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
-          onClick={handleSubmit}
+          onClick={handleSave}
           className="w-full"
-          aria-label={editingId ? `저장 ${editingId}` : "카드 추가"}
+          aria-label="저장"
         >
-          {editingId ? "저장" : "카드 추가"}
+          저장
         </Button>
-      </div>
-
-      <div className="space-y-2">
-        {cards?.map((card: any) => (
-          <div
-            key={card._id}
-            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-          >
-            <p className="text-sm font-semibold text-gray-900">
-              {card.question}
-            </p>
-            <p className="text-xs text-gray-600 mt-1">정답: {card.answer}</p>
-            <div className="flex gap-2 mt-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => startEdit(card)}
-                aria-label={`수정 ${card._id}`}
-              >
-                <Edit2 className="h-4 w-4" aria-hidden />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  void deleteCard({ cardId: card._id, bagId: bag._id })
-                }
-                aria-label={`삭제 ${card._id}`}
-              >
-                <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
-              </Button>
-            </div>
-          </div>
-        ))}
-        {!cards && (
-          <p className="text-sm text-gray-500">카드를 불러오는 중...</p>
-        )}
-        {cards?.length === 0 && (
-          <p className="text-sm text-gray-500">카드가 없습니다.</p>
-        )}
       </div>
     </div>
   );

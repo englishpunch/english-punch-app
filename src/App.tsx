@@ -25,7 +25,7 @@ export default function App() {
   if (isLoading) {
     return (
       <div
-        className="min-h-screen flex items-center justify-center bg-gray-50"
+        className="min-h-screen  flex items-center justify-center bg-gray-50"
         data-testid="global-loader"
       >
         <Loader2
@@ -37,7 +37,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen sm:w-160 sm: mx-auto  sm:shadow overflow-hidden bg-gray-50">
       <MobileShell user={loggedInUser} />
       <Toaster />
     </div>

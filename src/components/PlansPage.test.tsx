@@ -53,6 +53,53 @@ describe("PlansPage cards", () => {
     mockedUseMutation.mockImplementation(() => vi.fn());
   });
 
+  it("opens a dedicated page to create and edit cards", async () => {
+    const user = userEvent.setup();
+    mockedUseQuery.mockImplementation((_fn: any, args: any) => {
+      if (args?.bagId) {
+        return [
+          {
+            _id: "card1",
+            question: "Q1",
+            answer: "A1",
+            hint: "",
+            explanation: "",
+          },
+        ];
+      }
+      return [{ _id: "bag1", name: "Bag 1", totalCards: 1 }];
+    });
+
+    render(<PlansPage userId={"user_1" as any} />);
+
+    await user.click(screen.getByRole("button", { name: /관리 bag 1/i }));
+
+    expect(screen.queryByPlaceholderText(/질문을 입력/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /카드 추가/i }));
+
+    expect(screen.getByRole("heading", { name: /카드 추가/i })).toBeVisible();
+    await user.type(screen.getByPlaceholderText(/질문을 입력/i), "새 질문");
+    await user.type(screen.getByPlaceholderText(/정답을 입력/i), "새 답");
+    await user.click(screen.getByRole("button", { name: /저장/i }));
+
+    const createCardSpy = mockedUseMutation.mock.results
+      .map((r) => r.value as Mock)
+      .find((spy) =>
+        spy.mock.calls.some(
+          (call) =>
+            call[0]?.question === "새 질문" && call[0]?.bagId === "bag1"
+        )
+      );
+    expect(createCardSpy).toBeTruthy();
+
+    expect(screen.queryByPlaceholderText(/질문을 입력/i)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /수정 card1/i }));
+    expect(screen.getByRole("heading", { name: /카드 편집/i })).toBeVisible();
+    expect(screen.getByDisplayValue(/Q1/)).toBeVisible();
+  });
+
   it("adds, edits (with reset), and deletes cards in a bag", async () => {
     const user = userEvent.setup();
     mockedUseQuery.mockImplementation((_fn: any, args: any) => {
@@ -75,9 +122,10 @@ describe("PlansPage cards", () => {
     await user.click(screen.getByRole("button", { name: /관리 bag 1/i }));
 
     // add card
+    await user.click(screen.getByRole("button", { name: /카드 추가/i }));
     await user.type(screen.getByPlaceholderText(/질문을 입력/i), "What? ");
     await user.type(screen.getByPlaceholderText(/정답을 입력/i), "Answer");
-    await user.click(screen.getByRole("button", { name: /카드 추가/i }));
+    await user.click(screen.getByRole("button", { name: /저장/i }));
 
     const createCardSpy = mockedUseMutation.mock.results.find((r) =>
       r.value.mock.calls.some((c: any[]) => c[0]?.question === "What? ")
@@ -97,7 +145,7 @@ describe("PlansPage cards", () => {
     const questionInput = screen.getByDisplayValue(/Q1/);
     await user.clear(questionInput);
     await user.type(questionInput, "Q1 edited");
-    await user.click(screen.getByRole("button", { name: /저장 card1/i }));
+    await user.click(screen.getByRole("button", { name: /저장/i }));
 
     const updateCardSpy = mockedUseMutation.mock.results
       .map((r) => r.value as Mock)

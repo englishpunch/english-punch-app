@@ -90,7 +90,7 @@ function BottomNav({
   onChange: (tab: TabKey) => void;
 }) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 bg-white border-t border-gray-200 shadow-lg">
+    <nav className="fixed w-full bottom-0 sm:w-160 left-1/2 -translate-x-1/2 z-30 bg-white border-t border-gray-200 shadow-lg">
       <div className="max-w-5xl mx-auto flex justify-around">
         {Object.values(tabs).map((tab) => {
           const Icon = tab.icon;

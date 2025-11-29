@@ -20,3 +20,4 @@ Follow the checklist below in order. When told “go”, take the next unchecked
 - [x] Test: Inside a 샌드백 on Plans tab, I can add/edit/delete cards.
 - [x] Test: Editing a card resets its FSRS scheduling fields to initial values.
  - [x] Test: Profile drawer allows entering email/password and triggers sign in.
+- [x] Test: Card creation and editing happen on a dedicated page separate from the Plans list.

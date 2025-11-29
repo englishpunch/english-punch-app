@@ -6,6 +6,11 @@
 
 English Punch는 [FSRS (Free Spaced Repetition Scheduler)](https://github.com/open-spaced-repetition/ts-fsrs) 알고리즘을 기반으로 한 영어 학습 애플리케이션입니다. 매일 복싱 도장에 가듯이 꾸준히 영어를 학습하자는 의미에서 "Punch"라는 이름을 붙였습니다.
 
+## 작업들
+
+- getGlobalLogger 로 로깅 표준화
+- components.json 파일이 있긴 하지만 shadcn을 사용하진 않음
+
 ## 주요 특징
 
 ### FSRS 알고리즘
