@@ -25,7 +25,3 @@ export const getConvexClient = (): ConvexReactClient => {
   globalCache.__convexClient = client;
   return client;
 };
-
-export const resetConvexClientCache = () => {
-  delete globalCache.__convexClient;
-};
