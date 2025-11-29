@@ -61,7 +61,6 @@ describe("app routes use per-page Convex queries", () => {
     return waitFor(() =>
       expect(useQueryMock).toHaveBeenCalledWith(api.learning.getUserBags, {
         userId: mockUserId,
-        testMode: false,
       })
     );
   });
