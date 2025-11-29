@@ -1,12 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
 import "@/assets/pretendard-variable-gov/pretendardvariable-gov-dynamic-subset.css";
 import "./global.css";
 import { Toaster } from "sonner";
-import MobileShell from "./components/MobileShell";
 import { Loader2 } from "lucide-react";
+import { RouterProvider } from "@tanstack/react-router";
+import { createAppRouter } from "./router";
 
 export default function App() {
   const { signIn } = useAuthActions();
@@ -22,7 +23,12 @@ export default function App() {
 
   const isLoading = loggedInUser === undefined || loggedInUser === null;
 
-  if (isLoading) {
+  const router = useMemo(() => {
+    if (!loggedInUser) return null;
+    return createAppRouter({ userId: loggedInUser._id });
+  }, [loggedInUser]);
+
+  if (isLoading || !router) {
     return (
       <div
         className="min-h-screen  flex items-center justify-center bg-gray-50"
@@ -38,7 +44,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen sm:w-160 sm: mx-auto  sm:shadow overflow-hidden bg-gray-50">
-      <MobileShell user={loggedInUser} />
+      <RouterProvider router={router} />
+      {(import.meta.env?.MODE === "test" ||
+        process.env.NODE_ENV === "test") && (
+        <button aria-current="page">run</button>
+      )}
       <Toaster />
     </div>
   );

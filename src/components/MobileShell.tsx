@@ -1,8 +1,5 @@
 import React, { useState } from "react";
 import { Id } from "../../convex/_generated/dataModel";
-import BagManager from "./BagManager";
-import ActivityPage from "./ActivityPage";
-import PlansPage from "./PlansPage";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
 import {
@@ -17,12 +14,22 @@ import {
 } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { toast } from "sonner";
+import { Link, useRouter, useRouterState } from "@tanstack/react-router";
 
 interface MobileShellProps {
   user: { _id: Id<"users">; email?: string; name?: string };
+  children?: React.ReactNode;
 }
 
 type TabKey = "home" | "plans" | "run" | "club" | "activity";
+
+const tabPaths: Record<TabKey, string> = {
+  home: "/home",
+  plans: "/plans",
+  run: "/run",
+  club: "/club",
+  activity: "/activity",
+};
 
 const tabs: Record<
   TabKey,
@@ -45,8 +52,20 @@ const tabs: Record<
   },
 };
 
-export default function MobileShell({ user }: MobileShellProps) {
-  const [activeTab, setActiveTab] = useState<TabKey>("run");
+export default function MobileShell({ user, children }: MobileShellProps) {
+  let routerAvailable = true;
+  let pathname = "/run";
+  let navigateTo: ((path: string) => void) | null = null;
+  try {
+    const { location } = useRouterState();
+    pathname = location.pathname;
+    const router = useRouter();
+    navigateTo = (path: string) => router.navigate({ to: path });
+  } catch {
+    routerAvailable = false;
+  }
+
+  const activeTab = deriveTabFromPath(pathname);
   const [showProfile, setShowProfile] = useState(false);
 
   const screenTitle = tabs[activeTab].title;
@@ -68,17 +87,13 @@ export default function MobileShell({ user }: MobileShellProps) {
         </span>
       </header>
 
-      <main className="px-4 py-6 max-w-5xl mx-auto">
-        {activeTab === "home" && (
-          <HomeTab userName={user.name || user.email || "learner"} />
-        )}
-        {activeTab === "plans" && <PlansPage userId={user._id} />}
-        {activeTab === "run" && <RunTab userId={user._id} />}
-        {activeTab === "club" && <ComingSoon label="클럽" />}
-        {activeTab === "activity" && <ActivityPage userId={user._id} />}
-      </main>
+      <main className="px-4 py-6 max-w-5xl mx-auto">{children}</main>
 
-      <BottomNav activeTab={activeTab} onChange={setActiveTab} />
+      <BottomNav
+        activeTab={activeTab}
+        routerAvailable={routerAvailable}
+        navigateTo={navigateTo}
+      />
       <ProfileDrawer
         open={showProfile}
         onClose={() => setShowProfile(false)}
@@ -90,10 +105,12 @@ export default function MobileShell({ user }: MobileShellProps) {
 
 function BottomNav({
   activeTab,
-  onChange,
+  routerAvailable,
+  navigateTo,
 }: {
   activeTab: TabKey;
-  onChange: (tab: TabKey) => void;
+  routerAvailable: boolean;
+  navigateTo: ((path: string) => void) | null;
 }) {
   return (
     <nav className="fixed w-full bottom-0 sm:w-160 left-1/2 -translate-x-1/2 z-30 bg-white border-t border-gray-200 shadow-lg">
@@ -102,66 +119,64 @@ function BottomNav({
           const Icon = tab.icon;
           const isActive = tab.key === activeTab;
           return (
-            <Button
-              key={tab.key}
-              onClick={() => onChange(tab.key)}
-              className={cn(
-                "flex-col items-center py-2 text-xs font-medium",
-                isActive
-                  ? "text-primary-700 font-bold"
-                  : "text-gray-500 hover:text-gray-700"
-              )}
-              variant="plain"
-              size="sm"
-              fullWidth
-              aria-current={isActive ? "page" : undefined}
-              aria-label={tab.label}
-            >
-              <Icon
+            routerAvailable && navigateTo ? (
+              <Button
+                key={tab.key}
+                onClick={() => navigateTo(tabPaths[tab.key])}
                 className={cn(
-                  "h-5 w-5",
-                  isActive ? "text-primary-700 stroke-[2.5]" : "text-gray-500"
+                  "w-full flex-col items-center py-2 text-xs font-medium",
+                  isActive
+                    ? "text-primary-700 font-bold"
+                    : "text-gray-500 hover:text-gray-700"
                 )}
-                // strokeWidth={isActive ? "4" : undefined}
-                aria-hidden
-              />
-              <span className="mt-1 capitalize">{tab.label}</span>
-            </Button>
+                variant="plain"
+                size="sm"
+                fullWidth
+                aria-current={isActive ? "page" : undefined}
+                aria-label={tab.label}
+              >
+                <Icon
+                  className={cn(
+                    "h-5 w-5",
+                    isActive
+                      ? "text-primary-700 stroke-[2.5]"
+                      : "text-gray-500"
+                  )}
+                  aria-hidden
+                />
+                <span className="mt-1 capitalize">{tab.label}</span>
+              </Button>
+            ) : (
+              <Button
+                key={tab.key}
+                className={cn(
+                  "w-full flex-col items-center py-2 text-xs font-medium",
+                  isActive
+                    ? "text-primary-700 font-bold"
+                    : "text-gray-500 hover:text-gray-700"
+                )}
+                variant="plain"
+                size="sm"
+                fullWidth
+                aria-current={isActive ? "page" : undefined}
+                aria-label={tab.label}
+              >
+                <Icon
+                  className={cn(
+                    "h-5 w-5",
+                    isActive
+                      ? "text-primary-700 stroke-[2.5]"
+                      : "text-gray-500"
+                  )}
+                  aria-hidden
+                />
+                <span className="mt-1 capitalize">{tab.label}</span>
+              </Button>
+            )
           );
         })}
       </div>
     </nav>
-  );
-}
-
-function HomeTab({ userName: _userName }: { userName: string }) {
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-6">
-        <p className="text-sm text-gray-600">
-          학습 콘텐츠와 이벤트가 추가될 예정입니다.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function ComingSoon({ label }: { label: string }) {
-  return (
-    <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-8 text-center space-y-3">
-      <p className="text-lg font-semibold text-gray-900">
-        {label} 페이지 준비중
-      </p>
-      <p className="text-sm text-gray-600">조금만 기다려주세요.</p>
-    </div>
-  );
-}
-
-function RunTab({ userId }: { userId: Id<"users"> }) {
-  return (
-    <div className="space-y-4">
-      <BagManager userId={userId} />
-    </div>
   );
 }
 
@@ -261,4 +276,14 @@ function ProfileDrawer({
       </div>
     </div>
   );
+}
+
+function deriveTabFromPath(pathname: string): TabKey {
+  if (pathname.startsWith("/plans")) return "plans";
+  if (pathname.startsWith("/activity")) return "activity";
+  if (pathname.startsWith("/profile")) return "home";
+  if (pathname.startsWith("/run")) return "run";
+  if (pathname.startsWith("/club")) return "club";
+  if (pathname.startsWith("/home")) return "home";
+  return "run";
 }

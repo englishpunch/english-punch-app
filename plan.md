@@ -21,3 +21,8 @@ Follow the checklist below in order. When told “go”, take the next unchecked
 - [x] Test: Editing a card resets its FSRS scheduling fields to initial values.
  - [x] Test: Profile drawer allows entering email/password and triggers sign in.
 - [x] Test: Card creation and editing happen on a dedicated page separate from the Plans list.
+- [x] Test: Convex TanStack Query client is initialized once and shared across web and Tauri builds.
+- [x] Test: Data fetching routes are split per page (Run, Activity, Plans, Profile) and each uses `useQuery` from Convex.
+- [x] Test: Netlify build succeeds with Convex client configured from environment (no Tauri-only APIs used).
+- [ ] Test: Tauri build succeeds with the same Convex query hooks (no Netlify-only APIs used).
+- [ ] Test: Mock data mode activates only when search param `mock=true` is present; otherwise live Convex data loads.
