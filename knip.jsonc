@@ -1,0 +1,39 @@
+{
+  "$schema": "https://unpkg.com/knip@5/schema.json",
+
+  // Application and tooling entry points the runtime touches
+  "entry": [
+    "src/main.tsx",
+    "src/scripts/changePassword.ts",
+    "convex/http.ts",
+    "convex/auth.ts",
+    "setup.mjs",
+    "src/lib/deeplink.ts",
+    "src/lib/tauri.ts",
+  ],
+
+  // Files to analyze across frontend and Convex backend
+  "project": ["src/**/*.{ts,tsx}", "convex/**/*.{ts,tsx}"],
+
+  // Respect the Vite alias used throughout the app
+  "paths": {
+    "@/*": ["src/*"],
+  },
+
+  // Exclude generated/build artifacts and platform outputs
+  "ignore": [
+    "convex/_generated/**",
+    "src-tauri/target/**",
+    "dist/**",
+    "coverage/**",
+  ],
+
+  // Dependencies driven outside the TS analyzer (Rust plugins, Tailwind CSS import)
+  "ignoreDependencies": [
+    "@fabianlars/tauri-plugin-oauth",
+    "@tauri-apps/plugin-opener",
+    "tailwindcss",
+  ],
+
+  "includeEntryExports": false,
+}

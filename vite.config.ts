@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import reactCompiler from "babel-plugin-react-compiler";
 
 const host = process.env.TAURI_DEV_HOST;
 
@@ -9,7 +10,7 @@ export default defineConfig(async () => ({
   plugins: [
     react({
       babel: {
-        plugins: ["babel-plugin-react-compiler"],
+        plugins: [reactCompiler],
       },
     }),
     tailwindcss(),
