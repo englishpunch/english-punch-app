@@ -33,6 +33,7 @@
     "@fabianlars/tauri-plugin-oauth",
     "@tauri-apps/plugin-opener",
     "tailwindcss",
+    "vibe-rules",
   ],
 
   "includeEntryExports": false,
