@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { ReactMutation, useMutation, useQuery } from "convex/react";
-import { cn } from "@/lib/utils";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
@@ -37,7 +36,13 @@ export default function PlansPage({ userId }: PlansPageProps) {
   const [testMode, setTestMode] = useState<boolean>(getInitialTestMode);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const bagsQuery = useQuery(api.learning.getUserBags, { userId, testMode });
+  const bagsArgs = testMode
+    ? "skip"
+    : {
+        userId,
+        testMode: false,
+      };
+  const bagsQuery = useQuery(api.learning.getUserBags, bagsArgs);
   const createBag = useMutation(api.learning.createBag);
   const deleteBag = useMutation(api.learning.deleteBag);
 
@@ -219,16 +224,32 @@ function BagDetail({
   userId: Id<"users">;
   testMode: boolean;
 }) {
-  const cardArgs = testMode
-    ? ("skip" as const)
-    : {
-        bagId: bag._id,
-        userId,
-      };
-  const cards = useQuery(api.learning.getBagCards, cardArgs);
+  const cardArgs = {
+    bagId: bag._id,
+    userId,
+    testMode: false,
+  };
+
+  const cards = useQuery(
+    api.learning.getBagCards,
+    testMode ? "skip" : cardArgs
+  );
   const createCard = useMutation(api.learning.createCard);
   const updateCard = useMutation(api.learning.updateCard);
   const deleteCard = useMutation(api.learning.deleteCard);
+
+  const mockCards = useMemo(() => {
+    if (!testMode) return [];
+    return Array.from({ length: 500 }, (_, i) => ({
+      _id: `mock-card-${i + 1}` as Id<"cards">,
+      question: `Mock Question ${i + 1}`,
+      answer: `Mock Answer ${i + 1}`,
+      hint: `Mock Hint ${i + 1}`,
+      explanation: `Mock Explanation ${i + 1}`,
+    }));
+  }, [testMode]);
+
+  const cardsToShow = (testMode ? mockCards : cards) ?? [];
 
   const [cardEditor, setCardEditor] = useState<
     { mode: "create" } | { mode: "edit"; card: Card } | null
@@ -271,7 +292,7 @@ function BagDetail({
       </div>
 
       <div className="space-y-2">
-        {(cards || []).map((card) => (
+        {cardsToShow.map((card) => (
           <div
             key={card._id}
             className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
@@ -304,10 +325,10 @@ function BagDetail({
             </div>
           </div>
         ))}
-        {!cards && (
+        {!cardsToShow && (
           <p className="text-sm text-gray-500">카드를 불러오는 중...</p>
         )}
-        {cards?.length === 0 && (
+        {cardsToShow?.length === 0 && (
           <p className="text-sm text-gray-500">카드가 없습니다.</p>
         )}
       </div>

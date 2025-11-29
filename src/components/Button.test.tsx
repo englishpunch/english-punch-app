@@ -9,8 +9,48 @@ describe("Button", () => {
     const button = screen.getByRole("button", { name: /submit/i });
     expect(button.className).toMatch(/bg-primary-600/);
     expect(button.className).toMatch(/focus-visible:outline-primary-400/);
-    expect(button.className).toContain("gap-0");
+    expect(button.className).toContain("gap-2");
     expect(button).not.toBeDisabled();
+  });
+
+  it("keeps padding and icon/text gap consistent across variants", () => {
+    const variants = ["primary", "secondary", "ghost", "danger", "plain"] as const;
+
+    render(
+      <div>
+        {variants.map((variant) => (
+          <Button key={variant} variant={variant}>
+            {variant}
+          </Button>
+        ))}
+      </div>
+    );
+
+    const buttons = variants.map((variant) =>
+      screen.getByRole("button", { name: new RegExp(variant, "i") })
+    );
+
+    const classNames = buttons.map((button) => button.className);
+
+    classNames.forEach((className) => {
+      expect(className).toContain("px-4");
+      expect(className).toContain("py-3");
+      expect(className).toContain("gap-2");
+    });
+
+    const pxTokens = new Set(
+      classNames
+        .map((className) => className.match(/px-\d+/)?.[0])
+        .filter(Boolean)
+    );
+    const pyTokens = new Set(
+      classNames
+        .map((className) => className.match(/py-\d+/)?.[0])
+        .filter(Boolean)
+    );
+
+    expect(pxTokens.size).toBe(1);
+    expect(pyTokens.size).toBe(1);
   });
 
   it("includes default hover and active scale transforms", () => {
