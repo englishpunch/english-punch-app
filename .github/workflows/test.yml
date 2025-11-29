@@ -23,6 +23,9 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Knip (dead code/deps)
+        run: npm run knip
+
       - name: Test
         env:
           CI: true
