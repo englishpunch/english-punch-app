@@ -259,5 +259,3 @@ export const learningTables = {
     .index("by_level", ["level"])
     .index("by_category_and_level", ["category", "level"]),
 };
-
-export default learningTables;
