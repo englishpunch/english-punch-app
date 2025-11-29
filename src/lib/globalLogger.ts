@@ -18,7 +18,7 @@ if (
   window.process = {
     ...window.process,
     env: {
-      ...(window.process?.env as any),
+      ...window.process?.env,
     },
   };
 }
@@ -59,7 +59,6 @@ class DetailedLoggerModuleService {
     const duration = current.getTime() - last;
 
     if (typeof message === "object") {
-      // eslint-disable-next-line no-console
       console.log(
         JSON.stringify({
           timestamp: current.toISOString(),
@@ -70,7 +69,6 @@ class DetailedLoggerModuleService {
         })
       );
     } else {
-      // eslint-disable-next-line no-console
       console.log(
         JSON.stringify({
           timestamp: current.toISOString(),
@@ -111,8 +109,6 @@ class DetailedLoggerModuleService {
     this.log("error", key, message);
   }
 }
-
-export default DetailedLoggerModuleService;
 
 let _globalLogger: DetailedLoggerModuleService | null = null;
 

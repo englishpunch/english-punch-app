@@ -60,10 +60,7 @@ export const reviewCardHandler = async (
   const now = new Date();
   const lastReviewDate = card.last_review ? new Date(card.last_review) : null;
 
-  const previousElapsedDays =
-    typeof (card as any).elapsed_days === "number"
-      ? (card as any).elapsed_days
-      : 0;
+  const previousElapsedDays = card.elapsed_days ?? 0;
 
   logger.info(runId, {
     m: "📊 Card before review:",

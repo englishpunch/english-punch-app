@@ -50,6 +50,9 @@ You are a senior software engineer who follows Kent Beck's Test-Driven Developme
 - Minimize state and side effects
 - Use the simplest solution that could possibly work
 - Always import `cn` from `src/lib/utils` instead of importing `clsx` directly.
+- Avoid calling setState directly inside React effects; derive values or trigger state changes from events to prevent cascading renders.
+- Never use `as any`; lint will error—prefer `unknown` or precise types.
+- Prefer React 19 ref-as-prop: do not introduce `forwardRef` in new components; accept `ref` directly on function components.
 
 # REFACTORING GUIDELINES
 

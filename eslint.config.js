@@ -61,6 +61,19 @@ export default tseslint.config(
       // Allow explicit `any`s
       "@typescript-eslint/no-explicit-any": "off",
 
+      // Block widening casts to `any`
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector: "TSAsExpression > TSAnyKeyword",
+          message: "Avoid `as any`; use a narrower type or `unknown` instead.",
+        },
+        {
+          selector: "TSTypeAssertion > TSAnyKeyword",
+          message: "Avoid `as any`; use a narrower type or `unknown` instead.",
+        },
+      ],
+
       // START: Allow implicit `any`s
       "@typescript-eslint/no-unsafe-argument": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
@@ -93,5 +106,5 @@ export default tseslint.config(
         ],
       },
     },
-  },
+  }
 );

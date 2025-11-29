@@ -44,7 +44,7 @@ function StudyCardContent({
         : 0;
       onGrade(rating, duration);
     },
-    [onGrade],
+    [onGrade]
   );
 
   const getRatingConfig = (rating: 1 | 2 | 3 | 4) => {
@@ -128,7 +128,7 @@ function StudyCardContent({
             <span
               className={cn(
                 "px-2 py-1 rounded-full text-xs font-medium",
-                getStateColor(card.state),
+                getStateColor(card.state)
               )}
             >
               {getStateLabel(card.state)}
@@ -204,9 +204,8 @@ function StudyCardContent({
                       disabled={isLoading}
                       variant={config.variant}
                       className={cn(
-                        "px-4 py-3 text-white",
-                        "transform hover:scale-[1.02] active:scale-95 shadow-sm",
-                        config.className,
+                        "px-4 py-3 text-white shadow-sm",
+                        config.className
                       )}
                     >
                       <div className="text-center">

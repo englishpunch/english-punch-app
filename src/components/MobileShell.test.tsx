@@ -39,7 +39,9 @@ describe("MobileShell profile drawer", () => {
     const user = userEvent.setup();
 
     render(
-      <MobileShell user={{ _id: "user_1" as any, email: "test@example.com" }} />
+      <MobileShell
+        user={{ _id: "user_1" as Id<"users">, email: "test@example.com" }}
+      />
     );
 
     expect(screen.queryByText(/내 프로필/)).not.toBeInTheDocument();
@@ -70,7 +72,7 @@ describe("MobileShell profile drawer", () => {
     const signIn = vi.fn().mockResolvedValue(undefined);
     (useAuthActions as Mock).mockReturnValue({ signIn, signOut: vi.fn() });
 
-    render(<MobileShell user={{ _id: "user_anon" as any }} />);
+    render(<MobileShell user={{ _id: "user_anon" as Id<"users"> }} />);
 
     await user.click(screen.getByLabelText(/open profile/i));
     expect(screen.getByText(/내 프로필/)).toBeInTheDocument();
@@ -83,5 +85,15 @@ describe("MobileShell profile drawer", () => {
     await waitFor(() =>
       expect(screen.queryByText(/내 프로필/)).not.toBeInTheDocument()
     );
+  });
+
+  it("renders bottom navigation items with shared Button styling", () => {
+    render(<MobileShell user={{ _id: "user_anon" as Id<"users"> }} />);
+
+    const homeButton = screen.getByRole("button", { name: /home/i });
+
+    expect(homeButton.className).toContain("inline-flex");
+    expect(homeButton.className).toContain("focus-visible:outline-2");
+    expect(homeButton.className).not.toContain("gap-1");
   });
 });

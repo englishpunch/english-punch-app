@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi, beforeEach, Mock } from "vitest";
 import PlansPage from "./PlansPage";
 import { useQuery, useMutation } from "convex/react";
+import { Id } from "../../convex/_generated/dataModel";
 
 vi.mock("convex/react", () => ({
   useQuery: vi.fn(),
@@ -25,7 +26,7 @@ describe("PlansPage bags", () => {
       return [{ _id: "bag1", name: "Bag 1", totalCards: 0 }];
     });
 
-    render(<PlansPage userId={"user_1" as any} />);
+    render(<PlansPage userId={"user_1" as Id<"users">} />);
 
     await user.type(screen.getByPlaceholderText(/새 샌드백 이름/i), "New Bag");
     await user.click(screen.getByRole("button", { name: /샌드백 추가/i }));
@@ -44,6 +45,70 @@ describe("PlansPage bags", () => {
       )
     );
     expect(hasDeleteBag).toBe(true);
+  });
+
+  it("paginates bags 20 per page and navigates between pages", async () => {
+    const user = userEvent.setup();
+    const mockBags = Array.from({ length: 45 }, (_, i) => ({
+      _id: `bag${i + 1}`,
+      name: `Bag ${i + 1}`,
+      totalCards: 0,
+    }));
+    mockedUseQuery.mockImplementation((_fn: any, args: any) => {
+      if (args?.bagId) return [];
+      return mockBags;
+    });
+
+    render(<PlansPage userId={"user_1" as Id<"users">} />);
+
+    expect(screen.getAllByRole("button", { name: /관리 bag/i }).length).toBe(
+      20
+    );
+    expect(screen.getByText(/^Bag 1$/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /다음 페이지/i }));
+
+    expect(screen.getByText(/Bag 21/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Bag 1$/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /이전 페이지/i }));
+    expect(screen.getByText(/^Bag 1$/)).toBeInTheDocument();
+  });
+
+  it("toggles test mode to request mocked bulk data in dev", async () => {
+    const user = userEvent.setup();
+    const calls: any[] = [];
+    mockedUseQuery.mockImplementation((_fn: any, args: any) => {
+      calls.push(args);
+      return [];
+    });
+
+    render(<PlansPage userId={"user_1" as Id<"users">} />);
+
+    expect(calls.at(-1)?.testMode).toBeFalsy();
+    const toggle = screen.getByRole("button", { name: /테스트 모드/i });
+    expect(toggle).toHaveTextContent(/OFF/);
+
+    await user.click(screen.getByRole("button", { name: /테스트 모드/i }));
+
+    expect(calls.at(-1)).toBe("skip");
+    expect(toggle).toHaveTextContent(/ON/);
+  });
+
+  it("defaults to test mode when VITE_TEST_MODE is true", () => {
+    const calls: any[] = [];
+    vi.stubEnv("VITE_TEST_MODE", "true");
+    mockedUseQuery.mockImplementation((_fn: any, args: any) => {
+      calls.push(args);
+      return [];
+    });
+
+    render(<PlansPage userId={"user_1" as Id<"users">} />);
+
+    const toggle = screen.getByRole("button", { name: /테스트 모드/i });
+    expect(calls.at(-1)).toBe("skip");
+    expect(toggle).toHaveTextContent(/ON/);
+    vi.unstubAllEnvs();
   });
 });
 
@@ -70,11 +135,13 @@ describe("PlansPage cards", () => {
       return [{ _id: "bag1", name: "Bag 1", totalCards: 1 }];
     });
 
-    render(<PlansPage userId={"user_1" as any} />);
+    render(<PlansPage userId={"user_1" as Id<"users">} />);
 
     await user.click(screen.getByRole("button", { name: /관리 bag 1/i }));
 
-    expect(screen.queryByPlaceholderText(/질문을 입력/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/질문을 입력/i)
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /카드 추가/i }));
 
@@ -87,13 +154,14 @@ describe("PlansPage cards", () => {
       .map((r) => r.value as Mock)
       .find((spy) =>
         spy.mock.calls.some(
-          (call) =>
-            call[0]?.question === "새 질문" && call[0]?.bagId === "bag1"
+          (call) => call[0]?.question === "새 질문" && call[0]?.bagId === "bag1"
         )
       );
     expect(createCardSpy).toBeTruthy();
 
-    expect(screen.queryByPlaceholderText(/질문을 입력/i)).not.toBeInTheDocument();
+    expect(
+      screen.queryByPlaceholderText(/질문을 입력/i)
+    ).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: /수정 card1/i }));
     expect(screen.getByRole("heading", { name: /카드 편집/i })).toBeVisible();
@@ -117,7 +185,7 @@ describe("PlansPage cards", () => {
       return [{ _id: "bag1", name: "Bag 1", totalCards: 1 }];
     });
 
-    render(<PlansPage userId={"user_1" as any} />);
+    render(<PlansPage userId={"user_1" as Id<"users">} />);
 
     await user.click(screen.getByRole("button", { name: /관리 bag 1/i }));
 

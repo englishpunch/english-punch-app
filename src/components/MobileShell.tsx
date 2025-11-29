@@ -9,6 +9,7 @@ import {
   Activity,
   Home,
   ListChecks,
+  LucideProps,
   PlayCircle,
   User2,
   Users,
@@ -25,7 +26,12 @@ type TabKey = "home" | "plans" | "run" | "club" | "activity";
 
 const tabs: Record<
   TabKey,
-  { key: TabKey; label: string; title: string; icon: React.ElementType }
+  {
+    key: TabKey;
+    label: string;
+    title: string;
+    icon: React.ComponentType<LucideProps>;
+  }
 > = {
   home: { key: "home", label: "home", title: "Home", icon: Home },
   plans: { key: "plans", label: "plans", title: "Plans", icon: ListChecks },
@@ -96,27 +102,31 @@ function BottomNav({
           const Icon = tab.icon;
           const isActive = tab.key === activeTab;
           return (
-            <button
+            <Button
               key={tab.key}
               onClick={() => onChange(tab.key)}
               className={cn(
-                "flex flex-col items-center py-2 w-full text-xs font-medium transition-colors",
+                "flex-col items-center py-2 text-xs font-medium",
                 isActive
-                  ? "text-primary-700"
+                  ? "text-primary-700 font-bold"
                   : "text-gray-500 hover:text-gray-700"
               )}
+              variant="plain"
+              size="sm"
+              fullWidth
               aria-current={isActive ? "page" : undefined}
               aria-label={tab.label}
             >
               <Icon
                 className={cn(
                   "h-5 w-5",
-                  isActive ? "text-primary-700" : "text-gray-500"
+                  isActive ? "text-primary-700 stroke-[2.5]" : "text-gray-500"
                 )}
+                // strokeWidth={isActive ? "4" : undefined}
                 aria-hidden
               />
               <span className="mt-1 capitalize">{tab.label}</span>
-            </button>
+            </Button>
           );
         })}
       </div>

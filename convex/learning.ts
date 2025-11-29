@@ -194,6 +194,7 @@ export const createSampleBag = mutation({
 export const getUserBags = query({
   args: {
     userId: v.id("users"),
+    testMode: v.optional(v.boolean()),
   },
   returns: v.array(
     v.object({
@@ -209,6 +210,10 @@ export const getUserBags = query({
     })
   ),
   handler: async (ctx, args) => {
+    if (args.testMode) {
+      return [];
+    }
+
     const bags = await ctx.db
       .query("bags")
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
