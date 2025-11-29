@@ -5,6 +5,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
 import { Plus, Trash2, Edit2, ArrowLeft } from "lucide-react";
 import { getGlobalLogger } from "@/lib/globalLogger";
+import useIsMock from "@/hooks/useIsMock";
 const logger = getGlobalLogger();
 
 interface PlansPageProps {
@@ -19,28 +20,14 @@ type Card = {
   explanation?: string;
 };
 
-const getInitialTestMode = () => {
-  const envDefault = import.meta.env?.VITE_TEST_MODE === "true";
-  const isTestEnv =
-    import.meta.env?.MODE === "test" ||
-    Boolean(import.meta.env?.VITEST) ||
-    process.env.NODE_ENV === "test";
-
-  if (isTestEnv) {
-    return envDefault;
-  }
-  return envDefault;
-};
-
 export default function PlansPage({ userId }: PlansPageProps) {
-  const [testMode, setTestMode] = useState<boolean>(getInitialTestMode);
+  const isMock = useIsMock();
   const [currentPage, setCurrentPage] = useState(1);
 
-  const bagsArgs = testMode
+  const bagsArgs = isMock
     ? "skip"
     : {
         userId,
-        testMode: false,
       };
   const bagsQuery = useQuery(api.learning.getUserBags, bagsArgs);
   const createBag = useMutation(api.learning.createBag);
@@ -57,15 +44,15 @@ export default function PlansPage({ userId }: PlansPageProps) {
   };
 
   const mockBags = useMemo(() => {
-    if (!testMode) return [];
+    if (!isMock) return [];
     return Array.from({ length: 500 }, (_, i) => ({
       _id: `mock-${i + 1}` as Id<"bags">,
       name: `Mock Bag ${i + 1}`,
       totalCards: 0,
     }));
-  }, [testMode]);
+  }, [isMock]);
 
-  const bags = testMode ? mockBags : bagsQuery;
+  const bags = isMock ? mockBags : bagsQuery;
 
   const activeBag = useMemo(
     () => bags?.find((d) => d._id === activeBagId) || null,
@@ -102,7 +89,6 @@ export default function PlansPage({ userId }: PlansPageProps) {
         bag={activeBag}
         onBack={() => setActiveBagId(null)}
         userId={userId}
-        testMode={testMode}
       />
     );
   }
@@ -112,22 +98,6 @@ export default function PlansPage({ userId }: PlansPageProps) {
       <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-gray-900">샌드백 추가</h2>
-          {import.meta.env.DEV && (
-            <div className="flex items-center gap-2">
-              <Button
-                variant={testMode ? "secondary" : "ghost"}
-                size="sm"
-                aria-label="테스트 모드"
-                onClick={() => {
-                  const next = !testMode;
-                  setTestMode(next);
-                  setPage(1);
-                }}
-              >
-                테스트 모드 {testMode ? "ON" : "OFF"}
-              </Button>
-            </div>
-          )}
         </div>
         <div className="mt-3 flex gap-2">
           <input
@@ -217,29 +187,26 @@ function BagDetail({
   bag,
   onBack,
   userId,
-  testMode,
 }: {
   bag: { _id: Id<"bags">; name: string };
   onBack: () => void;
   userId: Id<"users">;
-  testMode: boolean;
 }) {
-  const cardArgs = {
-    bagId: bag._id,
-    userId,
-    testMode: false,
-  };
+  const isMock = useIsMock();
+  const cardArgs = isMock
+    ? "skip"
+    : {
+        bagId: bag._id,
+        userId,
+      };
 
-  const cards = useQuery(
-    api.learning.getBagCards,
-    testMode ? "skip" : cardArgs
-  );
+  const cards = useQuery(api.learning.getBagCards, cardArgs);
   const createCard = useMutation(api.learning.createCard);
   const updateCard = useMutation(api.learning.updateCard);
   const deleteCard = useMutation(api.learning.deleteCard);
 
   const mockCards = useMemo(() => {
-    if (!testMode) return [];
+    if (!isMock) return [];
     return Array.from({ length: 500 }, (_, i) => ({
       _id: `mock-card-${i + 1}` as Id<"cards">,
       question: `Mock Question ${i + 1}`,
@@ -247,9 +214,9 @@ function BagDetail({
       hint: `Mock Hint ${i + 1}`,
       explanation: `Mock Explanation ${i + 1}`,
     }));
-  }, [testMode]);
+  }, [isMock]);
 
-  const cardsToShow = (testMode ? mockCards : cards) ?? [];
+  const cardsToShow = (isMock ? mockCards : cards) ?? [];
   const CARD_PAGE_SIZE = 20;
   const [cardPage, setCardPage] = useState(1);
 
@@ -292,7 +259,6 @@ function BagDetail({
         onSaved={() => setCardEditor(null)}
         createCard={createCard}
         updateCard={updateCard}
-        testMode={testMode}
       />
     );
   }
@@ -310,7 +276,7 @@ function BagDetail({
           size="sm"
           className="gap-2"
           onClick={() => setCardEditor({ mode: "create" })}
-          disabled={testMode}
+          disabled={isMock}
           aria-label="카드 추가"
         >
           <Plus className="h-4 w-4" aria-hidden /> 카드 추가
@@ -332,7 +298,7 @@ function BagDetail({
                 size="sm"
                 variant="secondary"
                 onClick={() => setCardEditor({ mode: "edit", card })}
-                disabled={testMode}
+                disabled={isMock}
                 aria-label={`수정 ${card._id}`}
               >
                 <Edit2 className="h-4 w-4" aria-hidden />
@@ -343,7 +309,7 @@ function BagDetail({
                 onClick={() =>
                   void deleteCard({ cardId: card._id, bagId: bag._id })
                 }
-                disabled={testMode}
+                disabled={isMock}
                 aria-label={`삭제 ${card._id}`}
               >
                 <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
@@ -398,7 +364,6 @@ function CardEditorPage({
   onSaved,
   createCard,
   updateCard,
-  testMode,
 }: {
   mode: "create" | "edit";
   bag: { _id: Id<"bags">; name: string };
@@ -408,8 +373,8 @@ function CardEditorPage({
   onSaved: () => void;
   createCard: ReactMutation<typeof api.learning.createCard>;
   updateCard: ReactMutation<typeof api.learning.updateCard>;
-  testMode: boolean;
 }) {
+  const isMock = useIsMock();
   const [form, setForm] = useState({
     question: card?.question || "",
     answer: card?.answer || "",
@@ -419,7 +384,7 @@ function CardEditorPage({
 
   const handleSave = async () => {
     if (!form.question.trim() || !form.answer.trim()) return;
-    if (testMode) {
+    if (isMock) {
       onSaved();
       return;
     }

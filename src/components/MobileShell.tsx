@@ -53,17 +53,12 @@ const tabs: Record<
 };
 
 export default function MobileShell({ user, children }: MobileShellProps) {
-  let routerAvailable = true;
   let pathname = "/run";
-  let navigateTo: ((path: string) => void) | null = null;
-  try {
-    const { location } = useRouterState();
-    pathname = location.pathname;
-    const router = useRouter();
-    navigateTo = (path: string) => router.navigate({ to: path });
-  } catch {
-    routerAvailable = false;
-  }
+  const navigateTo = (path: string) => router.navigate({ to: path });
+
+  const { location } = useRouterState();
+  pathname = location.pathname;
+  const router = useRouter();
 
   const activeTab = deriveTabFromPath(pathname);
   const [showProfile, setShowProfile] = useState(false);
@@ -89,11 +84,7 @@ export default function MobileShell({ user, children }: MobileShellProps) {
 
       <main className="px-4 py-6 max-w-5xl mx-auto">{children}</main>
 
-      <BottomNav
-        activeTab={activeTab}
-        routerAvailable={routerAvailable}
-        navigateTo={navigateTo}
-      />
+      <BottomNav activeTab={activeTab} navigateTo={navigateTo} />
       <ProfileDrawer
         open={showProfile}
         onClose={() => setShowProfile(false)}
@@ -105,12 +96,10 @@ export default function MobileShell({ user, children }: MobileShellProps) {
 
 function BottomNav({
   activeTab,
-  routerAvailable,
   navigateTo,
 }: {
   activeTab: TabKey;
-  routerAvailable: boolean;
-  navigateTo: ((path: string) => void) | null;
+  navigateTo: (path: string) => Promise<void>;
 }) {
   return (
     <nav className="fixed w-full bottom-0 sm:w-160 left-1/2 -translate-x-1/2 z-30 bg-white border-t border-gray-200 shadow-lg">
@@ -119,60 +108,30 @@ function BottomNav({
           const Icon = tab.icon;
           const isActive = tab.key === activeTab;
           return (
-            routerAvailable && navigateTo ? (
-              <Button
-                key={tab.key}
-                onClick={() => navigateTo(tabPaths[tab.key])}
+            <Button
+              key={tab.key}
+              onClick={() => navigateTo(tabPaths[tab.key])}
+              className={cn(
+                "w-full flex-col items-center py-2 gap-0 text-xs font-medium",
+                isActive
+                  ? "text-primary-700 font-bold"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+              variant="plain"
+              size="sm"
+              fullWidth
+              aria-current={isActive ? "page" : undefined}
+              aria-label={tab.label}
+            >
+              <Icon
                 className={cn(
-                  "w-full flex-col items-center py-2 text-xs font-medium",
-                  isActive
-                    ? "text-primary-700 font-bold"
-                    : "text-gray-500 hover:text-gray-700"
+                  "h-5 w-5",
+                  isActive ? "text-primary-700 stroke-[2.5]" : "text-gray-500"
                 )}
-                variant="plain"
-                size="sm"
-                fullWidth
-                aria-current={isActive ? "page" : undefined}
-                aria-label={tab.label}
-              >
-                <Icon
-                  className={cn(
-                    "h-5 w-5",
-                    isActive
-                      ? "text-primary-700 stroke-[2.5]"
-                      : "text-gray-500"
-                  )}
-                  aria-hidden
-                />
-                <span className="mt-1 capitalize">{tab.label}</span>
-              </Button>
-            ) : (
-              <Button
-                key={tab.key}
-                className={cn(
-                  "w-full flex-col items-center py-2 text-xs font-medium",
-                  isActive
-                    ? "text-primary-700 font-bold"
-                    : "text-gray-500 hover:text-gray-700"
-                )}
-                variant="plain"
-                size="sm"
-                fullWidth
-                aria-current={isActive ? "page" : undefined}
-                aria-label={tab.label}
-              >
-                <Icon
-                  className={cn(
-                    "h-5 w-5",
-                    isActive
-                      ? "text-primary-700 stroke-[2.5]"
-                      : "text-gray-500"
-                  )}
-                  aria-hidden
-                />
-                <span className="mt-1 capitalize">{tab.label}</span>
-              </Button>
-            )
+                aria-hidden
+              />
+              <span className="mt-1 capitalize">{tab.label}</span>
+            </Button>
           );
         })}
       </div>

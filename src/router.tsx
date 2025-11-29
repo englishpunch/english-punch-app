@@ -6,9 +6,7 @@ import {
   createRouter,
   Navigate,
   Outlet,
-  Router,
   useRouter,
-  useRouterState,
 } from "@tanstack/react-router";
 import { Id } from "../convex/_generated/dataModel";
 import BagManager from "./components/BagManager";
@@ -17,11 +15,18 @@ import ActivityPage from "./components/ActivityPage";
 import ProfilePage from "./components/ProfilePage";
 import MobileShell from "./components/MobileShell";
 import ComingSoon from "./components/ComingSoon";
+import { fallback, zodValidator } from "@tanstack/zod-adapter";
+import { z } from "zod";
 
 type RouterContext = { userId: Id<"users"> };
 
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
+  validateSearch: zodValidator(
+    z.object({
+      mock: fallback(z.boolean().optional(), false),
+    })
+  ),
 });
 
 const indexRoute = createRoute({
