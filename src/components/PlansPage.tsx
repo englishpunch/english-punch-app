@@ -250,6 +250,32 @@ function BagDetail({
   }, [testMode]);
 
   const cardsToShow = (testMode ? mockCards : cards) ?? [];
+  const CARD_PAGE_SIZE = 20;
+  const [cardPage, setCardPage] = useState(1);
+
+  const cardTotalPages = useMemo(() => {
+    if (!cardsToShow.length) return 1;
+    return Math.ceil(cardsToShow.length / CARD_PAGE_SIZE);
+  }, [cardsToShow]);
+
+  const clampCardPage = (page: number) =>
+    Math.min(Math.max(page, 1), cardTotalPages);
+  const safeCardPage = clampCardPage(cardPage);
+  const setPage = (next: number | ((page: number) => number)) => {
+    setCardPage((prev) => {
+      const resolved =
+        typeof next === "function"
+          ? (next as (page: number) => number)(prev)
+          : next;
+      return clampCardPage(resolved);
+    });
+  };
+
+  const visibleCards = useMemo(() => {
+    if (!cardsToShow.length) return [];
+    const start = (safeCardPage - 1) * CARD_PAGE_SIZE;
+    return cardsToShow.slice(start, start + CARD_PAGE_SIZE);
+  }, [cardsToShow, safeCardPage]);
 
   const [cardEditor, setCardEditor] = useState<
     { mode: "create" } | { mode: "edit"; card: Card } | null
@@ -292,7 +318,7 @@ function BagDetail({
       </div>
 
       <div className="space-y-2">
-        {cardsToShow.map((card) => (
+        {visibleCards.map((card) => (
           <div
             key={card._id}
             className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
@@ -330,6 +356,33 @@ function BagDetail({
         )}
         {cardsToShow?.length === 0 && (
           <p className="text-sm text-gray-500">카드가 없습니다.</p>
+        )}
+        {cardsToShow.length > CARD_PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-2 text-xs text-gray-600">
+            <span>
+              {`페이지 ${safeCardPage} / ${cardTotalPages} · 총 ${cardsToShow.length}개`}
+            </span>
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-label="이전 페이지"
+                onClick={() => setPage((page) => page - 1)}
+                disabled={safeCardPage === 1}
+              >
+                이전
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                aria-label="다음 페이지"
+                onClick={() => setPage((page) => page + 1)}
+                disabled={safeCardPage === cardTotalPages}
+              >
+                다음
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </div>

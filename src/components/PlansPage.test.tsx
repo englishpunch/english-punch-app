@@ -252,4 +252,43 @@ describe("PlansPage cards", () => {
       bagId: "bag1",
     });
   });
+
+  it("paginates cards 20 per page inside bag detail", async () => {
+    const user = userEvent.setup();
+    const mockCards = Array.from({ length: 45 }, (_, i) => ({
+      _id: `card${i + 1}`,
+      question: `Question ${i + 1}`,
+      answer: `Answer ${i + 1}`,
+      hint: "",
+      explanation: "",
+    }));
+
+    mockedUseQuery.mockImplementation((_fn: any, args: any) => {
+      if (args?.bagId) return mockCards;
+      return [
+        {
+          _id: "bag1",
+          name: "Bag 1",
+          totalCards: mockCards.length,
+        },
+      ];
+    });
+
+    render(<PlansPage userId={"user_1" as Id<"users">} />);
+
+    await user.click(screen.getByRole("button", { name: /관리 bag 1/i }));
+
+    expect(screen.getAllByText(/Question \d+$/)).toHaveLength(20);
+    expect(screen.getByText(/^Question 1$/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Question 21$/)).not.toBeInTheDocument();
+    expect(screen.getByText(/페이지 1 \/ 3/)).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /다음 페이지/i }));
+
+    expect(screen.getByText(/^Question 21$/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Question 1$/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /이전 페이지/i }));
+    expect(screen.getByText(/^Question 1$/)).toBeInTheDocument();
+  });
 });
