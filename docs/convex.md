@@ -1,171 +1,103 @@
-# Convex
+---
+description: Guidelines and best practices for building Convex projects, including database schema design, queries, mutations, and real-world examples
+globs: **/*.ts,**/*.tsx,**/*.js,**/*.jsx
+---
 
-> Convex is the open source, reactive database where queries are TypeScript code
-> running right in the database. Just like React components react to state changes,
-> Convex queries react to database changes.
-
-Convex is a great fit for building fullstack apps with Next.js for web and Expo for
-mobile. It automatically handles storing data on the server, running server-side
-API functions, moving data between the client and server on WebSockets, state management
-on the client, and pushing changes for live updates. Server-side data fetching is
-automatically cached with full consistency, server-side mutators are fully transactional,
-and clients view consistent snapshots of application state.
-
-Convex also includes a scheduler for running background workflows, file storage for
-large objects, vector search, text search. Convex integrates with Clerk, Auth0, or any
-OIDC provider for authentication, and users can also use built-in Convex auth.
-
-Convex is open-source and can be self-hosted. Convex also offers a managed option with
-flexible, usage-based pricing.
-
-## Docs
-
-### Get started
-
-- [Tutorial](https://docs.convex.dev/tutorial/)
-- [React Quickstart](https://docs.convex.dev/quickstart/react)
-- [Next.js Quickstart](https://docs.convex.dev/quickstart/nextjs)
-- [Remix Quickstart](https://docs.convex.dev/quickstart/remix)
-- [TanStack Start Quickstart](https://docs.convex.dev/quickstart/tanstack-start)
-- [React Native Quickstart](https://docs.convex.dev/quickstart/react-native)
-- [Vue Quickstart](https://docs.convex.dev/quickstart/vue)
-- [Svelte Quickstart](https://docs.convex.dev/quickstart/svelte)
-- [Node.js Quickstart](https://docs.convex.dev/quickstart/nodejs)
-- [Bun Quickstart](https://docs.convex.dev/quickstart/bun)
-- [Script Tag Quickstart](https://docs.convex.dev/quickstart/script-tag)
-- [Python Quickstart](https://docs.convex.dev/quickstart/python)
-- [Android Kotlin Quickstart](https://docs.convex.dev/quickstart/android)
-- [iOS Swift Quickstart](https://docs.convex.dev/quickstart/swift)
-- [Rust Quickstart](https://docs.convex.dev/quickstart/rust)
-
-### Platform
-
-- [AI Code Generation](https://docs.convex.dev/ai)
-- [Self Hosting](https://docs.convex.dev/self-hosting)
-
-### Understand Convex
-
-- [Convex Overview](https://docs.convex.dev/understanding/)
-- [Dev workflow](https://docs.convex.dev/understanding/workflow)
-- [Best Practices](https://docs.convex.dev/understanding/best-practices/)
-- [The Zen of Convex](https://docs.convex.dev/understanding/zen)
-
-### API Reference
-
-- [React](https://docs.convex.dev/client/react)
-- [TanStack Query](https://docs.convex.dev/client/tanstack-query)
-- [Svelte](https://docs.convex.dev/client/svelte)
-- [Python](https://docs.convex.dev/client/python)
-- [Swift](https://docs.convex.dev/client/swift)
-- [Android Kotlin](https://docs.convex.dev/client/android)
-- [Convex API](https://docs.convex.dev/api/)
-- [Generated Code](https://docs.convex.dev/generated-api/)
-- [HTTP API](https://docs.convex.dev/http-api/)
-- [Errors](https://docs.convex.dev/error)
-
-## Stack
-
-[Stack](https://stack.convex.dev) is the Convex developer portal and blog,
-sharing bright ideas and techniques for building with Convex.
-
-# Guidelines for writing Convex code
+# Convex guidelines
 
 ## Function guidelines
 
 ### New function syntax
 
 - ALWAYS use the new function syntax for Convex functions. For example:
-  `typescript
-  import { query } from "./_generated/server";
-  import { v } from "convex/values";
-  export const f = query({
-      args: {},
-      returns: v.null(),
-      handler: async (ctx, args) => {
-      // Function body
-      },
-  });
-  `
+
+```typescript
+import { query } from "./_generated/server";
+import { v } from "convex/values";
+export const f = query({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    // Function body
+  },
+});
+```
 
 ### Http endpoint syntax
 
 - HTTP endpoints are defined in `convex/http.ts` and require an `httpAction` decorator. For example:
-  `typescript
-  import { httpRouter } from "convex/server";
-  import { httpAction } from "./_generated/server";
-  const http = httpRouter();
-  http.route({
-      path: "/echo",
-      method: "POST",
-      handler: httpAction(async (ctx, req) => {
-      const body = await req.bytes();
-      return new Response(body, { status: 200 });
-      }),
-  });
-  `
+
+```typescript
+import { httpRouter } from "convex/server";
+import { httpAction } from "./_generated/server";
+const http = httpRouter();
+http.route({
+  path: "/echo",
+  method: "POST",
+  handler: httpAction(async (ctx, req) => {
+    const body = await req.bytes();
+    return new Response(body, { status: 200 });
+  }),
+});
+```
+
 - HTTP endpoints are always registered at the exact path you specify in the `path` field. For example, if you specify `/api/someRoute`, the endpoint will be registered at `/api/someRoute`.
 
 ### Validators
 
 - Below is an example of an array validator:
 
-  ````typescript
-  import { mutation } from "./\_generated/server";
-  import { v } from "convex/values";
+```typescript
+import { mutation } from "./_generated/server";
+import { v } from "convex/values";
 
-                            export default mutation({
-                            args: {
-                                simpleArray: v.array(v.union(v.string(), v.number())),
-                            },
-                            handler: async (ctx, args) => {
-                                //...
-                            },
-                            });
-                            ```
-
-  ````
+export default mutation({
+  args: {
+    simpleArray: v.array(v.union(v.string(), v.number())),
+  },
+  handler: async (ctx, args) => {
+    //...
+  },
+});
+```
 
 - Below is an example of a schema with validators that codify a discriminated union type:
 
-  ````typescript
-  import { defineSchema, defineTable } from "convex/server";
-  import { v } from "convex/values";
+```typescript
+import { defineSchema, defineTable } from "convex/server";
+import { v } from "convex/values";
 
-                            export default defineSchema({
-                                results: defineTable(
-                                    v.union(
-                                        v.object({
-                                            kind: v.literal("error"),
-                                            errorMessage: v.string(),
-                                        }),
-                                        v.object({
-                                            kind: v.literal("success"),
-                                            value: v.number(),
-                                        }),
-                                    ),
-                                )
-                            });
-                            ```
-
-  ````
+export default defineSchema({
+  results: defineTable(
+    v.union(
+      v.object({
+        kind: v.literal("error"),
+        errorMessage: v.string(),
+      }),
+      v.object({
+        kind: v.literal("success"),
+        value: v.number(),
+      })
+    )
+  ),
+});
+```
 
 - Always use the `v.null()` validator when returning a null value. Below is an example query that returns a null value:
 
-  ````typescript
-  import { query } from "./\_generated/server";
-  import { v } from "convex/values";
+```typescript
+import { query } from "./_generated/server";
+import { v } from "convex/values";
 
-                                  export const exampleQuery = query({
-                                    args: {},
-                                    returns: v.null(),
-                                    handler: async (ctx, args) => {
-                                        console.log("This query returns a null value");
-                                        return null;
-                                    },
-                                  });
-                                  ```
-
-  ````
+export const exampleQuery = query({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    console.log("This query returns a null value");
+    return null;
+  },
+});
+```
 
 - Here are the valid Convex types along with their respective validators:
   Convex Type | TS/JS type | Example Usage | Validator for argument validation and schemas | Notes |
@@ -199,25 +131,24 @@ sharing bright ideas and techniques for building with Convex.
 - All of these calls take in a `FunctionReference`. Do NOT try to pass the callee function directly into one of these calls.
 - When using `ctx.runQuery`, `ctx.runMutation`, or `ctx.runAction` to call a function in the same file, specify a type annotation on the return value to work around TypeScript circularity limitations. For example,
 
-  ````
-  export const f = query({
+```
+export const f = query({
   args: { name: v.string() },
   returns: v.string(),
   handler: async (ctx, args) => {
-  return "Hello " + args.name;
+    return "Hello " + args.name;
   },
-  });
+});
 
-                            export const g = query({
-                              args: {},
-                              returns: v.null(),
-                              handler: async (ctx, args) => {
-                                const result: string = await ctx.runQuery(api.example.f, { name: "Bob" });
-                                return null;
-                              },
-                            });
-                            ```
-  ````
+export const g = query({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const result: string = await ctx.runQuery(api.example.f, { name: "Bob" });
+    return null;
+  },
+});
+```
 
 ### Function references
 
@@ -239,25 +170,26 @@ sharing bright ideas and techniques for building with Convex.
 - Paginated queries are queries that return a list of results in incremental pages.
 - You can define pagination using the following syntax:
 
-                            ```ts
-                            import { v } from "convex/values";
-                            import { query, mutation } from "./_generated/server";
-                            import { paginationOptsValidator } from "convex/server";
-                            export const listWithExtraArg = query({
-                                args: { paginationOpts: paginationOptsValidator, author: v.string() },
-                                handler: async (ctx, args) => {
-                                    return await ctx.db
-                                    .query("messages")
-                                    .filter((q) => q.eq(q.field("author"), args.author))
-                                    .order("desc")
-                                    .paginate(args.paginationOpts);
-                                },
-                            });
-                            ```
-                            Note: `paginationOpts` is an object with the following properties:
-                            - `numItems`: the maximum number of documents to return (the validator is `v.number()`)
-                            - `cursor`: the cursor to use to fetch the next page of documents (the validator is `v.union(v.string(), v.null())`)
+```ts
+import { v } from "convex/values";
+import { query, mutation } from "./_generated/server";
+import { paginationOptsValidator } from "convex/server";
+export const listWithExtraArg = query({
+  args: { paginationOpts: paginationOptsValidator, author: v.string() },
+  handler: async (ctx, args) => {
+    return await ctx.db
+      .query("messages")
+      .filter((q) => q.eq(q.field("author"), args.author))
+      .order("desc")
+      .paginate(args.paginationOpts);
+  },
+});
+```
 
+Note: `paginationOpts` is an object with the following properties:
+
+- `numItems`: the maximum number of documents to return (the validator is `v.number()`)
+- `cursor`: the cursor to use to fetch the next page of documents (the validator is `v.union(v.string(), v.null())`)
 - A query that ends in `.paginate()` returns an object that has the following properties: - page (contains an array of documents that you fetches) - isDone (a boolean that represents whether or not this is the last page of documents) - continueCursor (a string that represents the cursor to use to fetch the next page of documents)
 
 ## Validator guidelines
@@ -278,28 +210,26 @@ sharing bright ideas and techniques for building with Convex.
 - You can use the helper typescript type `Id` imported from './\_generated/dataModel' to get the type of the id for a given table. For example if there is a table called 'users' you can use `Id<'users'>` to get the type of the id for that table.
 - If you need to define a `Record` make sure that you correctly provide the type of the key and value in the type. For example a validator `v.record(v.id('users'), v.string())` would have the type `Record<Id<'users'>, string>`. Below is an example of using `Record` with an `Id` type in a query:
 
-  ````ts
-  import { query } from "./\_generated/server";
-  import { Doc, Id } from "./\_generated/dataModel";
+```ts
+import { query } from "./_generated/server";
+import { Doc, Id } from "./_generated/dataModel";
 
-                    export const exampleQuery = query({
-                        args: { userIds: v.array(v.id("users")) },
-                        returns: v.record(v.id("users"), v.string()),
-                        handler: async (ctx, args) => {
-                            const idToUsername: Record<Id<"users">, string> = {};
-                            for (const userId of args.userIds) {
-                                const user = await ctx.db.get(userId);
-                                if (user) {
-                                    users[user._id] = user.username;
-                                }
-                            }
+export const exampleQuery = query({
+  args: { userIds: v.array(v.id("users")) },
+  returns: v.record(v.id("users"), v.string()),
+  handler: async (ctx, args) => {
+    const idToUsername: Record<Id<"users">, string> = {};
+    for (const userId of args.userIds) {
+      const user = await ctx.db.get(userId);
+      if (user) {
+        idToUsername[user._id] = user.username;
+      }
+    }
 
-                            return idToUsername;
-                        },
-                    });
-                    ```
-
-  ````
+    return idToUsername;
+  },
+});
+```
 
 - Be strict with types, particularly around id's of documents. For example, if a function takes in an id for a document in the 'users' table, take in `Id<'users'>` rather than `string`.
 - Always use `as const` for string literals in discriminated union types.
@@ -342,19 +272,18 @@ q.search("body", "hello hi").eq("channel", "#general"),
 - Never use `ctx.db` inside of an action. Actions don't have access to the database.
 - Below is an example of the syntax for an action:
 
-  ````ts
-  import { action } from "./\_generated/server";
+```ts
+import { action } from "./_generated/server";
 
-                    export const exampleAction = action({
-                        args: {},
-                        returns: v.null(),
-                        handler: async (ctx, args) => {
-                            console.log("This action does not return anything");
-                            return null;
-                        },
-                    });
-                    ```
-  ````
+export const exampleAction = action({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    console.log("This action does not return anything");
+    return null;
+  },
+});
+```
 
 ## Scheduling guidelines
 
@@ -364,31 +293,29 @@ q.search("body", "hello hi").eq("channel", "#general"),
 - Both cron methods take in a FunctionReference. Do NOT try to pass the function directly into one of these methods.
 - Define crons by declaring the top-level `crons` object, calling some methods on it, and then exporting it as default. For example,
 
-  ````ts
-  import { cronJobs } from "convex/server";
-  import { internal } from "./\_generated/api";
-  import { internalAction } from "./\_generated/server";
+```ts
+import { cronJobs } from "convex/server";
+import { internal } from "./_generated/api";
+import { internalAction } from "./_generated/server";
 
-                            const empty = internalAction({
-                              args: {},
-                              returns: v.null(),
-                              handler: async (ctx, args) => {
-                                console.log("empty");
-                              },
-                            });
+const empty = internalAction({
+  args: {},
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    console.log("empty");
+  },
+});
 
-                            const crons = cronJobs();
+const crons = cronJobs();
 
-                            // Run `internal.crons.empty` every two hours.
-                            crons.interval("delete inactive users", { hours: 2 }, internal.crons.empty, {});
+// Run `internal.crons.empty` every two hours.
+crons.interval("delete inactive users", { hours: 2 }, internal.crons.empty, {});
 
-                            export default crons;
-                            ```
-
-  ````
+export default crons;
+```
 
 - You can register Convex functions within `crons.ts` just like any other file.
-- If a cron calls an internal function, always import the `internal` object from '\_generated/api`, even if the internal function is registered in the same file.
+- If a cron calls an internal function, always import the `internal` object from '\_generated/api', even if the internal function is registered in the same file.
 
 ## File storage guidelines
 
@@ -397,28 +324,29 @@ q.search("body", "hello hi").eq("channel", "#general"),
 - Do NOT use the deprecated `ctx.storage.getMetadata` call for loading a file's metadata.
 
                     Instead, query the `_storage` system table. For example, you can use `ctx.db.system.get` to get an `Id<"_storage">`.
-                    ```
-                    import { query } from "./_generated/server";
-                    import { Id } from "./_generated/dataModel";
 
-                    type FileMetadata = {
-                        _id: Id<"_storage">;
-                        _creationTime: number;
-                        contentType?: string;
-                        sha256: string;
-                        size: number;
-                    }
+```
+import { query } from "./_generated/server";
+import { Id } from "./_generated/dataModel";
 
-                    export const exampleQuery = query({
-                        args: { fileId: v.id("_storage") },
-                        returns: v.null();
-                        handler: async (ctx, args) => {
-                            const metadata: FileMetadata | null = await ctx.db.system.get(args.fileId);
-                            console.log(metadata);
-                            return null;
-                        },
-                    });
-                    ```
+type FileMetadata = {
+    _id: Id<"_storage">;
+    _creationTime: number;
+    contentType?: string;
+    sha256: string;
+    size: number;
+}
+
+export const exampleQuery = query({
+    args: { fileId: v.id("_storage") },
+    returns: v.null(),
+    handler: async (ctx, args) => {
+        const metadata: FileMetadata | null = await ctx.db.system.get(args.fileId);
+        console.log(metadata);
+        return null;
+    },
+});
+```
 
 - Convex storage stores items as `Blob` objects. You must convert all items to/from a `Blob` when using Convex storage.
 
@@ -637,7 +565,7 @@ export const listMessages = query({
       channelId: v.id("channels"),
       authorId: v.optional(v.id("users")),
       content: v.string(),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
     const messages = await ctx.db
@@ -715,7 +643,7 @@ export const loadContext = internalQuery({
     v.object({
       role: v.union(v.literal("user"), v.literal("assistant")),
       content: v.string(),
-    }),
+    })
   ),
   handler: async (ctx, args) => {
     const channel = await ctx.db.get(args.channelId);
