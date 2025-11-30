@@ -10,6 +10,7 @@
     "setup.mjs",
     "src/lib/deeplink.ts",
     "src/lib/tauri.ts",
+    "src/routes/__root.tsx",
   ],
 
   // Files to analyze across frontend and Convex backend
@@ -26,6 +27,7 @@
     "src-tauri/target/**",
     "dist/**",
     "coverage/**",
+    "src/routeTree.gen.ts",
   ],
 
   // Dependencies driven outside the TS analyzer (Rust plugins, Tailwind CSS import)
@@ -33,8 +35,11 @@
     "@fabianlars/tauri-plugin-oauth",
     "@tauri-apps/plugin-opener",
     "tailwindcss",
-    "vibe-rules",
+    "@testing-library/*",
   ],
+
+  // Binaries referenced in scripts but intentionally unmanaged by knip
+  "ignoreBinaries": ["vibe-rules"],
 
   "includeEntryExports": false,
 }
