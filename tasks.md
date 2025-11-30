@@ -36,3 +36,4 @@
 
 - Document Convex env var export: `npx convex env set GEMINI_API_KEY "<your-key>"`.
 - Add an AI spend/usage limit control.
+- Try to bundle into a single file for reducing network requests. (netlify cost concern)
