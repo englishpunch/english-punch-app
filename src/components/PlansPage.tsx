@@ -1,10 +1,5 @@
 import { useMemo, useState } from "react";
-import {
-  ReactMutation,
-  useAction,
-  useMutation,
-  useQuery,
-} from "convex/react";
+import { ReactMutation, useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
@@ -342,9 +337,7 @@ function BagDetail({
         )}
         {cardsToShow.length > CARD_PAGE_SIZE && (
           <div className="flex items-center justify-between pt-2 text-xs text-gray-600">
-            <span>
-              {`페이지 ${safeCardPage} / ${cardTotalPages} · 총 ${cardsToShow.length}개`}
-            </span>
+            <span>{`페이지 ${safeCardPage} / ${cardTotalPages} · 총 ${cardsToShow.length}개`}</span>
             <div className="flex gap-2">
               <Button
                 variant="secondary"
@@ -407,19 +400,30 @@ function CardEditorPage({
       return;
     }
 
+    const previousAnswer = form.answer.trim();
     setIsGenerating(true);
     try {
       const aiDraft = await generateDraft({ answer: form.answer });
+      const nextAnswer = aiDraft.finalAnswer || previousAnswer;
+
       setForm((current) => ({
         ...current,
-        ...aiDraft,
+        question: aiDraft.question,
+        hint: aiDraft.hint,
+        explanation: aiDraft.explanation,
+        answer: nextAnswer,
       }));
-      toast.success("Gemini가 질문과 설명을 채웠어요. 검토 후 저장하세요.");
+
+      if (aiDraft.finalAnswer && aiDraft.finalAnswer !== previousAnswer) {
+        toast.success(
+          `정답을 "${previousAnswer}" → "${aiDraft.finalAnswer}"로 바꿨어요. 검토 후 저장하세요.`
+        );
+      } else {
+        toast.success("질문과 설명을 채웠어요. 검토 후 저장하세요.");
+      }
     } catch (error) {
       const message =
-        error instanceof Error
-          ? error.message
-          : "Gemini 요청 중 문제가 발생했습니다.";
+        error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
       logger.error("CardEditorPage", message);
       toast.error(message);
     } finally {
@@ -534,13 +538,14 @@ function CardEditorPage({
               ) : (
                 <>
                   <Sparkles className="h-4 w-4" aria-hidden />
-                  AI 생성
+                  생성
                 </>
               )}
             </Button>
           </div>
           <p className="text-xs text-gray-500">
-            정답을 적고 AI 생성 버튼을 누르면 질문·힌트·설명이 자동 완성돼요.
+            정답을 적고 생성 버튼을 누르면 질문·힌트·설명이 자동 완성돼요.
+            기본형 단어일 땐 AI가 자연스러운 활용형으로 정답을 바꿀 수도 있어요.
           </p>
         </div>
 

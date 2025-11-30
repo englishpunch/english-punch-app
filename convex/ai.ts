@@ -6,9 +6,17 @@ import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
 const cardSchema = z.object({
-  question: z.string().describe("The question text with a blank represented as ___."),
+  question: z
+    .string()
+    .describe("The question text with a blank represented as ___."),
   hint: z.string().describe("A short hint for the question."),
   explanation: z.string().describe("An explanation of the answer."),
+  finalAnswer: z
+    .string()
+    .optional()
+    .describe(
+      "Optional: the inflected/changed answer to actually use when you adjusted the base-form input. Omit when unchanged."
+    ),
 });
 
 const GEMINI_MODEL = "gemini-3-pro-preview";
@@ -18,10 +26,13 @@ const buildPrompt = (answer: string): string => {
   const trimmed = answer.trim();
   return [
     "You help me create English flashcards.",
-    `Correct answer: "${trimmed}".`,
-    "Question: 20-30 English words, natural sentences, include a single blank written as ___, never reveal the answer.",
+    `User provided answer (may be base form): "${trimmed}".`,
+    "You may change the answer only when all of these are true: it is a single-word base form (infinitive verb or singular noun), changing tense/number makes the sentence more natural, and the new form stays aligned with the original meaning.",
+    "Never change multi-word answers or answers that are already inflected/specific; reuse them as-is.",
+    "If you change the answer, set finalAnswer to the new form and write the question, hint, and explanation using that finalAnswer. Otherwise omit finalAnswer.",
+    "Question: 20-30 English words, natural sentences, include one blank written as ___, never reveal the answer.",
     "Hint: short, easy English under 12 words; do not include the answer.",
-    "Explanation: 30-50 simple English words; may include the answer plainly; define meaning and how it fits the blank.",
+    "Explanation: 30-50 simple English words; define meaning and how it fits the blank;",
   ].join("\n");
 };
 
@@ -32,11 +43,13 @@ export const generateCardDraft = action({
     question: v.string(),
     hint: v.string(),
     explanation: v.string(),
+    finalAnswer: v.optional(v.string()),
   }),
 
   handler: async (_ctx, args) => {
     const answer = args.answer.trim();
-    const runId = "ai:generateCardDraft:" + Math.random().toString(36).slice(2, 8);
+    const runId =
+      "ai:generateCardDraft:" + Math.random().toString(36).slice(2, 8);
     if (!answer) {
       throw new Error("정답을 입력해주세요.");
     }
@@ -63,7 +76,7 @@ export const generateCardDraft = action({
 
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
-      contents: buildPrompt(args.answer),
+      contents: prompt,
       config: {
         responseMimeType: "application/json",
         responseJsonSchema: zodToJsonSchema(cardSchema),
@@ -89,6 +102,7 @@ export const generateCardDraft = action({
       stage: "card parsed",
       questionPreview: card.question.slice(0, 60),
       hintPreview: card.hint.slice(0, 40),
+      finalAnswerApplied: card.finalAnswer,
     });
 
     return card;
