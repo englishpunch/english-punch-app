@@ -14,7 +14,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -22,6 +22,13 @@ jobs:
 
       - name: Lint
         run: npm run lint
+
+      - name: Vibe rules (must leave no diff)
+        env:
+          npm_config_yes: "true" # auto-confirm npx install prompts
+        run: |
+          npm run vibe-rules
+          git diff --exit-code
 
       - name: Knip (dead code/deps)
         run: npm run knip

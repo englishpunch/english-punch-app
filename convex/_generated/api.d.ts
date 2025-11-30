@@ -9,6 +9,7 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as ai from "../ai.js";
 import type * as auth from "../auth.js";
 import type * as fsrs from "../fsrs.js";
 import type * as fsrsSchema from "../fsrsSchema.js";
@@ -24,6 +25,7 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  ai: typeof ai;
   auth: typeof auth;
   fsrs: typeof fsrs;
   fsrsSchema: typeof fsrsSchema;

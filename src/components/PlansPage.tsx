@@ -1,9 +1,22 @@
 import { useMemo, useState } from "react";
-import { ReactMutation, useMutation, useQuery } from "convex/react";
+import {
+  ReactMutation,
+  useAction,
+  useMutation,
+  useQuery,
+} from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
-import { Plus, Trash2, Edit2, ArrowLeft } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  ArrowLeft,
+  Loader2,
+  Sparkles,
+} from "lucide-react";
+import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
 import useIsMock from "@/hooks/useIsMock";
 const logger = getGlobalLogger();
@@ -100,7 +113,11 @@ export default function PlansPage({ userId }: PlansPageProps) {
           <h2 className="text-base font-semibold text-gray-900">샌드백 추가</h2>
         </div>
         <div className="mt-3 flex gap-2">
+          <label className="sr-only" htmlFor="new-bag-name">
+            새 샌드백 이름
+          </label>
           <input
+            id="new-bag-name"
             className="flex-1 px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
             placeholder="새 샌드백 이름"
             value={newBagName}
@@ -375,12 +392,40 @@ function CardEditorPage({
   updateCard: ReactMutation<typeof api.learning.updateCard>;
 }) {
   const isMock = useIsMock();
+  const generateDraft = useAction(api.ai.generateCardDraft);
   const [form, setForm] = useState({
     question: card?.question || "",
     answer: card?.answer || "",
     hint: card?.hint || "",
     explanation: card?.explanation || "",
   });
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handleGenerate = async () => {
+    if (!form.answer.trim()) {
+      toast.error("정답을 먼저 입력해주세요.");
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const aiDraft = await generateDraft({ answer: form.answer });
+      setForm((current) => ({
+        ...current,
+        ...aiDraft,
+      }));
+      toast.success("Gemini가 질문과 설명을 채웠어요. 검토 후 저장하세요.");
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Gemini 요청 중 문제가 발생했습니다.";
+      logger.error("CardEditorPage", message);
+      toast.error(message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!form.question.trim() || !form.answer.trim()) return;
@@ -437,37 +482,106 @@ function CardEditorPage({
         </h2>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-3">
-        <input
-          className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
-          placeholder="질문을 입력"
-          value={form.question}
-          onChange={(e) => setForm((f) => ({ ...f, question: e.target.value }))}
-        />
-        <input
-          className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
-          placeholder="정답을 입력"
-          value={form.answer}
-          onChange={(e) => setForm((f) => ({ ...f, answer: e.target.value }))}
-        />
-        <input
-          className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
-          placeholder="힌트 (선택)"
-          value={form.hint}
-          onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
-        />
-        <textarea
-          className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
-          placeholder="설명 (선택)"
-          value={form.explanation}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, explanation: e.target.value }))
-          }
-        />
+      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-4">
+        <div className="space-y-1">
+          <label
+            className="text-sm font-medium text-gray-700"
+            htmlFor="card-question"
+          >
+            질문
+          </label>
+          <input
+            id="card-question"
+            className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+            placeholder="질문을 입력"
+            value={form.question}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, question: e.target.value }))
+            }
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label
+            className="text-sm font-medium text-gray-700"
+            htmlFor="card-answer"
+          >
+            정답
+          </label>
+          <div className="flex gap-2">
+            <input
+              id="card-answer"
+              className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+              placeholder="정답을 입력"
+              value={form.answer}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, answer: e.target.value }))
+              }
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => void handleGenerate()}
+              disabled={isGenerating || isMock}
+              aria-label="Gemini로 질문 생성"
+            >
+              {isGenerating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  생성 중...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="h-4 w-4" aria-hidden />
+                  AI 생성
+                </>
+              )}
+            </Button>
+          </div>
+          <p className="text-xs text-gray-500">
+            정답을 적고 AI 생성 버튼을 누르면 질문·힌트·설명이 자동 완성돼요.
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <label
+            className="text-sm font-medium text-gray-700"
+            htmlFor="card-hint"
+          >
+            힌트 (선택)
+          </label>
+          <input
+            id="card-hint"
+            className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+            placeholder="힌트"
+            value={form.hint}
+            onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
+          />
+        </div>
+
+        <div className="space-y-1">
+          <label
+            className="text-sm font-medium text-gray-700"
+            htmlFor="card-explanation"
+          >
+            설명 (선택)
+          </label>
+          <textarea
+            id="card-explanation"
+            className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+            placeholder="설명"
+            value={form.explanation}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, explanation: e.target.value }))
+            }
+          />
+        </div>
         <Button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onClick={handleSave}
           className="w-full"
+          disabled={isGenerating}
           aria-label="저장"
         >
           저장

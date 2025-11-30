@@ -17,7 +17,7 @@
     "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css}\" \"convex/**/*.{ts,tsx}\"",
     "knip": "knip",
     "change-password": "tsx src/scripts/changePassword.ts",
-    "vibe-rules": "npx vibe-rules install codex"
+    "vibe-rules": "npx vibe-rules install codex && prettier --write AGENTS.md"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.90",
