@@ -23,11 +23,7 @@ type SessionCard = {
   reps: number;
 };
 
-export default function FSRSStudySession({
-  bagId,
-  userId,
-  onComplete,
-}: FSRSStudySessionProps) {
+export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStudySessionProps) {
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -43,12 +39,7 @@ export default function FSRSStudySession({
   const dueCards = useQuery(api.learning.getDueCards, {
     userId,
     bagId,
-    limit: 20,
-  });
-  const newCards = useQuery(api.learning.getNewCards, {
-    userId,
-    bagId,
-    limit: 10,
+    limit: 30,
   });
 
   const startSession = useMutation(api.fsrs.startSession);
@@ -77,15 +68,15 @@ export default function FSRSStudySession({
 
   // 세션 카드 목록을 한 번만 설정
   React.useEffect(() => {
-    if ((dueCards || newCards) && sessionCards.length === 0) {
-      const due = dueCards || [];
-      const newCardsToAdd = newCards || [];
+    if (dueCards && sessionCards.length === 0) {
+      const allDue = dueCards;
+      const newCardsOnly = allDue.filter((card) => card.state === 0);
+      const reviewAndLearningCards = allDue.filter((card) => card.state !== 0);
 
-      // 복습 카드를 우선하고, 새 카드를 적절히 섞음
-      const combined = [...due];
+      // 복습/학습 카드를 우선하고, 새 카드를 복습 카드 사이에 배치 (3:1 비율)
+      const combined = [...reviewAndLearningCards];
 
-      // 새 카드를 복습 카드 사이에 배치 (3:1 비율)
-      newCardsToAdd.forEach((cardItem, index) => {
+      newCardsOnly.forEach((cardItem, index) => {
         const insertIndex = Math.min((index + 1) * 4, combined.length);
         combined.splice(insertIndex, 0, cardItem);
       });
@@ -93,7 +84,7 @@ export default function FSRSStudySession({
       console.log("🎯 Session cards fixed:", combined.length, "cards");
       setSessionCards(combined);
     }
-  }, [dueCards, newCards, sessionCards.length]);
+  }, [dueCards, sessionCards.length]);
 
   const allCards: SessionCard[] = sessionCards;
 
@@ -175,37 +166,25 @@ export default function FSRSStudySession({
             <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4 text-primary-700">
               <CheckCircle2 className="h-8 w-8" aria-hidden />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              학습 완료!
-            </h2>
-            <p className="text-gray-600 mb-6">
-              총 {completedCount}장의 카드를 학습했습니다.
-            </p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">학습 완료!</h2>
+            <p className="text-gray-600 mb-6">총 {completedCount}장의 카드를 학습했습니다.</p>
 
             {/* 세션 통계 */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div className="rounded-lg border border-gray-200 bg-red-50 p-3">
-                <div className="text-red-600 font-semibold text-lg">
-                  {sessionStats.again}
-                </div>
+                <div className="text-red-600 font-semibold text-lg">{sessionStats.again}</div>
                 <div className="text-red-600 text-sm">다시</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">
-                  {sessionStats.hard}
-                </div>
+                <div className="text-primary-700 font-semibold text-lg">{sessionStats.hard}</div>
                 <div className="text-gray-700 text-sm">어려움</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">
-                  {sessionStats.good}
-                </div>
+                <div className="text-primary-700 font-semibold text-lg">{sessionStats.good}</div>
                 <div className="text-gray-700 text-sm">보통</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">
-                  {sessionStats.easy}
-                </div>
+                <div className="text-primary-700 font-semibold text-lg">{sessionStats.easy}</div>
                 <div className="text-gray-700 text-sm">쉬움</div>
               </div>
             </div>
@@ -228,9 +207,7 @@ export default function FSRSStudySession({
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
             <FileText className="w-8 h-8" aria-hidden />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">
-            학습할 카드가 없습니다
-          </h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-2">학습할 카드가 없습니다</h2>
           <p className="text-gray-600 mb-6">
             모든 카드를 학습했거나 아직 복습 시간이 되지 않았습니다.
           </p>
@@ -248,12 +225,7 @@ export default function FSRSStudySession({
       <div className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-2">
-            <Button
-              onClick={handleBack}
-              variant="secondary"
-              size="sm"
-              className="gap-2"
-            >
+            <Button onClick={handleBack} variant="secondary" size="sm" className="gap-2">
               <ArrowLeft className="w-4 h-4" aria-hidden />
               <span className="text-sm font-medium">홈으로</span>
             </Button>
