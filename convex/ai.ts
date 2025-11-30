@@ -1,6 +1,6 @@
 import { action } from "./_generated/server";
 import { v } from "convex/values";
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import { getGlobalLogger } from "../src/lib/globalLogger";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
@@ -54,7 +54,7 @@ export const generateCardDraft = action({
 
     const prompt = buildPrompt(answer);
 
-    logger.debug(runId, {
+    logger.info(runId, {
       stage: "prompt_built",
       promptPreview: prompt.slice(0, 120),
     });
@@ -67,12 +67,16 @@ export const generateCardDraft = action({
       config: {
         responseMimeType: "application/json",
         responseJsonSchema: zodToJsonSchema(cardSchema),
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.LOW,
+        },
       },
     });
 
     logger.info(runId, {
       stage: "response_received",
       text: response.text,
+      usage: response.usageMetadata,
     });
 
     if (!response.text) {
