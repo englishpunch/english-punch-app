@@ -193,7 +193,9 @@ The `LinkProps` type extends the [`ActiveLinkOptions`](../ActiveLinkOptionsType.
 ```tsx
 type LinkProps = ActiveLinkOptions &
   Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "children"> & {
-    children?: React.ReactNode | ((state: { isActive: boolean }) => React.ReactNode);
+    children?:
+      | React.ReactNode
+      | ((state: { isActive: boolean }) => React.ReactNode);
   };
 ```
 
@@ -392,7 +394,12 @@ The `NotFoundRoute` constructor accepts an object as its only argument.
 ```tsx
 Omit<
   RouteOptions,
-  "path" | "id" | "getParentRoute" | "caseSensitive" | "parseParams" | "stringifyParams"
+  | "path"
+  | "id"
+  | "getParentRoute"
+  | "caseSensitive"
+  | "parseParams"
+  | "stringifyParams"
 >;
 ```
 
@@ -541,7 +548,12 @@ The options that will be used to configure the root route instance.
 ```tsx
 Omit<
   RouteOptions,
-  "path" | "id" | "getParentRoute" | "caseSensitive" | "parseParams" | "stringifyParams"
+  | "path"
+  | "id"
+  | "getParentRoute"
+  | "caseSensitive"
+  | "parseParams"
+  | "stringifyParams"
 >;
 ```
 
@@ -2097,7 +2109,11 @@ import { Await } from "@tanstack/react-router";
 function Component() {
   const { deferredPromise } = route.useLoaderData();
 
-  return <Await promise={deferredPromise}>{(data) => <div>{JSON.stringify(data)}</div>}</Await>;
+  return (
+    <Await promise={deferredPromise}>
+      {(data) => <div>{JSON.stringify(data)}</div>}
+    </Await>
+  );
 }
 ```
 
@@ -2145,7 +2161,10 @@ import { CatchBoundary } from "@tanstack/react-router";
 
 function Component() {
   return (
-    <CatchBoundary getResetKey={() => "reset"} onCatch={(error) => console.error(error)}>
+    <CatchBoundary
+      getResetKey={() => "reset"}
+      onCatch={(error) => console.error(error)}
+    >
       <div>My Component</div>
     </CatchBoundary>
   );
@@ -2190,7 +2209,9 @@ import { CatchNotFound } from "@tanstack/react-router";
 
 function Component() {
   return (
-    <CatchNotFound fallback={(error) => <p>Not found error! {JSON.stringify(error)}</p>}>
+    <CatchNotFound
+      fallback={(error) => <p>Not found error! {JSON.stringify(error)}</p>}
+    >
       <ComponentThatMightThrowANotFoundError />
     </CatchNotFound>
   );
@@ -2223,7 +2244,10 @@ The component to render if the JS is loaded in the client.
 ```tsx
 // src/routes/dashboard.tsx
 import { ClientOnly, createFileRoute } from "@tanstack/react-router";
-import { Charts, FallbackCharts } from "./charts-that-break-server-side-rendering";
+import {
+  Charts,
+  FallbackCharts,
+} from "./charts-that-break-server-side-rendering";
 
 export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
@@ -2301,7 +2325,10 @@ A new function that accepts a single argument of partial of the type [`RouteOpti
 - Type:
 
 ```tsx
-Pick<RouteOptions, "component" | "pendingComponent" | "errorComponent" | "notFoundComponent">;
+Pick<
+  RouteOptions,
+  "component" | "pendingComponent" | "errorComponent" | "notFoundComponent"
+>;
 ```
 
 - [`RouteOptions`](../RouteOptionsType.md)
@@ -2344,7 +2371,10 @@ A new function that accepts a single argument of partial of the type [`RouteOpti
 - Type:
 
 ```tsx
-Pick<RouteOptions, "component" | "pendingComponent" | "errorComponent" | "notFoundComponent">;
+Pick<
+  RouteOptions,
+  "component" | "pendingComponent" | "errorComponent" | "notFoundComponent"
+>;
 ```
 
 - [`RouteOptions`](../RouteOptionsType.md)
@@ -2367,7 +2397,11 @@ function IndexComponent() {
 }
 
 // src/routeTree.tsx
-import { createRootRouteWithContext, createRoute, Outlet } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  createRoute,
+  Outlet,
+} from "@tanstack/react-router";
 
 interface MyRouterContext {
   foo: string;
@@ -2398,7 +2432,12 @@ The options that will be used to configure the root route instance.
 ```tsx
 Omit<
   RouteOptions,
-  "path" | "id" | "getParentRoute" | "caseSensitive" | "parseParams" | "stringifyParams"
+  | "path"
+  | "id"
+  | "getParentRoute"
+  | "caseSensitive"
+  | "parseParams"
+  | "stringifyParams"
 >;
 ```
 
@@ -2450,7 +2489,10 @@ The `createRootRouteWithContext` function accepts a single generic argument:
 ## Examples
 
 ```tsx
-import { createRootRouteWithContext, createRouter } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  createRouter,
+} from "@tanstack/react-router";
 import { QueryClient } from "@tanstack/react-query";
 
 interface MyRouterContext {
@@ -2623,7 +2665,11 @@ function MyComponent() {
 
   // or
 
-  return <Await promise={deferredPromise}>{(data) => <div>{JSON.stringify(data)}</div>}</Await>;
+  return (
+    <Await promise={deferredPromise}>
+      {(data) => <div>{JSON.stringify(data)}</div>}
+    </Await>
+  );
 }
 ```
 
@@ -3527,7 +3573,9 @@ function Component() {
 
   return (
     <div>
-      {canGoBack ? <button onClick={() => router.history.back()}>Go back</button> : null}
+      {canGoBack ? (
+        <button onClick={() => router.history.back()}>Go back</button>
+      ) : null}
 
       {/* ... */}
     </div>
@@ -3582,7 +3630,8 @@ The `useLinkProps` hook that takes an object as its argument and returns a `Reac
 ## useLinkProps options
 
 ```tsx
-type UseLinkPropsOptions = ActiveLinkOptions & React.AnchorHTMLAttributes<HTMLAnchorElement>;
+type UseLinkPropsOptions = ActiveLinkOptions &
+  React.AnchorHTMLAttributes<HTMLAnchorElement>;
 ```
 
 - [`ActiveLinkOptions`](../ActiveLinkOptionsType.md)
@@ -4685,7 +4734,12 @@ export default defineConfig({
       autoCodeSplitting: true,
       codeSplittingOptions: {
         defaultBehavior: [
-          ["component", "pendingComponent", "errorComponent", "notFoundComponent"], // Bundle all UI components together
+          [
+            "component",
+            "pendingComponent",
+            "errorComponent",
+            "notFoundComponent",
+          ], // Bundle all UI components together
         ],
       },
     }),
@@ -5185,9 +5239,13 @@ interface BasicLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
   // Add any additional props you want to pass to the anchor element
 }
 
-const BasicLinkComponent = React.forwardRef<HTMLAnchorElement, BasicLinkProps>((props, ref) => {
-  return <a ref={ref} {...props} className={"block px-3 py-2 text-blue-700"} />;
-});
+const BasicLinkComponent = React.forwardRef<HTMLAnchorElement, BasicLinkProps>(
+  (props, ref) => {
+    return (
+      <a ref={ref} {...props} className={"block px-3 py-2 text-blue-700"} />
+    );
+  }
+);
 
 const CreatedLinkComponent = createLink(BasicLinkComponent);
 
@@ -5253,17 +5311,25 @@ import * as React from "react";
 import { createLink, LinkComponent } from "@tanstack/react-router";
 import { Link } from "@chakra-ui/react";
 
-interface ChakraLinkProps extends Omit<React.ComponentPropsWithoutRef<typeof Link>, "href"> {
+interface ChakraLinkProps extends Omit<
+  React.ComponentPropsWithoutRef<typeof Link>,
+  "href"
+> {
   // Add any additional props you want to pass to the link
 }
 
-const ChakraLinkComponent = React.forwardRef<HTMLAnchorElement, ChakraLinkProps>((props, ref) => {
+const ChakraLinkComponent = React.forwardRef<
+  HTMLAnchorElement,
+  ChakraLinkProps
+>((props, ref) => {
   return <Link ref={ref} {...props} />;
 });
 
 const CreatedLinkComponent = createLink(ChakraLinkComponent);
 
-export const CustomLink: LinkComponent<typeof ChakraLinkComponent> = (props) => {
+export const CustomLink: LinkComponent<typeof ChakraLinkComponent> = (
+  props
+) => {
   return (
     <CreatedLinkComponent
       textDecoration={"underline"}
@@ -5304,9 +5370,9 @@ interface MUILinkProps extends LinkProps {
   // Add any additional props you want to pass to the Link
 }
 
-const MUILinkComponent = React.forwardRef<HTMLAnchorElement, MUILinkProps>((props, ref) => (
-  <Link ref={ref} {...props} />
-));
+const MUILinkComponent = React.forwardRef<HTMLAnchorElement, MUILinkProps>(
+  (props, ref) => <Link ref={ref} {...props} />
+);
 
 const CreatedLinkComponent = createLink(MUILinkComponent);
 
@@ -5332,13 +5398,16 @@ interface MUIButtonLinkProps extends ButtonProps<"a"> {
   // Add any additional props you want to pass to the Button
 }
 
-const MUIButtonLinkComponent = React.forwardRef<HTMLAnchorElement, MUIButtonLinkProps>(
-  (props, ref) => <Button ref={ref} component="a" {...props} />
-);
+const MUIButtonLinkComponent = React.forwardRef<
+  HTMLAnchorElement,
+  MUIButtonLinkProps
+>((props, ref) => <Button ref={ref} component="a" {...props} />);
 
 const CreatedButtonLinkComponent = createLink(MUIButtonLinkComponent);
 
-export const CustomButtonLink: LinkComponent<typeof MUIButtonLinkComponent> = (props) => {
+export const CustomButtonLink: LinkComponent<typeof MUIButtonLinkComponent> = (
+  props
+) => {
   return <CreatedButtonLinkComponent preload={"intent"} {...props} />;
 };
 ```
@@ -5369,15 +5438,18 @@ interface MantineAnchorProps extends Omit<AnchorProps, "href"> {
   // Add any additional props you want to pass to the anchor
 }
 
-const MantineLinkComponent = React.forwardRef<HTMLAnchorElement, MantineAnchorProps>(
-  (props, ref) => {
-    return <Anchor ref={ref} {...props} />;
-  }
-);
+const MantineLinkComponent = React.forwardRef<
+  HTMLAnchorElement,
+  MantineAnchorProps
+>((props, ref) => {
+  return <Anchor ref={ref} {...props} />;
+});
 
 const CreatedLinkComponent = createLink(MantineLinkComponent);
 
-export const CustomLink: LinkComponent<typeof MantineLinkComponent> = (props) => {
+export const CustomLink: LinkComponent<typeof MantineLinkComponent> = (
+  props
+) => {
   return <CreatedLinkComponent preload="intent" {...props} />;
 };
 ```
@@ -5407,7 +5479,11 @@ It would be serialized and escaped into the following search string:
 We can implement the default behavior with the following code:
 
 ```tsx
-import { createRouter, parseSearchWith, stringifySearchWith } from "@tanstack/react-router";
+import {
+  createRouter,
+  parseSearchWith,
+  stringifySearchWith,
+} from "@tanstack/react-router";
 
 const router = createRouter({
   // ...
@@ -5432,11 +5508,17 @@ Here are some examples of how you can customize the search param serialization i
 It's common to base64 encode your search params to achieve maximum compatibility across browsers and URL unfurlers, etc. This can be done with the following code:
 
 ```tsx
-import { Router, parseSearchWith, stringifySearchWith } from "@tanstack/react-router";
+import {
+  Router,
+  parseSearchWith,
+  stringifySearchWith,
+} from "@tanstack/react-router";
 
 const router = createRouter({
   parseSearch: parseSearchWith((value) => JSON.parse(decodeFromBinary(value))),
-  stringifySearch: stringifySearchWith((value) => encodeToBinary(JSON.stringify(value))),
+  stringifySearch: stringifySearchWith((value) =>
+    encodeToBinary(JSON.stringify(value))
+  ),
 });
 
 function decodeFromBinary(str: string): string {
@@ -5503,7 +5585,11 @@ So, if we were to turn the previous object into a search string using this confi
 [JSURL2](https://github.com/wmertens/jsurl2) is a non-standard library that can compress URLs while still maintaining readability. This can be done with the following code:
 
 ```tsx
-import { Router, parseSearchWith, stringifySearchWith } from "@tanstack/react-router";
+import {
+  Router,
+  parseSearchWith,
+  stringifySearchWith,
+} from "@tanstack/react-router";
 import { parse, stringify } from "jsurl2";
 
 const router = createRouter({
@@ -5524,12 +5610,18 @@ So, if we were to turn the previous object into a search string using this confi
 [Zipson](https://jgranstrom.github.io/zipson/) is a very user-friendly and performant JSON compression library (both in runtime performance and the resulting compression performance). To compress your search params with it (which requires escaping/unescaping and base64 encoding/decoding them as well), you can use the following code:
 
 ```tsx
-import { Router, parseSearchWith, stringifySearchWith } from "@tanstack/react-router";
+import {
+  Router,
+  parseSearchWith,
+  stringifySearchWith,
+} from "@tanstack/react-router";
 import { stringify, parse } from "zipson";
 
 const router = createRouter({
   parseSearch: parseSearchWith((value) => parse(decodeFromBinary(value))),
-  stringifySearch: stringifySearchWith((value) => encodeToBinary(stringify(value))),
+  stringifySearch: stringifySearchWith((value) =>
+    encodeToBinary(stringify(value))
+  ),
 });
 
 function decodeFromBinary(str: string): string {
@@ -6768,7 +6860,11 @@ export function createRouter() {
     },
     // Optionally, we can use `Wrap` to wrap our router in the loader client provider
     Wrap: ({ children }) => {
-      return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+      return (
+        <QueryClientProvider client={queryClient}>
+          {children}
+        </QueryClientProvider>
+      );
     },
   });
 }
@@ -7071,7 +7167,11 @@ function MyComponent() {
   // OR
 
   return (
-    <Block shouldBlockFn={() => formIsDirty} enableBeforeUnload={formIsDirty} withResolver>
+    <Block
+      shouldBlockFn={() => formIsDirty}
+      enableBeforeUnload={formIsDirty}
+      withResolver
+    >
       {({ status, proceed, reset }) => <>{/* ... */}</>}
     </Block>
   );
@@ -7241,7 +7341,9 @@ type ToOptions<
   // `hash` is either a string or a function that supplies the previous hash and allows you to return a new one.
   hash?: string | ((prevHash: string) => string);
   // `state` is either an object of state or a function that supplies the previous state and allows you to return a new one. State is stored in the history API and can be useful for passing data between routes that you do not want to permanently store in URL search params.
-  state?: Record<string, any> | ((prevState: Record<string, unknown>) => Record<string, unknown>);
+  state?:
+    | Record<string, any>
+    | ((prevState: Record<string, unknown>) => Record<string, unknown>);
 };
 ```
 
@@ -7337,9 +7439,13 @@ export type LinkProps<
   TTo extends string = "",
 > = LinkOptions<RegisteredRouter["routeTree"], TFrom, TTo> & {
   // A function that returns additional props for the `active` state of this link. These props override other props passed to the link (`style`'s are merged, `className`'s are concatenated)
-  activeProps?: FrameworkHTMLAnchorTagAttributes | (() => FrameworkHTMLAnchorAttributes);
+  activeProps?:
+    | FrameworkHTMLAnchorTagAttributes
+    | (() => FrameworkHTMLAnchorAttributes);
   // A function that returns additional props for the `inactive` state of this link. These props override other props passed to the link (`style`'s are merged, `className`'s are concatenated)
-  inactiveProps?: FrameworkHTMLAnchorAttributes | (() => FrameworkHTMLAnchorAttributes);
+  inactiveProps?:
+    | FrameworkHTMLAnchorAttributes
+    | (() => FrameworkHTMLAnchorAttributes);
 };
 ```
 
@@ -8696,7 +8802,10 @@ function Navigation() {
       </Link>
 
       {/* Navigate with multiple optional parameters */}
-      <Link to="/posts/{-$category}/{-$slug}" params={{ category: "tech", slug: "react-tips" }}>
+      <Link
+        to="/posts/{-$category}/{-$slug}"
+        params={{ category: "tech", slug: "react-tips" }}
+      >
         Specific Post
       </Link>
     </div>
@@ -8890,15 +8999,24 @@ function AdvancedLanguageSwitcher() {
 
   return (
     <div className="language-switcher">
-      <Link to="/{-$locale}/blog/{-$category}/$slug" params={handleLanguageChange("fr")}>
+      <Link
+        to="/{-$locale}/blog/{-$category}/$slug"
+        params={handleLanguageChange("fr")}
+      >
         Français
       </Link>
 
-      <Link to="/{-$locale}/blog/{-$category}/$slug" params={handleLanguageChange("es")}>
+      <Link
+        to="/{-$locale}/blog/{-$category}/$slug"
+        params={handleLanguageChange("es")}
+      >
         Español
       </Link>
 
-      <Link to="/{-$locale}/blog/{-$category}/$slug" params={handleLanguageChange("en")}>
+      <Link
+        to="/{-$locale}/blog/{-$category}/$slug"
+        params={handleLanguageChange("en")}
+      >
         English
       </Link>
     </div>
@@ -9470,7 +9588,10 @@ These are just suggested uses of the router context. You can use it for whatever
 Like everything else, the root router context is strictly typed. This type can be augmented via any route's `beforeLoad` option as it is merged down the route match tree. To constrain the type of the root router context, you must use the `createRootRouteWithContext<YourContextTypeHere>()(routeOptions)` function to create a new router context instead of the `createRootRoute()` function to create your root route. Here's an example:
 
 ```tsx
-import { createRootRouteWithContext, createRouter } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  createRouter,
+} from "@tanstack/react-router";
 
 interface MyRouterContext {
   user: User;
@@ -9583,7 +9704,10 @@ export const Route = createFileRoute("/todos")({
 ### How about an external data fetching library?
 
 ```tsx
-import { createRootRouteWithContext, createRouter } from "@tanstack/react-router";
+import {
+  createRootRouteWithContext,
+  createRouter,
+} from "@tanstack/react-router";
 
 interface MyRouterContext {
   queryClient: QueryClient;
@@ -9777,7 +9901,9 @@ export const Route = createRootRoute({
   component: () => {
     const matches = useRouterState({ select: (s) => s.matches });
 
-    const matchWithTitle = [...matches].reverse().find((d) => d.context.getTitle);
+    const matchWithTitle = [...matches]
+      .reverse()
+      .find((d) => d.context.getTitle);
 
     const title = matchWithTitle?.context.getTitle() || "My App";
 
@@ -9813,7 +9939,9 @@ For complex selectors that cannot be simply resolved using `document.querySelect
 
 ```tsx
 const selector = () =>
-  document.querySelector("#shadowRootParent")?.shadowRoot?.querySelector("#main-scrollable-area");
+  document
+    .querySelector("#shadowRootParent")
+    ?.shadowRoot?.querySelector("#main-scrollable-area");
 
 const router = createRouter({
   scrollToTopSelectors: [selector],
@@ -9885,7 +10013,9 @@ import { createRouter } from "@tanstack/react-router";
 const router = createRouter({
   getScrollRestorationKey: (location) => {
     const paths = ["/", "/chat"];
-    return paths.includes(location.pathname) ? location.pathname : location.state.__TSR_key!;
+    return paths.includes(location.pathname)
+      ? location.pathname
+      : location.state.__TSR_key!;
   },
 });
 ```
@@ -10227,7 +10357,9 @@ import { z } from "zod";
 const productSearchSchema = z.object({
   page: fallback(z.number(), 1).default(1),
   filter: fallback(z.string(), "").default(""),
-  sort: fallback(z.enum(["newest", "oldest", "price"]), "newest").default("newest"),
+  sort: fallback(z.enum(["newest", "oldest", "price"]), "newest").default(
+    "newest"
+  ),
 });
 
 export const Route = createFileRoute("/shop/products/")({
@@ -10243,7 +10375,9 @@ While not recommended, it is also possible to configure `input` and `output` typ
 const productSearchSchema = z.object({
   page: fallback(z.number(), 1).default(1),
   filter: fallback(z.string(), "").default(""),
-  sort: fallback(z.enum(["newest", "oldest", "price"]), "newest").default("newest"),
+  sort: fallback(z.enum(["newest", "oldest", "price"]), "newest").default(
+    "newest"
+  ),
 });
 
 export const Route = createFileRoute("/shop/products/")({
@@ -10271,7 +10405,10 @@ import * as v from "valibot";
 const productSearchSchema = v.object({
   page: v.optional(v.fallback(v.number(), 1), 1),
   filter: v.optional(v.fallback(v.string(), ""), ""),
-  sort: v.optional(v.fallback(v.picklist(["newest", "oldest", "price"]), "newest"), "newest"),
+  sort: v.optional(
+    v.fallback(v.picklist(["newest", "oldest", "price"]), "newest"),
+    "newest"
+  ),
 });
 
 export const Route = createFileRoute("/shop/products/")({
@@ -10733,7 +10870,10 @@ using `defaultRenderHandler`
 
 ```tsx
 // src/entry-server.tsx
-import { createRequestHandler, defaultRenderToString } from "@tanstack/react-router/ssr/server";
+import {
+  createRequestHandler,
+  defaultRenderToString,
+} from "@tanstack/react-router/ssr/server";
 import { createRouter } from "./router";
 
 export async function render({ request }: { request: Request }) {
@@ -10809,7 +10949,10 @@ using `defaultStreamHandler`
 
 ```tsx
 // src/entry-server.tsx
-import { createRequestHandler, defaultStreamHandler } from "@tanstack/react-router/ssr/server";
+import {
+  createRequestHandler,
+  defaultStreamHandler,
+} from "@tanstack/react-router/ssr/server";
 import { createRouter } from "./router";
 
 export async function render({ request }: { request: Request }) {
@@ -11302,7 +11445,12 @@ export function Menu(props: MenuProps): React.ReactNode {
 This of course allows the following `items` prop to be completely type-safe
 
 ```tsx
-<Menu items={[{ to: "/posts" }, { to: "/posts/$postId", params: { postId: "postId" } }]} />
+<Menu
+  items={[
+    { to: "/posts" },
+    { to: "/posts/$postId", params: { postId: "postId" } },
+  ]}
+/>
 ```
 
 It is also possible to fix `from` for each `Link` options in the array. This would allow all `Menu` items to navigate relative to `from`. Additional type checking of `from` can be provided by the `ValidateFromPath` utility
@@ -11338,7 +11486,10 @@ export function Menu(props: MenuProps): React.ReactNode {
 `ValidateLinkOptionsArray` allows you to fix `from` by providing an extra type parameter. The result is a type safe array of `Link` options providing navigation relative to `from`
 
 ```tsx
-<Menu from="/posts" items={[{ to: "." }, { to: "./$postId", params: { postId: "postId" } }]} />
+<Menu
+  from="/posts"
+  items={[{ to: "." }, { to: "./$postId", params: { postId: "postId" } }]}
+/>
 ```
 
 ## Type checking redirect options with `ValidateRedirectOptions`
@@ -11349,7 +11500,10 @@ export function Menu(props: MenuProps): React.ReactNode {
 export async function fetchOrRedirect<
   TRouter extends RegisteredRouter = RegisteredRouter,
   TOptions,
->(url: string, redirectOptions: ValidateRedirectOptions<TRouter, TOptions>): Promise<unknown>;
+>(
+  url: string,
+  redirectOptions: ValidateRedirectOptions<TRouter, TOptions>
+): Promise<unknown>;
 export async function fetchOrRedirect(
   url: string,
   redirectOptions: ValidateRedirectOptions
@@ -11386,7 +11540,9 @@ export interface UseConditionalNavigateResult {
 export function useConditionalNavigate<
   TRouter extends RegisteredRouter = RegisteredRouter,
   TOptions,
->(navigateOptions: ValidateNavigateOptions<TRouter, TOptions>): UseConditionalNavigateResult;
+>(
+  navigateOptions: ValidateNavigateOptions<TRouter, TOptions>
+): UseConditionalNavigateResult;
 export function useConditionalNavigate(
   navigateOptions: ValidateNavigateOptions
 ): UseConditionalNavigateResult {
@@ -12655,7 +12811,13 @@ Here's a quick example of using virtual file routes to map a route tree to a set
 
 ```tsx
 // routes.ts
-import { rootRoute, route, index, layout, physical } from "@tanstack/virtual-file-routes";
+import {
+  rootRoute,
+  route,
+  index,
+  layout,
+  physical,
+} from "@tanstack/virtual-file-routes";
 
 export const routes = rootRoute("root.tsx", [
   index("index.tsx"),
@@ -12885,9 +13047,16 @@ Let's look at the `bar` directory which contains a special file named `__virtual
 
 ```tsx
 // routes/foo/bar/__virtual.ts
-import { defineVirtualSubtreeConfig, index, route } from "@tanstack/virtual-file-routes";
+import {
+  defineVirtualSubtreeConfig,
+  index,
+  route,
+} from "@tanstack/virtual-file-routes";
 
-export default defineVirtualSubtreeConfig([index("home.tsx"), route("$id", "details.tsx")]);
+export default defineVirtualSubtreeConfig([
+  index("home.tsx"),
+  route("$id", "details.tsx"),
+]);
 ```
 
 The helper function `defineVirtualSubtreeConfig` is closely modeled after vite's `defineConfig` and allows you to define a subtree configuration via a default export. The default export can either be
@@ -13363,7 +13532,11 @@ function Posts() {
     <div>
       <nav>
         {posts.map((post) => (
-          <Link key={post.id} to={`/posts/$postId`} params={{ postId: post.id }}>
+          <Link
+            key={post.id}
+            to={`/posts/$postId`}
+            params={{ postId: post.id }}
+          >
             {post.title}
           </Link>
         ))}
@@ -14424,7 +14597,9 @@ But this is only one part of setting up a basic application. TanStack Router req
 > 🤯 If this route-tree were in its own file for an application with ~40-50 routes, it can easily grow up to 700+ lines.
 
 ```tsx
-const routeTree = rootRoute.addChildren([postsRoute.addChildren([postsIndexRoute, postsIdRoute])]);
+const routeTree = rootRoute.addChildren([
+  postsRoute.addChildren([postsIndexRoute, postsIdRoute]),
+]);
 ```
 
 This complexity only increases as you begin to use more features of the router, such as nested context, loaders, search param validation, etc. As such, it no longer becomes feasible to define your routes in a single file. And so, users end up building their own _semi consistent_ way of defining their routes across multiple files. This can lead to inconsistencies and errors in the route configuration.
@@ -14616,7 +14791,10 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 It can then be attached to provided shadow DOM target:
 
 ```js
-<TanStackRouterDevtoolsPanel shadowDOMTarget={shadowContainer} router={router} />
+<TanStackRouterDevtoolsPanel
+  shadowDOMTarget={shadowContainer}
+  router={router}
+/>
 ```
 
 Click [here](https://tanstack.com/router/latest/docs/framework/react/examples/basic-devtools-panel) to see a live example of this in StackBlitz.
@@ -14632,7 +14810,11 @@ function App() {
   return (
     <>
       <Router router={router} />
-      <TanStackRouterDevtoolsPanel router={router} style={styles} className={className} />
+      <TanStackRouterDevtoolsPanel
+        router={router}
+        style={styles}
+        className={className}
+      />
     </>
   );
 }
