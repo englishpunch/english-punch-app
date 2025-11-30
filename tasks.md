@@ -1,3 +1,7 @@
+## Notes
+
+- The deploy branch is `main-deploy`.
+
 ## TODO
 
 ### Routing
@@ -31,4 +35,4 @@
 ### Operations
 
 - Document Convex env var export: `npx convex env set GEMINI_API_KEY "<your-key>"`.
-- Add a spend/usage limit control.
+- Add an AI spend/usage limit control.
