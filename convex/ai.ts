@@ -19,6 +19,15 @@ const cardSchema = z.object({
     ),
 });
 
+const hintExplanationSchema = z.object({
+  hint: z.string().describe("A short hint for the question."),
+  explanation: z
+    .string()
+    .describe(
+      "An explanation of the answer, why it fits, and simple guidance."
+    ),
+});
+
 const GEMINI_MODEL = "gemini-3-pro-preview";
 const logger = getGlobalLogger();
 
@@ -106,5 +115,85 @@ export const generateCardDraft = action({
     });
 
     return card;
+  },
+});
+
+const buildHintExplanationPrompt = (question: string, answer: string): string =>
+  [
+    "You help me refine flashcards.",
+    `Question text (includes a blank as ___): "${question.trim()}"`,
+    `Correct answer to fit the blank: "${answer.trim()}"`,
+    "Return only JSON. Do not include the answer directly in the hint or explanation.",
+    "Hint: under 12 English words, give a nudge without revealing the answer.",
+    "Explanation: 30-50 simple English words explaining the meaning and why the answer fits the blank. Avoid repeating the question verbatim.",
+  ].join("\n");
+
+export const regenerateHintAndExplanation = action({
+  args: { question: v.string(), answer: v.string() },
+  returns: v.object({
+    hint: v.string(),
+    explanation: v.string(),
+  }),
+  handler: async (_ctx, args) => {
+    const question = args.question.trim();
+    const answer = args.answer.trim();
+    const runId =
+      "ai:regenerateHintAndExplanation:" +
+      Math.random().toString(36).slice(2, 8);
+
+    if (!question) {
+      throw new Error("질문을 입력해주세요.");
+    }
+
+    if (!answer) {
+      throw new Error("정답을 입력해주세요.");
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
+    }
+
+    logger.info(runId, {
+      stage: "start",
+      model: GEMINI_MODEL,
+      questionLength: question.length,
+      answerLength: answer.length,
+    });
+
+    const prompt = buildHintExplanationPrompt(question, answer);
+
+    logger.info(runId, {
+      stage: "prompt_built",
+      promptPreview: prompt.slice(0, 120),
+    });
+
+    const ai = new GoogleGenAI({ apiKey });
+
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseJsonSchema: zodToJsonSchema(hintExplanationSchema),
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.LOW,
+        },
+      },
+    });
+
+    if (!response.text) {
+      throw new Error("Gemini 응답이 비어있습니다.");
+    }
+
+    const result = hintExplanationSchema.parse(JSON.parse(response.text));
+
+    logger.info(runId, {
+      stage: "parsed",
+      hintPreview: result.hint.slice(0, 60),
+      explanationPreview: result.explanation.slice(0, 80),
+    });
+
+    return result;
   },
 });
