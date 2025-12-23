@@ -387,9 +387,8 @@ function CardEditorPage({
 }) {
   const isMock = useIsMock();
   const generateDraft = useAction(api.ai.generateCardDraft);
-  const regenerateHintAndExplanation = useAction(
-    api.ai.regenerateHintAndExplanation
-  );
+  const regenerateHint = useAction(api.ai.regenerateHint);
+  const regenerateExplanation = useAction(api.ai.regenerateExplanation);
   const [form, setForm] = useState({
     question: card?.question || "",
     answer: card?.answer || "",
@@ -448,21 +447,27 @@ function CardEditorPage({
     setLoading(true);
 
     try {
-      const aiDraft = await regenerateHintAndExplanation({
-        question: form.question,
-        answer: form.answer,
-      });
-
-      setForm((current) => ({
-        ...current,
-        ...(target === "hint"
-          ? { hint: aiDraft.hint }
-          : { explanation: aiDraft.explanation }),
-      }));
-
-      toast.success(
-        target === "hint" ? "힌트를 새로 만들었어요." : "설명을 새로 만들었어요."
-      );
+      if (target === "hint") {
+        const aiDraft = await regenerateHint({
+          question: form.question,
+          answer: form.answer,
+        });
+        setForm((current) => ({
+          ...current,
+          hint: aiDraft.hint,
+        }));
+        toast.success("힌트를 새로 만들었어요.");
+      } else {
+        const aiDraft = await regenerateExplanation({
+          question: form.question,
+          answer: form.answer,
+        });
+        setForm((current) => ({
+          ...current,
+          explanation: aiDraft.explanation,
+        }));
+        toast.success("설명을 새로 만들었어요.");
+      }
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";

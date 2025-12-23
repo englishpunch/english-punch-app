@@ -19,8 +19,11 @@ const cardSchema = z.object({
     ),
 });
 
-const hintExplanationSchema = z.object({
+const hintSchema = z.object({
   hint: z.string().describe("A short hint for the question."),
+});
+
+const explanationSchema = z.object({
   explanation: z
     .string()
     .describe(
@@ -118,41 +121,48 @@ export const generateCardDraft = action({
   },
 });
 
-const buildHintExplanationPrompt = (question: string, answer: string): string =>
+const buildHintPrompt = (question: string, answer: string): string =>
   [
-    "You help me refine flashcards.",
+    "You help me refine flashcard hints.",
     `Question text (includes a blank as ___): "${question.trim()}"`,
     `Correct answer to fit the blank: "${answer.trim()}"`,
-    "Return only JSON. Do not include the answer directly in the hint or explanation.",
     "Hint: under 12 English words, give a nudge without revealing the answer.",
-    "Explanation: 30-50 simple English words explaining the meaning and why the answer fits the blank. Avoid repeating the question verbatim.",
   ].join("\n");
 
-export const regenerateHintAndExplanation = action({
+const buildExplanationPrompt = (question: string, answer: string): string =>
+  [
+    "You help me refine flashcard explanations.",
+    `Question text (includes a blank as ___): "${question.trim()}"`,
+    `Correct answer to fit the blank: "${answer.trim()}"`,
+    "Explanation: 30-50 simple English words explaining meaning and why the answer fits the blank. Avoid repeating the question verbatim.",
+  ].join("\n");
+
+const requireInputs = (question: string, answer: string) => {
+  if (!question.trim()) {
+    throw new Error("질문을 입력해주세요.");
+  }
+  if (!answer.trim()) {
+    throw new Error("정답을 입력해주세요.");
+  }
+};
+
+const getAiClient = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
+  }
+  return new GoogleGenAI({ apiKey });
+};
+
+export const regenerateHint = action({
   args: { question: v.string(), answer: v.string() },
-  returns: v.object({
-    hint: v.string(),
-    explanation: v.string(),
-  }),
+  returns: v.object({ hint: v.string() }),
   handler: async (_ctx, args) => {
     const question = args.question.trim();
     const answer = args.answer.trim();
-    const runId =
-      "ai:regenerateHintAndExplanation:" +
-      Math.random().toString(36).slice(2, 8);
+    const runId = "ai:regenerateHint:" + Math.random().toString(36).slice(2, 8);
 
-    if (!question) {
-      throw new Error("질문을 입력해주세요.");
-    }
-
-    if (!answer) {
-      throw new Error("정답을 입력해주세요.");
-    }
-
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
-    }
+    requireInputs(question, answer);
 
     logger.info(runId, {
       stage: "start",
@@ -161,21 +171,20 @@ export const regenerateHintAndExplanation = action({
       answerLength: answer.length,
     });
 
-    const prompt = buildHintExplanationPrompt(question, answer);
+    const prompt = buildHintPrompt(question, answer);
 
     logger.info(runId, {
       stage: "prompt_built",
       promptPreview: prompt.slice(0, 120),
     });
 
-    const ai = new GoogleGenAI({ apiKey });
-
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
       contents: prompt,
       config: {
         responseMimeType: "application/json",
-        responseJsonSchema: zodToJsonSchema(hintExplanationSchema),
+        responseJsonSchema: zodToJsonSchema(hintSchema),
         thinkingConfig: {
           thinkingLevel: ThinkingLevel.LOW,
         },
@@ -186,11 +195,63 @@ export const regenerateHintAndExplanation = action({
       throw new Error("Gemini 응답이 비어있습니다.");
     }
 
-    const result = hintExplanationSchema.parse(JSON.parse(response.text));
+    const result = hintSchema.parse(JSON.parse(response.text));
 
     logger.info(runId, {
       stage: "parsed",
       hintPreview: result.hint.slice(0, 60),
+    });
+
+    return result;
+  },
+});
+
+export const regenerateExplanation = action({
+  args: { question: v.string(), answer: v.string() },
+  returns: v.object({ explanation: v.string() }),
+  handler: async (_ctx, args) => {
+    const question = args.question.trim();
+    const answer = args.answer.trim();
+    const runId =
+      "ai:regenerateExplanation:" + Math.random().toString(36).slice(2, 8);
+
+    requireInputs(question, answer);
+
+    logger.info(runId, {
+      stage: "start",
+      model: GEMINI_MODEL,
+      questionLength: question.length,
+      answerLength: answer.length,
+    });
+
+    const prompt = buildExplanationPrompt(question, answer);
+
+    logger.info(runId, {
+      stage: "prompt_built",
+      promptPreview: prompt.slice(0, 120),
+    });
+
+    const ai = getAiClient();
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseJsonSchema: zodToJsonSchema(explanationSchema),
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.LOW,
+        },
+      },
+    });
+
+    if (!response.text) {
+      throw new Error("Gemini 응답이 비어있습니다.");
+    }
+
+    const result = explanationSchema.parse(JSON.parse(response.text));
+
+    logger.info(runId, {
+      stage: "parsed",
       explanationPreview: result.explanation.slice(0, 80),
     });
 
