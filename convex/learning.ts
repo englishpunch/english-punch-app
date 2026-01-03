@@ -597,6 +597,38 @@ export const getBagCards = query({
   },
 });
 
+/** 백의 카드 페이지네이션 조회 (30개 단위) */
+export const getBagCardsPaginated = query({
+  args: {
+    bagId: v.id("bags"),
+    userId: v.id("users"),
+    paginationOpts: v.object({
+      numItems: v.number(),
+      cursor: v.union(v.string(), v.null()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const result = await ctx.db
+      .query("cards")
+      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
+      .filter((q) => q.eq(q.field("userId"), args.userId))
+      .order("desc")
+      .paginate(args.paginationOpts);
+
+    return {
+      ...result,
+      page: result.page.map((c) => ({
+        _id: c._id,
+        _creationTime: c._creationTime,
+        question: c.question,
+        answer: c.answer,
+        hint: c.hint,
+        explanation: c.explanation,
+      })),
+    };
+  },
+});
+
 const initialSchedule = (now: number) => ({
   due: now,
   stability: 0,

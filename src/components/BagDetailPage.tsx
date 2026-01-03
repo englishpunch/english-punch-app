@@ -1,5 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
-import { ReactMutation, useAction, useMutation, useQuery } from "convex/react";
+import {
+  ReactMutation,
+  useAction,
+  useMutation,
+  useQuery,
+  usePaginatedQuery,
+} from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
@@ -78,16 +84,23 @@ export default function BagDetailPage() {
     [bagsToShow, bagId]
   );
 
-  const cardArgs = isMock
-    ? "skip"
-    : userId && bag
-      ? {
+  // Use paginated query for cards
+  const paginatedCardsArgs =
+    isMock || !userId || !bag
+      ? "skip"
+      : {
           bagId: bag._id,
           userId,
-        }
-      : "skip";
+        };
 
-  const cards = useQuery(api.learning.getBagCards, cardArgs);
+  const {
+    results: paginatedCards,
+    status,
+    loadMore,
+  } = usePaginatedQuery(api.learning.getBagCardsPaginated, paginatedCardsArgs, {
+    initialNumItems: 30,
+  });
+
   const createCard = useMutation(api.learning.createCard);
   const updateCard = useMutation(api.learning.updateCard);
   const deleteCard = useMutation(api.learning.deleteCard);
@@ -105,8 +118,8 @@ export default function BagDetailPage() {
   }, [isMock]);
 
   const cardsToShow = useMemo(
-    () => (isMock ? mockCards : cards) ?? [],
-    [cards, isMock, mockCards]
+    () => (isMock ? mockCards : paginatedCards) ?? [],
+    [paginatedCards, isMock, mockCards]
   );
 
   const [cardEditor, setCardEditor] = useState<
@@ -355,9 +368,21 @@ export default function BagDetailPage() {
       </div>
 
       {table.getRowModel().rows.length > 0 && (
-        <div className="text-xs text-gray-600">
-          총 {table.getRowModel().rows.length}개
-          {searchQuery && ` (필터링됨: ${cardsToShow.length}개 중)`}
+        <div className="flex items-center justify-between text-xs text-gray-600">
+          <span>
+            총 {table.getRowModel().rows.length}개
+            {searchQuery && ` (필터링됨: ${cardsToShow.length}개 중)`}
+          </span>
+          {!isMock && status === "CanLoadMore" && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => loadMore(30)}
+              aria-label="더 보기"
+            >
+              더 보기 (30개)
+            </Button>
+          )}
         </div>
       )}
     </div>
