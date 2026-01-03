@@ -10,7 +10,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "lint": "eslint src",
+    "lint": "eslint src convex",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",

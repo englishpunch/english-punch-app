@@ -26,8 +26,9 @@ export const createSampleBag = mutation({
         userId: args.userId,
         fsrsParameters: {
           w: [
-            0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001, 1.8722, 0.1666, 0.796,
-            1.4835, 0.0614, 0.2629, 1.6483, 0.6014, 1.8729, 0.5425, 0.0912, 0.0658, 0.1542,
+            0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001,
+            1.8722, 0.1666, 0.796, 1.4835, 0.0614, 0.2629, 1.6483, 0.6014,
+            1.8729, 0.5425, 0.0912, 0.0658, 0.1542,
           ], // FSRS-6 기본값
           request_retention: 0.9,
           maximum_interval: 36500,
@@ -254,7 +255,9 @@ export const getDueCards = query({
 
     const cards = await ctx.db
       .query("cards")
-      .withIndex("by_user_and_due", (q) => q.eq("userId", args.userId).lte("due", nowTimestamp))
+      .withIndex("by_user_and_due", (q) =>
+        q.eq("userId", args.userId).lte("due", nowTimestamp)
+      )
       .filter((q) => q.eq(q.field("bagId"), args.bagId))
       .filter((q) => q.eq(q.field("suspended"), false))
       .order("asc")
@@ -435,41 +438,59 @@ export const getBagDetailStats = query({
       reviewCards: allCards.filter((card) => card.state === 2).length,
       relearningCards: allCards.filter((card) => card.state === 3).length,
       suspendedCards: allCards.filter((card) => card.suspended).length,
-      dueCards: allCards.filter((card) => card.due <= nowTimestamp && !card.suspended).length,
+      dueCards: allCards.filter(
+        (card) => card.due <= nowTimestamp && !card.suspended
+      ).length,
     };
 
     // 난이도 분포 (0-10 범위)
     const difficultyDistribution = {
       veryEasy: allCards.filter((card) => card.difficulty <= 2).length,
-      easy: allCards.filter((card) => card.difficulty > 2 && card.difficulty <= 4).length,
-      medium: allCards.filter((card) => card.difficulty > 4 && card.difficulty <= 6).length,
-      hard: allCards.filter((card) => card.difficulty > 6 && card.difficulty <= 8).length,
+      easy: allCards.filter(
+        (card) => card.difficulty > 2 && card.difficulty <= 4
+      ).length,
+      medium: allCards.filter(
+        (card) => card.difficulty > 4 && card.difficulty <= 6
+      ).length,
+      hard: allCards.filter(
+        (card) => card.difficulty > 6 && card.difficulty <= 8
+      ).length,
       veryHard: allCards.filter((card) => card.difficulty > 8).length,
     };
 
     // 안정성 분포 (일 단위)
     const stabilityDistribution = {
       veryLow: allCards.filter((card) => card.stability <= 1).length,
-      low: allCards.filter((card) => card.stability > 1 && card.stability <= 7).length,
-      medium: allCards.filter((card) => card.stability > 7 && card.stability <= 30).length,
-      high: allCards.filter((card) => card.stability > 30 && card.stability <= 90).length,
+      low: allCards.filter((card) => card.stability > 1 && card.stability <= 7)
+        .length,
+      medium: allCards.filter(
+        (card) => card.stability > 7 && card.stability <= 30
+      ).length,
+      high: allCards.filter(
+        (card) => card.stability > 30 && card.stability <= 90
+      ).length,
       veryHigh: allCards.filter((card) => card.stability > 90).length,
     };
 
     // 반복 횟수 분포
     const repsDistribution = {
       new: allCards.filter((card) => card.reps === 0).length,
-      beginner: allCards.filter((card) => card.reps > 0 && card.reps <= 3).length,
-      intermediate: allCards.filter((card) => card.reps > 3 && card.reps <= 10).length,
-      advanced: allCards.filter((card) => card.reps > 10 && card.reps <= 20).length,
+      beginner: allCards.filter((card) => card.reps > 0 && card.reps <= 3)
+        .length,
+      intermediate: allCards.filter((card) => card.reps > 3 && card.reps <= 10)
+        .length,
+      advanced: allCards.filter((card) => card.reps > 10 && card.reps <= 20)
+        .length,
       expert: allCards.filter((card) => card.reps > 20).length,
     };
 
     // 실수 횟수 분포
     const lapsesDistribution = {
       perfect: allCards.filter((card) => card.lapses === 0).length,
-      occasional: allCards.filter((card) => card.lapses > 0 && card.lapses <= 2).length,
-      frequent: allCards.filter((card) => card.lapses > 2 && card.lapses <= 5).length,
+      occasional: allCards.filter((card) => card.lapses > 0 && card.lapses <= 2)
+        .length,
+      frequent: allCards.filter((card) => card.lapses > 2 && card.lapses <= 5)
+        .length,
       problematic: allCards.filter((card) => card.lapses > 5).length,
     };
 
@@ -641,7 +662,9 @@ export const updateCard = mutation({
     learning_steps: v.optional(v.number()),
     reps: v.optional(v.number()),
     lapses: v.optional(v.number()),
-    state: v.optional(v.union(v.literal(0), v.literal(1), v.literal(2), v.literal(3))),
+    state: v.optional(
+      v.union(v.literal(0), v.literal(1), v.literal(2), v.literal(3))
+    ),
   },
   handler: async (ctx, args) => {
     const card = await ctx.db.get(args.cardId);

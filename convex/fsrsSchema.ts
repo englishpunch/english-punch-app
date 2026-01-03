@@ -1,6 +1,6 @@
 import { defineTable } from "convex/server";
 import { v } from "convex/values";
-import { Grades, Rating, State } from "ts-fsrs";
+import { Rating, State } from "ts-fsrs";
 
 /**
  * FSRS (Free Spaced Repetition Scheduler) 알고리즘을 지원하는
@@ -94,7 +94,7 @@ export const learningTables = {
       v.literal(0), // New
       v.literal(1), // Learning
       v.literal(2), // Review
-      v.literal(3), // Relearning
+      v.literal(3) // Relearning
     ),
 
     // 마지막 복습 정보
@@ -128,7 +128,7 @@ export const learningTables = {
       v.literal(Rating.Again), // Again
       v.literal(Rating.Hard), // Hard
       v.literal(Rating.Good), // Good
-      v.literal(Rating.Easy), // Easy
+      v.literal(Rating.Easy) // Easy
     ),
 
     // ts-fsrs ReviewLog 인터페이스 매칭
@@ -136,7 +136,7 @@ export const learningTables = {
       v.literal(State.New), // New
       v.literal(State.Learning), // Learning
       v.literal(State.Review), // Review
-      v.literal(State.Relearning), // Relearning
+      v.literal(State.Relearning) // Relearning
     ),
     due: v.number(), // 예정되었던 복습일 (timestamp)
     stability: v.number(), // 복습 전 안정성
@@ -153,7 +153,7 @@ export const learningTables = {
     reviewType: v.union(
       v.literal("manual"), // 수동 복습
       v.literal("scheduled"), // 예정된 복습
-      v.literal("cramming"), // 벼락치기
+      v.literal("cramming") // 벼락치기
     ),
   })
     .index("by_card", ["cardId"])
@@ -193,7 +193,7 @@ export const learningTables = {
     sessionType: v.union(
       v.literal("daily"), // 일일 학습
       v.literal("custom"), // 커스텀 학습
-      v.literal("cramming"), // 벼락치기
+      v.literal("cramming") // 벼락치기
     ),
   })
     .index("by_user", ["userId"])
@@ -240,7 +240,7 @@ export const learningTables = {
     level: v.union(
       v.literal("beginner"),
       v.literal("intermediate"),
-      v.literal("advanced"),
+      v.literal("advanced")
     ),
 
     // 카드 콘텐츠
