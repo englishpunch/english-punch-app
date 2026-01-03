@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ReactMutation, useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -331,8 +331,8 @@ function BagDetail({
     [columnHelper, isMock, deleteCard, bag._id]
   );
 
-  // Apply search filter
-  useMemo(() => {
+  // Apply search filter via useEffect
+  useEffect(() => {
     if (searchQuery) {
       setColumnFilters([{ id: "answer", value: searchQuery }]);
     } else {
@@ -352,13 +352,6 @@ function BagDetail({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    filterFns: {
-      auto: (row, columnId, filterValue) => {
-        const value = row.getValue(columnId);
-        if (typeof value !== "string") return false;
-        return value.toLowerCase().includes(filterValue.toLowerCase());
-      },
-    },
   });
 
   if (cardEditor) {
