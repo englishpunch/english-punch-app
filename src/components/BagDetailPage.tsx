@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
 import useIsMock from "@/hooks/useIsMock";
-import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   createColumnHelper,
   flexRender,
@@ -29,6 +29,7 @@ import {
   type SortingState,
   type ColumnFiltersState,
 } from "@tanstack/react-table";
+
 const logger = getGlobalLogger();
 
 type Card = {
@@ -43,12 +44,16 @@ type Card = {
   expression?: string;
 };
 
-export default function PlansPage() {
+export default function BagDetailPage() {
+  const { bagId } = useParams({ from: "/plans/$bagId" });
+  const isMock = useIsMock();
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
-  const isMock = useIsMock();
-  const [currentPage, setCurrentPage] = useState(1);
+  const navigate = useNavigate();
+  const searchParams = useSearch({ from: "/plans/$bagId" });
+  const searchQuery = searchParams.search || "";
 
+  // Get bag info
   const bagsArgs = isMock
     ? "skip"
     : userId
@@ -56,20 +61,7 @@ export default function PlansPage() {
           userId,
         }
       : "skip";
-  const bagsQuery = useQuery(api.learning.getUserBags, bagsArgs);
-  const createBag = useMutation(api.learning.createBag);
-  const deleteBag = useMutation(api.learning.deleteBag);
-
-  const [newBagName, setNewBagName] = useState("");
-  const [activeBagId, setActiveBagId] = useState<Id<"bags"> | null>(null);
-
-  const handleAddBag = async () => {
-    const name = newBagName.trim();
-    if (!name) return;
-    if (!userId) return;
-    await createBag({ userId, name });
-    setNewBagName("");
-  };
+  const bags = useQuery(api.learning.getUserBags, bagsArgs);
 
   const mockBags = useMemo(() => {
     if (!isMock) return [];
@@ -80,152 +72,15 @@ export default function PlansPage() {
     }));
   }, [isMock]);
 
-  const bags = isMock ? mockBags : bagsQuery;
-
-  const activeBag = useMemo(
-    () => bags?.find((d) => d._id === activeBagId) || null,
-    [bags, activeBagId]
+  const bagsToShow = isMock ? mockBags : bags;
+  const bag = useMemo(
+    () => bagsToShow?.find((d) => d._id === bagId) || null,
+    [bagsToShow, bagId]
   );
-
-  const PAGE_SIZE = 20;
-  const totalPages = useMemo(() => {
-    if (!bags?.length) return 1;
-    return Math.ceil(bags.length / PAGE_SIZE);
-  }, [bags]);
-
-  const clampPage = (page: number) => Math.min(Math.max(page, 1), totalPages);
-  const safeCurrentPage = clampPage(currentPage);
-  const setPage = (next: number | ((page: number) => number)) => {
-    setCurrentPage((prev) => {
-      const resolved =
-        typeof next === "function"
-          ? (next as (page: number) => number)(prev)
-          : next;
-      return clampPage(resolved);
-    });
-  };
-
-  const visibleBags = useMemo(() => {
-    if (!bags) return [];
-    const start = (safeCurrentPage - 1) * PAGE_SIZE;
-    return bags.slice(start, start + PAGE_SIZE);
-  }, [bags, safeCurrentPage]);
-
-  if (activeBag) {
-    return <BagDetail bag={activeBag} onBack={() => setActiveBagId(null)} />;
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-base font-semibold text-gray-900">샌드백 추가</h2>
-        </div>
-        <div className="mt-3 flex gap-2">
-          <label className="sr-only" htmlFor="new-bag-name">
-            새 샌드백 이름
-          </label>
-          <input
-            id="new-bag-name"
-            className="focus:border-primary-500 focus:ring-primary-500 flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-            placeholder="새 샌드백 이름"
-            value={newBagName}
-            onChange={(e) => setNewBagName(e.target.value)}
-          />
-          {/* eslint-disable-next-line @typescript-eslint/no-misused-promises */}
-          <Button onClick={handleAddBag} className="gap-2">
-            <Plus className="h-4 w-4" aria-hidden /> 샌드백 추가
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        {visibleBags.map((bag) => (
-          <div
-            key={bag._id}
-            className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-          >
-            <div>
-              <p className="text-sm font-semibold text-gray-900">{bag.name}</p>
-              <p className="text-xs text-gray-500">카드 {bag.totalCards}장</p>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setActiveBagId(bag._id)}
-                aria-label={`관리 ${bag.name}`}
-              >
-                관리
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => void deleteBag({ bagId: bag._id })}
-                aria-label={`삭제 ${bag.name}`}
-              >
-                <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
-              </Button>
-            </div>
-          </div>
-        ))}
-        {!bags && (
-          <div className="text-sm text-gray-500">샌드백을 불러오는 중...</div>
-        )}
-        {bags?.length === 0 && (
-          <div className="text-sm text-gray-500">
-            샌드백이 없습니다. 새로 추가해보세요.
-          </div>
-        )}
-        {bags && bags.length > PAGE_SIZE && (
-          <div className="flex items-center justify-between pt-2 text-xs text-gray-600">
-            <span>
-              페이지 {safeCurrentPage} / {totalPages} · 총 {bags.length}개
-            </span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                aria-label="이전 페이지"
-                onClick={() => setPage((page) => page - 1)}
-                disabled={safeCurrentPage === 1}
-              >
-                이전
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                aria-label="다음 페이지"
-                onClick={() => setPage((page) => page + 1)}
-                disabled={safeCurrentPage === totalPages}
-              >
-                다음
-              </Button>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function BagDetail({
-  bag,
-  onBack,
-}: {
-  bag: { _id: Id<"bags">; name: string };
-  onBack: () => void;
-}) {
-  const isMock = useIsMock();
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-  const userId = loggedInUser?._id;
-  const navigate = useNavigate({ from: "/plans" });
-  const searchParams = useSearch({ from: "/plans" });
-  const searchQuery = searchParams.search || "";
 
   const cardArgs = isMock
     ? "skip"
-    : userId
+    : userId && bag
       ? {
           bagId: bag._id,
           userId,
@@ -320,9 +175,9 @@ function BagDetail({
                 size="sm"
                 variant="ghost"
                 onClick={() =>
-                  void deleteCard({ cardId: card._id, bagId: bag._id })
+                  void deleteCard({ cardId: card._id, bagId: bag!._id })
                 }
-                disabled={isMock}
+                disabled={isMock || !bag}
                 aria-label={`삭제 ${card._id}`}
               >
                 <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
@@ -333,7 +188,7 @@ function BagDetail({
         size: 120,
       }),
     ],
-    [columnHelper, isMock, deleteCard, bag._id]
+    [columnHelper, isMock, deleteCard, bag]
   );
 
   // Apply search filter via useEffect
@@ -359,6 +214,30 @@ function BagDetail({
     getFilteredRowModel: getFilteredRowModel(),
   });
 
+  const handleBack = () => {
+    void navigate({ to: "/plans" });
+  };
+
+  if (!bag) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="px-2"
+            onClick={handleBack}
+          >
+            <ArrowLeft className="h-4 w-4" aria-hidden />
+          </Button>
+          <h2 className="text-base font-semibold text-gray-900">
+            샌드백을 찾을 수 없습니다
+          </h2>
+        </div>
+      </div>
+    );
+  }
+
   if (cardEditor) {
     return (
       <CardEditorPage
@@ -377,7 +256,12 @@ function BagDetail({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="px-2" onClick={onBack}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="px-2"
+            onClick={handleBack}
+          >
             <ArrowLeft className="h-4 w-4" aria-hidden />
           </Button>
           <h2 className="text-base font-semibold text-gray-900">{bag.name}</h2>
@@ -402,7 +286,8 @@ function BagDetail({
             value={searchQuery}
             onChange={(e) => {
               void navigate({
-                to: "/plans",
+                to: "/plans/$bagId",
+                params: { bagId },
                 search: { search: e.target.value },
               });
             }}
@@ -596,7 +481,7 @@ function CardEditorPage({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
-      logger.error("PlansPage.handleRegenerateHelpers", message);
+      logger.error("BagDetailPage.handleRegenerateHelpers", message);
       toast.error(message);
     } finally {
       setIsRegeneratingHelpers(false);
@@ -622,7 +507,7 @@ function CardEditorPage({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
-      logger.error("PlansPage.handleGenerateExpressions", message);
+      logger.error("BagDetailPage.handleGenerateExpressions", message);
       toast.error(message);
     } finally {
       setIsGeneratingExpressions(false);
@@ -678,7 +563,7 @@ function CardEditorPage({
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
-      logger.error("PlansPage.handleCreateBatchCards", message);
+      logger.error("BagDetailPage.handleCreateBatchCards", message);
       toast.error(message);
     } finally {
       setIsCreatingBatch(false);

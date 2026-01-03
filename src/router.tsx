@@ -10,6 +10,7 @@ import {
   ClubRoute,
   HomeRoute,
   PlansRoute,
+  PlansBagDetailRoute,
   ProfileRoute,
   RootLayout,
   RunRoute,
@@ -48,6 +49,12 @@ const plansRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/plans",
   component: PlansRoute,
+});
+
+const plansBagDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/plans/$bagId",
+  component: PlansBagDetailRoute,
   validateSearch: zodValidator(
     z.object({
       search: fallback(z.string().optional(), ""),
@@ -78,6 +85,7 @@ const routeTree = rootRoute.addChildren([
   homeRoute,
   runRoute,
   plansRoute,
+  plansBagDetailRoute,
   activityRoute,
   profileRoute,
   clubRoute,
