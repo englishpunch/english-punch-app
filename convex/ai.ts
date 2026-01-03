@@ -48,7 +48,7 @@ You are an expert English linguist specialized in creating high-quality vocabula
    - If (and only if) changing the tense or number makes the sentence significantly more natural, update the form (e.g., "apply" -> "applied").
    - If the input is multi-word or already specific (e.g., "went", "apple tree"), reuse them exactly as-is.
 3. **Generate Content**:
-   - **question**: A context-rich sentence (approx. 10-35 words). **Crucial**: Use natural yet nuanced grammar. Avoid overly academic language, but go beyond basic SVO patterns. Create specific, vivid, and non-obvious scenarios. Use "___" for the blank.
+   - **question**: A context-rich sentence (approx. 10-35 words). **Crucial**: Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing. Use "___" for the blank.
    - **hint**: A simple definition or synonym under 12 words. Do not include the answer.
    - **explanation**: 10-50 words. Define the meaning and explain the nuance of why this specific form or tense is the most appropriate for the described scenario.
    - **finalAnswer**: Only if you changed the input form, provide the updated form here.
