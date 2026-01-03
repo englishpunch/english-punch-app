@@ -88,3 +88,46 @@ function handleButtonPress() {
 Use the Convex CLI to push your functions to a deployment. See everything
 the Convex CLI can do by running `npx convex -h` in your project root
 directory. To learn more, launch the docs with `npx convex docs`.
+
+## Logging in Convex Functions
+
+This project provides a logging utility (`logger.ts`) to prevent server-side logs from appearing in the browser console in production.
+
+### Why use the logger utility?
+
+Convex forwards `console.log()` calls from backend functions (mutations/queries) to the browser console for debugging. While this is helpful during development, it can:
+- Expose sensitive information in production
+- Clutter the browser console for end users
+- Display internal server details that should remain private
+
+### Usage
+
+Instead of using `console.log()` directly, import and use the logger utility:
+
+```ts
+import * as logger from "./logger";
+
+export const myMutation = mutation({
+  handler: async (ctx, args) => {
+    // This will only log in development/test, not in production
+    logger.log("Processing request", args);
+    
+    // Warnings are also suppressed in production
+    logger.warn("This might be an issue");
+    
+    // Errors are ALWAYS logged, even in production
+    logger.error("Critical error occurred", error);
+    
+    // Debug logs are also suppressed in production
+    logger.debug("Detailed debug info");
+  },
+});
+```
+
+### Behavior
+
+- **Development/Test**: All logs (`log`, `warn`, `debug`, `error`) are output to console
+- **Production**: Only `error` logs are output; `log`, `warn`, and `debug` are suppressed
+
+The logger checks `process.env.NODE_ENV` to determine the environment.
+
