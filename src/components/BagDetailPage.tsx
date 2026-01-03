@@ -307,6 +307,12 @@ export default function BagDetailPage() {
             className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 py-2 pr-3 pl-10 text-sm focus:ring-1"
           />
         </div>
+        {searchQuery && (
+          <p className="mt-2 text-xs text-gray-500">
+            검색은 현재 로드된 카드에서만 수행됩니다. 더 많은 결과를 보려면 "더
+            보기"를 클릭하세요.
+          </p>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -382,6 +388,12 @@ export default function BagDetailPage() {
             >
               더 보기 (30개)
             </Button>
+          )}
+          {!isMock && status === "LoadingMore" && (
+            <span className="flex items-center gap-2 text-gray-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              로딩 중...
+            </span>
           )}
         </div>
       )}
