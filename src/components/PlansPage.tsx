@@ -36,6 +36,9 @@ type Card = {
   answer: string;
   hint?: string;
   explanation?: string;
+  context?: string;
+  sourceWord?: string;
+  expression?: string;
 };
 
 export default function PlansPage() {

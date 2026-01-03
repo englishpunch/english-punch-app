@@ -78,6 +78,9 @@ export const learningTables = {
     answer: v.string(), // "reserve"
     hint: v.optional(v.string()), // "book in advance"
     explanation: v.optional(v.string()), // 추가 설명
+    context: v.optional(v.string()), // "친구에게 조언하는 상황" - 생성 시 사용한 맥락
+    sourceWord: v.optional(v.string()), // "예약하다" - 원본 한국어 표현 (다중 표현 생성 시)
+    expression: v.optional(v.string()), // "reserve" - 생성된 영어 표현 (다중 표현 생성 시)
 
     // FSRS 스케줄링 데이터 (ts-fsrs Card 인터페이스 완전 매칭)
     due: v.number(), // 다음 복습 예정일 (timestamp, Date로 변환 가능)

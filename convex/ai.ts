@@ -19,6 +19,15 @@ const cardSchema = z.object({
     ),
 });
 
+const hintAndExplanationSchema = z.object({
+  hint: z.string().describe("A short hint for the question."),
+  explanation: z
+    .string()
+    .describe(
+      "An explanation of the answer, why it fits, and simple guidance."
+    ),
+});
+
 const hintSchema = z.object({
   hint: z.string().describe("A short hint for the question."),
 });
@@ -47,7 +56,8 @@ You are an expert English linguist specialized in creating high-quality vocabula
 2. **Inflection Rule**: 
    - If (and only if) changing the tense or number makes the sentence significantly more natural, update the form (e.g., "apply" -> "applied").
    - If the input is multi-word or already specific (e.g., "went", "apple tree"), reuse them exactly as-is.
-3. **Generate Content**:
+3. **Context Awareness**: If a context is provided (e.g., "친구에게 조언하는 상황", "회의에서 제안하는 말투"), use it consistently across all generated content (question, hint, explanation).
+4. **Generate Content**:
    - **question**: A context-rich sentence (approx. 10-35 words). **Crucial**: Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing. Use "___" for the blank.
    - **hint**: A simple definition or synonym under 12 words. Do not include the answer.
    - **explanation**: 10-50 words. Define the meaning and explain the nuance of why this specific form or tense is the most appropriate for the described scenario.
@@ -62,12 +72,16 @@ You are an expert English linguist specialized in creating high-quality vocabula
 - finalAnswer: surpassed
 `.trim();
 
-const buildPrompt = (answer: string): string => {
-  return `Target Word/Phrase: "${answer.trim()}"`;
+const buildPrompt = (answer: string, context?: string): string => {
+  let prompt = `Target Word/Phrase: "${answer.trim()}"`;
+  if (context && context.trim()) {
+    prompt += `\nContext/Situation: "${context.trim()}"`;
+  }
+  return prompt;
 };
 
 export const generateCardDraft = action({
-  args: { answer: v.string() },
+  args: { answer: v.string(), context: v.optional(v.string()) },
 
   returns: v.object({
     question: v.string(),
@@ -78,6 +92,7 @@ export const generateCardDraft = action({
 
   handler: async (_ctx, args) => {
     const answer = args.answer.trim();
+    const context = args.context?.trim();
     const runId =
       "ai:generateCardDraft:" + Math.random().toString(36).slice(2, 8);
     if (!answer) {
@@ -93,9 +108,10 @@ export const generateCardDraft = action({
       stage: "start",
       model: GEMINI_MODEL,
       answerLength: answer.length,
+      hasContext: !!context,
     });
 
-    const prompt = buildPrompt(answer);
+    const prompt = buildPrompt(answer, context);
 
     logger.info(runId, {
       stage: "prompt_built",
@@ -271,6 +287,90 @@ export const regenerateExplanation = action({
 
     logger.info(runId, {
       stage: "parsed",
+      explanationPreview: result.explanation.slice(0, 80),
+    });
+
+    return result;
+  },
+});
+
+/**
+ * One-shot regeneration of both hint and explanation
+ * Uses the unified system instruction for consistency
+ */
+export const regenerateHintAndExplanation = action({
+  args: { 
+    question: v.string(), 
+    answer: v.string(),
+    context: v.optional(v.string()),
+  },
+  returns: v.object({ 
+    hint: v.string(),
+    explanation: v.string(),
+  }),
+  handler: async (_ctx, args) => {
+    const question = args.question.trim();
+    const answer = args.answer.trim();
+    const context = args.context?.trim();
+    const runId =
+      "ai:regenerateHintAndExplanation:" +
+      Math.random().toString(36).slice(2, 8);
+
+    requireInputs(question, answer);
+
+    logger.info(runId, {
+      stage: "start",
+      model: GEMINI_MODEL,
+      questionLength: question.length,
+      answerLength: answer.length,
+      hasContext: !!context,
+    });
+
+    // Build prompt with context awareness
+    let prompt = [
+      "You help me refine flashcard hints and explanations.",
+      `Question text (includes a blank as ___): "${question}"`,
+      `Correct answer to fit the blank: "${answer}"`,
+    ];
+    
+    if (context) {
+      prompt.push(`Context/Situation: "${context}"`);
+    }
+    
+    prompt.push(
+      "Generate both hint (under 12 English words, give a nudge without revealing the answer) and explanation (30-50 simple English words explaining meaning and why the answer fits the blank). Ensure they align with the provided context."
+    );
+
+    const promptStr = prompt.join("\n");
+
+    logger.info(runId, {
+      stage: "prompt_built",
+      promptPreview: promptStr.slice(0, 120),
+    });
+
+    const ai = getAiClient();
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: promptStr,
+      config: {
+        responseMimeType: "application/json",
+        responseJsonSchema: zodToJsonSchema(hintAndExplanationSchema),
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.LOW,
+        },
+        systemInstruction,
+      },
+    });
+
+    if (!response.text) {
+      throw new Error("Gemini 응답이 비어있습니다.");
+    }
+
+    const result = hintAndExplanationSchema.parse(JSON.parse(response.text));
+
+    logger.info(runId, {
+      stage: "parsed",
+      hintPreview: result.hint.slice(0, 60),
       explanationPreview: result.explanation.slice(0, 80),
     });
 

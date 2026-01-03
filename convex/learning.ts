@@ -619,6 +619,9 @@ export const createCard = mutation({
     answer: v.string(),
     hint: v.optional(v.string()),
     explanation: v.optional(v.string()),
+    context: v.optional(v.string()),
+    sourceWord: v.optional(v.string()),
+    expression: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -629,6 +632,9 @@ export const createCard = mutation({
       answer: args.answer,
       hint: args.hint,
       explanation: args.explanation,
+      context: args.context,
+      sourceWord: args.sourceWord,
+      expression: args.expression,
       tags: [],
       source: "manual",
       ...initialSchedule(now),
@@ -655,6 +661,9 @@ export const updateCard = mutation({
     answer: v.string(),
     hint: v.optional(v.string()),
     explanation: v.optional(v.string()),
+    context: v.optional(v.string()),
+    sourceWord: v.optional(v.string()),
+    expression: v.optional(v.string()),
     due: v.optional(v.number()),
     stability: v.optional(v.number()),
     difficulty: v.optional(v.number()),
@@ -676,6 +685,9 @@ export const updateCard = mutation({
       answer: args.answer,
       hint: args.hint,
       explanation: args.explanation,
+      context: args.context,
+      sourceWord: args.sourceWord,
+      expression: args.expression,
       ...initialSchedule(now),
     });
 
