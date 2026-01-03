@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Loader2,
   Sparkles,
+  RefreshCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
@@ -385,6 +386,8 @@ function CardEditorPage({
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
   const generateDraft = useAction(api.ai.generateCardDraft);
+  const regenerateHint = useAction(api.ai.regenerateHint);
+  const regenerateExplanation = useAction(api.ai.regenerateExplanation);
   const [form, setForm] = useState({
     question: card?.question || "",
     answer: card?.answer || "",
@@ -392,6 +395,8 @@ function CardEditorPage({
     explanation: card?.explanation || "",
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isHintRefreshing, setIsHintRefreshing] = useState(false);
+  const [isExplanationRefreshing, setIsExplanationRefreshing] = useState(false);
 
   const handleGenerate = async () => {
     if (!form.answer.trim()) {
@@ -427,6 +432,48 @@ function CardEditorPage({
       toast.error(message);
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleRefresh = async (target: "hint" | "explanation") => {
+    if (!form.question.trim() || !form.answer.trim()) {
+      toast.error("질문과 정답을 먼저 입력해주세요.");
+      return;
+    }
+
+    const setLoading =
+      target === "hint" ? setIsHintRefreshing : setIsExplanationRefreshing;
+    setLoading(true);
+
+    try {
+      if (target === "hint") {
+        const aiDraft = await regenerateHint({
+          question: form.question,
+          answer: form.answer,
+        });
+        setForm((current) => ({
+          ...current,
+          hint: aiDraft.hint,
+        }));
+        toast.success("힌트를 새로 만들었어요.");
+      } else {
+        const aiDraft = await regenerateExplanation({
+          question: form.question,
+          answer: form.answer,
+        });
+        setForm((current) => ({
+          ...current,
+          explanation: aiDraft.explanation,
+        }));
+        toast.success("설명을 새로 만들었어요.");
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
+      logger.error("PlansPage.handleRefresh", message);
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -556,13 +603,35 @@ function CardEditorPage({
           >
             힌트 (선택)
           </label>
-          <input
-            id="card-hint"
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-            placeholder="힌트"
-            value={form.hint}
-            onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
-          />
+          <div className="flex gap-2">
+            <input
+              id="card-hint"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+              placeholder="힌트"
+              value={form.hint}
+              onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="whitespace-nowrap"
+              onClick={() => void handleRefresh("hint")}
+              disabled={isHintRefreshing || isMock}
+              aria-label="힌트 재생성"
+            >
+              {isHintRefreshing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  재생성 중...
+                </>
+              ) : (
+                <>
+                  <RefreshCcw className="h-4 w-4" aria-hidden />
+                  재생성
+                </>
+              )}
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-1">
@@ -572,15 +641,37 @@ function CardEditorPage({
           >
             설명 (선택)
           </label>
-          <textarea
-            id="card-explanation"
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-            placeholder="설명"
-            value={form.explanation}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, explanation: e.target.value }))
-            }
-          />
+          <div className="flex gap-2">
+            <textarea
+              id="card-explanation"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+              placeholder="설명"
+              value={form.explanation}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, explanation: e.target.value }))
+              }
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              className="self-start whitespace-nowrap"
+              onClick={() => void handleRefresh("explanation")}
+              disabled={isExplanationRefreshing || isMock}
+              aria-label="설명 재생성"
+            >
+              {isExplanationRefreshing ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  재생성 중...
+                </>
+              ) : (
+                <>
+                  <RefreshCcw className="h-4 w-4" aria-hidden />
+                  재생성
+                </>
+              )}
+            </Button>
+          </div>
         </div>
         <Button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
