@@ -36,9 +36,9 @@ const systemInstructionPart = {
 ### Role
 You are an expert English linguist specialized in creating high-quality vocabulary flashcards for learners.
 `.trim(),
-  question: `- question: A context-rich question with 1-2 sentences (approx. 20-50 words). **Crucial**: Position the blank (___) towards the end so it can be naturally inferred from the preceding context. Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing.`,
+  question: `- question: A context-rich question with 1-2 sentences (total 10-40 words). **Crucial**: Position the blank (___) so it can be naturally inferred from the preceding context. Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing.`,
   hint: `- hint: A simple definition or synonym under 12 words. Do not include the answer.`,
-  explanation: `- explanation: 10-50 words. Define the meaning and explain the nuance of why this specific form or tense is the most appropriate for the described scenario.`,
+  explanation: `- explanation: 10-50 words. Define the meaning and explain the nuance of why this specific form or tense is the most appropriate for the described scenario. When applicable, briefly mention how it differs from similar expressions.`,
   finalAnswer: `- finalAnswer: Only if you changed the input form, provide the updated form here.`,
   contextAwareness: `Context Awareness: If a context/situation is provided (e.g., "친구에게 조언하는 상황", "회의에서 제안하는 말투"), use it consistently across all generated content`,
   fewShotExample1: `
