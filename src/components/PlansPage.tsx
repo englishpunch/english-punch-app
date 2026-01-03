@@ -12,6 +12,8 @@ import {
   Sparkles,
   RefreshCcw,
   Search,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
@@ -501,6 +503,11 @@ function CardEditorPage({
   const regenerateHintAndExplanation = useAction(
     api.ai.regenerateHintAndExplanation
   );
+  const generateExpressionCandidates = useAction(
+    api.ai.generateExpressionCandidates
+  );
+  const createCardsBatch = useMutation(api.learning.createCardsBatch);
+
   const [form, setForm] = useState({
     question: card?.question || "",
     answer: card?.answer || "",
@@ -513,6 +520,19 @@ function CardEditorPage({
   const [showQuestionInput, setShowQuestionInput] = useState(
     !!card?.question || false
   );
+
+  // Multi-expression state
+  const [showMultiExpression, setShowMultiExpression] = useState(false);
+  const [koreanInput, setKoreanInput] = useState("");
+  const [expressionCandidates, setExpressionCandidates] = useState<string[]>(
+    []
+  );
+  const [customExpression, setCustomExpression] = useState("");
+  const [selectedExpressions, setSelectedExpressions] = useState<Set<number>>(
+    new Set()
+  );
+  const [isGeneratingExpressions, setIsGeneratingExpressions] = useState(false);
+  const [isCreatingBatch, setIsCreatingBatch] = useState(false);
 
   const handleGenerate = async () => {
     if (!form.answer.trim()) {
@@ -581,6 +601,100 @@ function CardEditorPage({
     } finally {
       setIsRegeneratingHelpers(false);
     }
+  };
+
+  const handleGenerateExpressions = async () => {
+    if (!koreanInput.trim()) {
+      toast.error("한국어 표현을 입력해주세요.");
+      return;
+    }
+
+    setIsGeneratingExpressions(true);
+    try {
+      const result = await generateExpressionCandidates({
+        koreanInput,
+        context: form.context || undefined,
+      });
+      setExpressionCandidates(result.expressions);
+      setSelectedExpressions(new Set());
+      setCustomExpression("");
+      toast.success(`${result.expressions.length}개의 표현을 생성했어요.`);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
+      logger.error("PlansPage.handleGenerateExpressions", message);
+      toast.error(message);
+    } finally {
+      setIsGeneratingExpressions(false);
+    }
+  };
+
+  const handleCreateBatchCards = async () => {
+    if (selectedExpressions.size === 0 && !customExpression.trim()) {
+      toast.error("최소 하나의 표현을 선택하거나 입력해주세요.");
+      return;
+    }
+
+    if (!userId) return;
+    if (isMock) {
+      toast.success("Mock 모드에서는 카드를 생성할 수 없습니다.");
+      return;
+    }
+
+    setIsCreatingBatch(true);
+    try {
+      const expressions = [
+        ...Array.from(selectedExpressions).map((i) => expressionCandidates[i]),
+        ...(customExpression.trim() ? [customExpression.trim()] : []),
+      ];
+
+      // Generate cards for each expression
+      const cardsToCreate = [];
+      for (const expression of expressions) {
+        const draft = await generateDraft({
+          answer: expression,
+          context: form.context || undefined,
+        });
+
+        cardsToCreate.push({
+          question: draft.question,
+          answer: draft.finalAnswer || expression,
+          hint: draft.hint,
+          explanation: draft.explanation,
+          context: form.context || undefined,
+          sourceWord: koreanInput,
+          expression: expression,
+        });
+      }
+
+      await createCardsBatch({
+        bagId: bag._id,
+        userId,
+        cards: cardsToCreate,
+      });
+
+      toast.success(`${cardsToCreate.length}개의 카드를 생성했어요.`);
+      onSaved();
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
+      logger.error("PlansPage.handleCreateBatchCards", message);
+      toast.error(message);
+    } finally {
+      setIsCreatingBatch(false);
+    }
+  };
+
+  const toggleExpressionSelection = (index: number) => {
+    setSelectedExpressions((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
   };
 
   const handleSave = async () => {
@@ -797,6 +911,140 @@ function CardEditorPage({
             }
           />
         </div>
+
+        {/* Multi-expression Pipeline */}
+        {mode === "create" && (
+          <div className="border-t border-gray-200 pt-4">
+            <button
+              type="button"
+              onClick={() => setShowMultiExpression(!showMultiExpression)}
+              className="flex w-full items-center justify-between text-left"
+            >
+              <span className="text-sm font-medium text-gray-700">
+                다중 표현 생성 (한국어 → 여러 영어 표현)
+              </span>
+              {showMultiExpression ? (
+                <ChevronUp className="h-4 w-4 text-gray-500" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              )}
+            </button>
+
+            {showMultiExpression && (
+              <div className="mt-3 space-y-3">
+                <p className="text-xs text-gray-600">
+                  한국어 표현을 입력하면 여러 영어 표현 후보를 생성하고, 선택한
+                  표현들로 카드를 일괄 생성할 수 있습니다.
+                </p>
+
+                {/* Step 1: Korean Input */}
+                <div className="space-y-1">
+                  <label
+                    className="text-sm font-medium text-gray-700"
+                    htmlFor="korean-input"
+                  >
+                    한국어 표현/의도
+                  </label>
+                  <input
+                    id="korean-input"
+                    className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+                    placeholder="예: 예약하다, 기대하다"
+                    value={koreanInput}
+                    onChange={(e) => setKoreanInput(e.target.value)}
+                  />
+                </div>
+
+                <Button
+                  variant="secondary"
+                  className="w-full gap-2"
+                  onClick={() => void handleGenerateExpressions()}
+                  disabled={isGeneratingExpressions || isMock}
+                >
+                  {isGeneratingExpressions ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                      표현 생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4" aria-hidden />
+                      영어 표현 후보 생성
+                    </>
+                  )}
+                </Button>
+
+                {/* Step 2: Expression Candidates */}
+                {expressionCandidates.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      생성된 표현 (선택)
+                    </label>
+                    <div className="space-y-2">
+                      {expressionCandidates.map((expr, index) => (
+                        <label
+                          key={index}
+                          className="flex cursor-pointer items-center gap-2 rounded-md border border-gray-200 p-2 hover:bg-gray-50"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedExpressions.has(index)}
+                            onChange={() => toggleExpressionSelection(index)}
+                            className="text-primary-600 focus:ring-primary-500 h-4 w-4 rounded border-gray-300"
+                          />
+                          <span className="text-sm text-gray-900">{expr}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <div className="space-y-1">
+                      <label
+                        className="text-sm font-medium text-gray-700"
+                        htmlFor="custom-expression"
+                      >
+                        직접 입력 (선택)
+                      </label>
+                      <input
+                        id="custom-expression"
+                        className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+                        placeholder="다른 표현을 직접 입력"
+                        value={customExpression}
+                        onChange={(e) => setCustomExpression(e.target.value)}
+                      />
+                    </div>
+
+                    {/* Step 3: Batch Create */}
+                    <Button
+                      variant="primary"
+                      className="w-full gap-2"
+                      onClick={() => void handleCreateBatchCards()}
+                      disabled={
+                        isCreatingBatch ||
+                        isMock ||
+                        (selectedExpressions.size === 0 &&
+                          !customExpression.trim())
+                      }
+                    >
+                      {isCreatingBatch ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          카드 생성 중...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          선택한 표현으로 카드 일괄 생성 (
+                          {selectedExpressions.size +
+                            (customExpression.trim() ? 1 : 0)}
+                          개)
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         <Button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises

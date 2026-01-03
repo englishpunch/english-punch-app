@@ -377,3 +377,94 @@ export const regenerateHintAndExplanation = action({
     return result;
   },
 });
+
+/**
+ * Multi-expression generation: Korean → English expression candidates
+ */
+const expressionCandidatesSchema = z.object({
+  expressions: z
+    .array(z.string())
+    .describe(
+      "Array of 3 natural English expressions/phrases that convey the Korean input meaning"
+    ),
+});
+
+export const generateExpressionCandidates = action({
+  args: {
+    koreanInput: v.string(),
+    context: v.optional(v.string()),
+  },
+  returns: v.object({
+    expressions: v.array(v.string()),
+  }),
+  handler: async (_ctx, args) => {
+    const koreanInput = args.koreanInput.trim();
+    const context = args.context?.trim();
+    const runId =
+      "ai:generateExpressionCandidates:" +
+      Math.random().toString(36).slice(2, 8);
+
+    if (!koreanInput) {
+      throw new Error("한국어 표현을 입력해주세요.");
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
+    }
+
+    logger.info(runId, {
+      stage: "start",
+      model: GEMINI_MODEL,
+      koreanInputLength: koreanInput.length,
+      hasContext: !!context,
+    });
+
+    const prompt = [
+      "You are an expert English linguist helping Korean learners find natural English expressions.",
+      `Korean expression/intent: "${koreanInput}"`,
+    ];
+
+    if (context) {
+      prompt.push(`Context/Situation: "${context}"`);
+    }
+
+    prompt.push(
+      "Generate exactly 3 natural, idiomatic English expressions or phrases that convey this meaning. Vary the formality and style. Focus on expressions that would be useful in real conversation or writing."
+    );
+
+    const promptStr = prompt.join("\n");
+
+    logger.info(runId, {
+      stage: "prompt_built",
+      promptPreview: promptStr.slice(0, 120),
+    });
+
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: promptStr,
+      config: {
+        responseMimeType: "application/json",
+        responseJsonSchema: zodToJsonSchema(expressionCandidatesSchema),
+        thinkingConfig: {
+          thinkingLevel: ThinkingLevel.LOW,
+        },
+      },
+    });
+
+    if (!response.text) {
+      throw new Error("Gemini 응답이 비어있습니다.");
+    }
+
+    const result = expressionCandidatesSchema.parse(JSON.parse(response.text));
+
+    logger.info(runId, {
+      stage: "parsed",
+      expressionsCount: result.expressions.length,
+      expressions: result.expressions,
+    });
+
+    return result;
+  },
+});
