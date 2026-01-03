@@ -51,6 +51,13 @@ class DetailedLoggerModuleService {
   }
 
   log(level: string, key: string, message: string | Record<string, unknown>) {
+    // Skip logging in production to prevent logs from appearing in browser console
+    // when running in Convex backend (mutations/queries forward console.log to browser)
+    const isProduction = process.env.NODE_ENV === "production";
+    if (isProduction) {
+      return;
+    }
+
     const last = this.durationCache_.has(key)
       ? this.durationCache_.get(key)!
       : Date.now();

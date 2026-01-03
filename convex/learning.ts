@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import * as logger from "./logger";
 
 /**
  * 샘플 백 생성 - 영어 학습용 기본 카드들
@@ -10,7 +11,7 @@ export const createSampleBag = mutation({
   },
   returns: v.id("bags"),
   handler: async (ctx, args) => {
-    console.log("🎯 CreateSampleBag started for userId:", args.userId);
+    logger.log("🎯 CreateSampleBag started for userId:", args.userId);
 
     // 사용자 설정 확인/생성
     const userSettings = await ctx.db
@@ -19,7 +20,7 @@ export const createSampleBag = mutation({
       .unique();
 
     if (!userSettings) {
-      console.log("👤 Creating user settings with default FSRS parameters");
+      logger.log("👤 Creating user settings with default FSRS parameters");
 
       // 기본 FSRS 설정으로 사용자 설정 생성
       const userSettingsId = await ctx.db.insert("userSettings", {
@@ -44,13 +45,13 @@ export const createSampleBag = mutation({
         currentStreak: 0,
         longestStreak: 0,
       });
-      console.log("✅ User settings created:", userSettingsId);
+      logger.log("✅ User settings created:", userSettingsId);
     } else {
-      console.log("📋 User settings already exist");
+      logger.log("📋 User settings already exist");
     }
 
     // 샘플 백 생성
-    console.log("📦 Creating sample bag");
+    logger.log("📦 Creating sample bag");
     const bagId = await ctx.db.insert("bags", {
       userId: args.userId,
       name: "영어 기초 표현",
@@ -64,7 +65,7 @@ export const createSampleBag = mutation({
       tags: ["기초", "일상회화"],
       lastModified: new Date().toISOString(),
     });
-    console.log("✅ Sample bag created:", bagId);
+    logger.log("✅ Sample bag created:", bagId);
 
     // 샘플 카드들
     const sampleCards = [
@@ -135,7 +136,7 @@ export const createSampleBag = mutation({
     const nowIsoString = now.toISOString();
     let cardCount = 0;
 
-    console.log(`📚 Creating ${sampleCards.length} sample cards`);
+    logger.log(`📚 Creating ${sampleCards.length} sample cards`);
 
     for (const cardData of sampleCards) {
       const cardId = await ctx.db.insert("cards", {
@@ -163,21 +164,21 @@ export const createSampleBag = mutation({
         suspended: false,
       });
       cardCount++;
-      console.log(`📄 Card ${cardCount} created:`, {
+      logger.log(`📄 Card ${cardCount} created:`, {
         cardId,
         question: cardData.question,
       });
     }
 
     // 백 통계 업데이트
-    console.log("📊 Updating bag statistics");
+    logger.log("📊 Updating bag statistics");
     await ctx.db.patch("bags", bagId, {
       totalCards: cardCount,
       newCards: cardCount,
       lastModified: nowIsoString,
     });
 
-    console.log("✅ CreateSampleBag completed:", {
+    logger.log("✅ CreateSampleBag completed:", {
       bagId,
       cardCount,
       totalCards: cardCount,
@@ -350,7 +351,7 @@ export const updateBagStats = mutation({
       lastModified: new Date().toISOString(),
     });
 
-    console.log("📊 Bag statistics updated:", { bagId: args.bagId, stats });
+    logger.log("📊 Bag statistics updated:", { bagId: args.bagId, stats });
     return null;
   },
 });
