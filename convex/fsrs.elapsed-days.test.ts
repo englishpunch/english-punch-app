@@ -98,6 +98,7 @@ describe("reviewCard elapsed_days tracking", () => {
 
     // Should persist the interval since last review on the card
     expect(patch).toHaveBeenCalledWith(
+      "cards",
       cardId,
       expect.objectContaining({
         elapsed_days: 6,
