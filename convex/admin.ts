@@ -18,7 +18,7 @@ type ChangePasswordDeps = {
 
 export async function changePasswordWithDeps(
   deps: ChangePasswordDeps,
-  args: { email: string; newPassword: string },
+  args: { email: string; newPassword: string }
 ) {
   const { email, newPassword } = args;
 
@@ -43,7 +43,7 @@ export const getPasswordAccount = internalQuery({
     return await ctx.db
       .query("authAccounts")
       .withIndex("providerAndAccountId", (q) =>
-        q.eq("provider", "password").eq("providerAccountId", email),
+        q.eq("provider", "password").eq("providerAccountId", email)
       )
       .unique();
   },
@@ -64,7 +64,7 @@ export const changePassword = internalAction({
         invalidateUserSessions: (userId): Promise<void> =>
           invalidateSessions(ctx, { userId }),
       },
-      args,
+      args
     );
   },
 });

@@ -8,7 +8,7 @@ const http = httpRouter();
 http.route({
   path: "/health",
   method: "GET",
-  handler: httpAction(async (ctx, request) => {
+  handler: httpAction(async () => {
     return new Response(
       JSON.stringify({ status: "ok", timestamp: Date.now() }),
       {
@@ -17,7 +17,7 @@ http.route({
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*",
         },
-      },
+      }
     );
   }),
 });
@@ -26,7 +26,7 @@ http.route({
 http.route({
   path: "/api/*",
   method: "OPTIONS",
-  handler: httpAction(async (ctx, request) => {
+  handler: httpAction(async () => {
     return new Response(null, {
       status: 200,
       headers: {

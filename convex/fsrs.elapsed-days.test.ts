@@ -101,7 +101,7 @@ describe("reviewCard elapsed_days tracking", () => {
       cardId,
       expect.objectContaining({
         elapsed_days: 6,
-      }),
+      })
     );
 
     // Should capture both current and previous intervals in the review log
@@ -110,7 +110,7 @@ describe("reviewCard elapsed_days tracking", () => {
       expect.objectContaining({
         elapsed_days: 6,
         last_elapsed_days: 5,
-      }),
+      })
     );
   });
 
@@ -159,7 +159,7 @@ describe("reviewCard elapsed_days tracking", () => {
         rating: 3,
         duration: 1234,
         sessionId: "session_2",
-      }),
+      })
     ).rejects.toThrow(/elapsed_days/);
 
     expect(patch).not.toHaveBeenCalled();

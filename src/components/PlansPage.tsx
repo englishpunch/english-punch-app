@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { ReactMutation, useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -11,14 +11,27 @@ import {
   Loader2,
   Sparkles,
   RefreshCcw,
+  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
 import useIsMock from "@/hooks/useIsMock";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import {
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  getSortedRowModel,
+  getFilteredRowModel,
+  type SortingState,
+  type ColumnFiltersState,
+} from "@tanstack/react-table";
 const logger = getGlobalLogger();
 
 type Card = {
   _id: Id<"cards">;
+  _creationTime: number;
   question: string;
   answer: string;
   hint?: string;
@@ -201,6 +214,10 @@ function BagDetail({
   const isMock = useIsMock();
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
+  const navigate = useNavigate({ from: "/plans" });
+  const searchParams = useSearch({ from: "/plans" });
+  const searchQuery = searchParams.search || "";
+
   const cardArgs = isMock
     ? "skip"
     : userId
@@ -219,6 +236,7 @@ function BagDetail({
     if (!isMock) return [];
     return Array.from({ length: 500 }, (_, i) => ({
       _id: `mock-card-${i + 1}` as Id<"cards">,
+      _creationTime: Date.now() - i * 1000,
       question: `Mock Question ${i + 1}`,
       answer: `Mock Answer ${i + 1}`,
       hint: `Mock Hint ${i + 1}`,
@@ -230,36 +248,111 @@ function BagDetail({
     () => (isMock ? mockCards : cards) ?? [],
     [cards, isMock, mockCards]
   );
-  const CARD_PAGE_SIZE = 20;
-  const [cardPage, setCardPage] = useState(1);
-
-  const cardTotalPages = useMemo(() => {
-    if (!cardsToShow.length) return 1;
-    return Math.ceil(cardsToShow.length / CARD_PAGE_SIZE);
-  }, [cardsToShow]);
-
-  const clampCardPage = (page: number) =>
-    Math.min(Math.max(page, 1), cardTotalPages);
-  const safeCardPage = clampCardPage(cardPage);
-  const setPage = (next: number | ((page: number) => number)) => {
-    setCardPage((prev) => {
-      const resolved =
-        typeof next === "function"
-          ? (next as (page: number) => number)(prev)
-          : next;
-      return clampCardPage(resolved);
-    });
-  };
-
-  const visibleCards = useMemo(() => {
-    if (!cardsToShow.length) return [];
-    const start = (safeCardPage - 1) * CARD_PAGE_SIZE;
-    return cardsToShow.slice(start, start + CARD_PAGE_SIZE);
-  }, [cardsToShow, safeCardPage]);
 
   const [cardEditor, setCardEditor] = useState<
     { mode: "create" } | { mode: "edit"; card: Card } | null
   >(null);
+
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "_creationTime", desc: true },
+  ]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+
+  const columnHelper = createColumnHelper<Card>();
+
+  const columns = useMemo(
+    () => [
+      columnHelper.accessor("answer", {
+        header: "Answer",
+        cell: (info) => (
+          <div className="font-semibold text-gray-900">{info.getValue()}</div>
+        ),
+        size: 200,
+      }),
+      columnHelper.accessor("question", {
+        header: "Question",
+        cell: (info) => {
+          const question = info.getValue();
+          const truncated =
+            question.length > 80 ? question.slice(0, 80) + "..." : question;
+          return <div className="text-sm text-gray-600">{truncated}</div>;
+        },
+        size: 400,
+      }),
+      columnHelper.accessor("_creationTime", {
+        header: "Created",
+        cell: (info) => {
+          const date = new Date(info.getValue());
+          return (
+            <div className="text-xs text-gray-500">
+              {date.toLocaleDateString("ko-KR", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+              })}
+            </div>
+          );
+        },
+        size: 120,
+      }),
+      columnHelper.display({
+        id: "actions",
+        header: "Actions",
+        cell: (info) => {
+          const card = info.row.original;
+          return (
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setCardEditor({ mode: "edit", card })}
+                disabled={isMock}
+                aria-label={`수정 ${card._id}`}
+              >
+                <Edit2 className="h-4 w-4" aria-hidden />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() =>
+                  void deleteCard({ cardId: card._id, bagId: bag._id })
+                }
+                disabled={isMock}
+                aria-label={`삭제 ${card._id}`}
+              >
+                <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
+              </Button>
+            </div>
+          );
+        },
+        size: 120,
+      }),
+    ],
+    [columnHelper, isMock, deleteCard, bag._id]
+  );
+
+  // Apply search filter via useEffect
+  useEffect(() => {
+    if (searchQuery) {
+      setColumnFilters([{ id: "answer", value: searchQuery }]);
+    } else {
+      setColumnFilters([]);
+    }
+  }, [searchQuery]);
+
+  const table = useReactTable({
+    data: cardsToShow,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+    },
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+  });
 
   if (cardEditor) {
     return (
@@ -295,72 +388,88 @@ function BagDetail({
         </Button>
       </div>
 
-      <div className="space-y-2">
-        {visibleCards.map((card) => (
-          <div
-            key={card._id}
-            className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
-          >
-            <p className="text-sm font-semibold text-gray-900">
-              {card.question}
-            </p>
-            <p className="mt-1 text-xs text-gray-600">정답: {card.answer}</p>
-            <div className="mt-2 flex gap-2">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setCardEditor({ mode: "edit", card })}
-                disabled={isMock}
-                aria-label={`수정 ${card._id}`}
-              >
-                <Edit2 className="h-4 w-4" aria-hidden />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  void deleteCard({ cardId: card._id, bagId: bag._id })
-                }
-                disabled={isMock}
-                aria-label={`삭제 ${card._id}`}
-              >
-                <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
-              </Button>
-            </div>
-          </div>
-        ))}
-        {!cardsToShow && (
-          <p className="text-sm text-gray-500">카드를 불러오는 중...</p>
-        )}
-        {cardsToShow?.length === 0 && (
-          <p className="text-sm text-gray-500">카드가 없습니다.</p>
-        )}
-        {cardsToShow.length > CARD_PAGE_SIZE && (
-          <div className="flex items-center justify-between pt-2 text-xs text-gray-600">
-            <span>{`페이지 ${safeCardPage} / ${cardTotalPages} · 총 ${cardsToShow.length}개`}</span>
-            <div className="flex gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                aria-label="이전 페이지"
-                onClick={() => setPage((page) => page - 1)}
-                disabled={safeCardPage === 1}
-              >
-                이전
-              </Button>
-              <Button
-                variant="secondary"
-                size="sm"
-                aria-label="다음 페이지"
-                onClick={() => setPage((page) => page + 1)}
-                disabled={safeCardPage === cardTotalPages}
-              >
-                다음
-              </Button>
-            </div>
-          </div>
-        )}
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by answer..."
+            value={searchQuery}
+            onChange={(e) => {
+              void navigate({
+                to: "/plans",
+                search: { search: e.target.value },
+              });
+            }}
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 py-2 pr-3 pl-10 text-sm focus:ring-1"
+          />
+        </div>
       </div>
+
+      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+        <table className="w-full">
+          <thead className="border-b border-gray-200 bg-gray-50">
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="px-4 py-3 text-left text-xs font-semibold text-gray-700"
+                    style={{ width: header.getSize() }}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td
+                  colSpan={columns.length}
+                  className="px-4 py-8 text-center text-sm text-gray-500"
+                >
+                  {!cardsToShow
+                    ? "카드를 불러오는 중..."
+                    : searchQuery
+                      ? "검색 결과가 없습니다."
+                      : "카드가 없습니다."}
+                </td>
+              </tr>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr key={row.id} className="hover:bg-gray-50">
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className="px-4 py-3"
+                      style={{ width: cell.column.getSize() }}
+                    >
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {table.getRowModel().rows.length > 0 && (
+        <div className="text-xs text-gray-600">
+          총 {table.getRowModel().rows.length}개
+          {searchQuery && ` (필터링됨: ${cardsToShow.length}개 중)`}
+        </div>
+      )}
     </div>
   );
 }
