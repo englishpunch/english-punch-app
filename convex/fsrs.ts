@@ -39,7 +39,7 @@ export const reviewCardHandler = async (
     userId: args.userId,
   });
 
-  const card = await ctx.db.get(args.cardId);
+  const card = await ctx.db.get("cards", args.cardId);
   if (!card || card.userId !== args.userId) {
     const error = "Card not found";
     logger.error(runId, { m: "❌ ReviewCard error:", error });
@@ -131,7 +131,7 @@ export const reviewCardHandler = async (
   });
 
   // 카드 업데이트
-  await ctx.db.patch(args.cardId, {
+  await ctx.db.patch("cards", args.cardId, {
     due: recordLogItem.card.due.getTime(),
     stability: recordLogItem.card.stability,
     difficulty: recordLogItem.card.difficulty,
@@ -266,7 +266,7 @@ export const getRecentReviewLogs = query({
 
     const enriched = await Promise.all(
       logs.map(async (log) => {
-        const card = await ctx.db.get(log.cardId);
+        const card = await ctx.db.get("cards", log.cardId);
         return {
           _id: log._id,
           cardId: log.cardId,
@@ -436,7 +436,7 @@ export const endSession = mutation({
 
     logger.info(runId, { m: "📈 Session statistics:", sessionStats });
 
-    await ctx.db.patch(session._id, sessionStats);
+    await ctx.db.patch("sessions", session._id, sessionStats);
 
     logger.info(runId, {
       m: "✅ Session ended successfully:",

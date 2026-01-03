@@ -171,7 +171,7 @@ export const createSampleBag = mutation({
 
     // 백 통계 업데이트
     console.log("📊 Updating bag statistics");
-    await ctx.db.patch(bagId, {
+    await ctx.db.patch("bags", bagId, {
       totalCards: cardCount,
       newCards: cardCount,
       lastModified: nowIsoString,
@@ -345,7 +345,7 @@ export const updateBagStats = mutation({
       reviewCards: allCards.filter((card) => card.state === 2).length,
     };
 
-    await ctx.db.patch(args.bagId, {
+    await ctx.db.patch("bags", args.bagId, {
       ...stats,
       lastModified: new Date().toISOString(),
     });
@@ -417,7 +417,7 @@ export const getBagDetailStats = query({
   ),
   handler: async (ctx, args) => {
     // 백 정보 조회
-    const bag = await ctx.db.get(args.bagId);
+    const bag = await ctx.db.get("bags", args.bagId);
     if (!bag || bag.userId !== args.userId) {
       return null;
     }
@@ -548,7 +548,7 @@ export const deleteBag = mutation({
     bagId: v.id("bags"),
   },
   handler: async (ctx, args) => {
-    const bag = await ctx.db.get(args.bagId);
+    const bag = await ctx.db.get("bags", args.bagId);
     if (!bag) return null;
 
     const cards = await ctx.db
@@ -556,8 +556,8 @@ export const deleteBag = mutation({
       .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
       .collect();
 
-    await Promise.all(cards.map((c) => ctx.db.delete(c._id)));
-    await ctx.db.delete(args.bagId);
+    await Promise.all(cards.map((c) => ctx.db.delete("cards", c._id)));
+    await ctx.db.delete("bags", args.bagId);
     return null;
   },
 });
@@ -634,9 +634,9 @@ export const createCard = mutation({
       ...initialSchedule(now),
     });
 
-    const bag = await ctx.db.get(args.bagId);
+    const bag = await ctx.db.get("bags", args.bagId);
     if (bag) {
-      await ctx.db.patch(args.bagId, {
+      await ctx.db.patch("bags", args.bagId, {
         totalCards: bag.totalCards + 1,
         newCards: bag.newCards + 1,
         lastModified: new Date(now).toISOString(),
@@ -667,11 +667,11 @@ export const updateCard = mutation({
     ),
   },
   handler: async (ctx, args) => {
-    const card = await ctx.db.get(args.cardId);
+    const card = await ctx.db.get("cards", args.cardId);
     if (!card || card.bagId !== args.bagId) return null;
 
     const now = Date.now();
-    await ctx.db.patch(args.cardId, {
+    await ctx.db.patch("cards", args.cardId, {
       question: args.question,
       answer: args.answer,
       hint: args.hint,
@@ -679,13 +679,13 @@ export const updateCard = mutation({
       ...initialSchedule(now),
     });
 
-    const bag = await ctx.db.get(args.bagId);
+    const bag = await ctx.db.get("bags", args.bagId);
     if (bag) {
       // 이전 상태가 0이 아니면 newCards 증가, 다른 상태 감소는 생략 (간단 집계)
       const newCards = bag.newCards + (card.state === 0 ? 0 : 1);
       const learningCards = bag.learningCards - (card.state === 1 ? 1 : 0);
       const reviewCards = bag.reviewCards - (card.state === 2 ? 1 : 0);
-      await ctx.db.patch(args.bagId, {
+      await ctx.db.patch("bags", args.bagId, {
         newCards,
         learningCards,
         reviewCards,
@@ -703,10 +703,10 @@ export const deleteCard = mutation({
     bagId: v.id("bags"),
   },
   handler: async (ctx, args) => {
-    const card = await ctx.db.get(args.cardId);
-    const bag = await ctx.db.get(args.bagId);
+    const card = await ctx.db.get("cards", args.cardId);
+    const bag = await ctx.db.get("bags", args.bagId);
     if (!card || !bag) return null;
-    await ctx.db.delete(args.cardId);
+    await ctx.db.delete("cards", args.cardId);
 
     const counts = {
       totalCards: bag.totalCards - 1,
@@ -714,7 +714,7 @@ export const deleteCard = mutation({
       learningCards: bag.learningCards - (card.state === 1 ? 1 : 0),
       reviewCards: bag.reviewCards - (card.state === 2 ? 1 : 0),
     };
-    await ctx.db.patch(args.bagId, {
+    await ctx.db.patch("bags", args.bagId, {
       ...counts,
       lastModified: new Date().toISOString(),
     });
