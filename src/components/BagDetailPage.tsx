@@ -1,5 +1,11 @@
 import { useMemo, useState, useEffect } from "react";
-import { ReactMutation, useAction, useMutation, useQuery } from "convex/react";
+import {
+  ReactMutation,
+  useAction,
+  useMutation,
+  useQuery,
+  usePaginatedQuery,
+} from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
@@ -78,16 +84,23 @@ export default function BagDetailPage() {
     [bagsToShow, bagId]
   );
 
-  const cardArgs = isMock
-    ? "skip"
-    : userId && bag
-      ? {
+  // Use paginated query for cards
+  const paginatedCardsArgs =
+    isMock || !userId || !bag
+      ? "skip"
+      : {
           bagId: bag._id,
           userId,
-        }
-      : "skip";
+        };
 
-  const cards = useQuery(api.learning.getBagCards, cardArgs);
+  const {
+    results: paginatedCards,
+    status,
+    loadMore,
+  } = usePaginatedQuery(api.learning.getBagCardsPaginated, paginatedCardsArgs, {
+    initialNumItems: 30,
+  });
+
   const createCard = useMutation(api.learning.createCard);
   const updateCard = useMutation(api.learning.updateCard);
   const deleteCard = useMutation(api.learning.deleteCard);
@@ -105,8 +118,8 @@ export default function BagDetailPage() {
   }, [isMock]);
 
   const cardsToShow = useMemo(
-    () => (isMock ? mockCards : cards) ?? [],
-    [cards, isMock, mockCards]
+    () => (isMock ? mockCards : paginatedCards) ?? [],
+    [paginatedCards, isMock, mockCards]
   );
 
   const [cardEditor, setCardEditor] = useState<
@@ -294,6 +307,12 @@ export default function BagDetailPage() {
             className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 py-2 pr-3 pl-10 text-sm focus:ring-1"
           />
         </div>
+        {searchQuery && (
+          <p className="mt-2 text-xs text-gray-500">
+            검색은 현재 로드된 카드에서만 수행됩니다. 더 많은 결과를 보려면 "더
+            보기"를 클릭하세요.
+          </p>
+        )}
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
@@ -325,7 +344,7 @@ export default function BagDetailPage() {
                   colSpan={columns.length}
                   className="px-4 py-8 text-center text-sm text-gray-500"
                 >
-                  {!cardsToShow
+                  {!isMock && status === "LoadingFirstPage"
                     ? "카드를 불러오는 중..."
                     : searchQuery
                       ? "검색 결과가 없습니다."
@@ -355,9 +374,27 @@ export default function BagDetailPage() {
       </div>
 
       {table.getRowModel().rows.length > 0 && (
-        <div className="text-xs text-gray-600">
-          총 {table.getRowModel().rows.length}개
-          {searchQuery && ` (필터링됨: ${cardsToShow.length}개 중)`}
+        <div className="flex items-center justify-between text-xs text-gray-600">
+          <span>
+            총 {table.getRowModel().rows.length}개
+            {searchQuery && ` (필터링됨: ${cardsToShow.length}개 중)`}
+          </span>
+          {!isMock && status === "CanLoadMore" && (
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => loadMore(30)}
+              aria-label="더 보기"
+            >
+              더 보기 (30개)
+            </Button>
+          )}
+          {!isMock && status === "LoadingMore" && (
+            <span className="flex items-center gap-2 text-gray-500">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              로딩 중...
+            </span>
+          )}
         </div>
       )}
     </div>
