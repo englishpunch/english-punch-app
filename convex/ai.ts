@@ -28,18 +28,6 @@ const hintAndExplanationSchema = z.object({
     ),
 });
 
-const hintSchema = z.object({
-  hint: z.string().describe("A short hint for the question."),
-});
-
-const explanationSchema = z.object({
-  explanation: z
-    .string()
-    .describe(
-      "An explanation of the answer, why it fits, and simple guidance."
-    ),
-});
-
 const GEMINI_MODEL = "gemini-3-pro-preview";
 const logger = getGlobalLogger();
 
