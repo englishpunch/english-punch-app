@@ -34,18 +34,31 @@ const explanationSchema = z.object({
 const GEMINI_MODEL = "gemini-3-pro-preview";
 const logger = getGlobalLogger();
 
+/**
+ * System Instruction for the AI model.
+ * This should be passed to config.systemInstruction.
+ */
+const systemInstruction = `
+### Role
+You are an expert English linguist specialized in creating high-quality vocabulary flashcards for learners.
+
+### Task & Logic
+1. **Analyze Form**: Determine if the input is a single-word base form (infinitive verb or singular noun).
+2. **Inflection Rule**: 
+   - If (and only if) changing the tense or number makes the sentence significantly more natural, update the form (e.g., "apply" -> "applied").
+   - If the input is multi-word or already specific (e.g., "went", "apple tree"), reuse them exactly as-is.
+3. **Generate Content**:
+   - **question**: A context-rich sentence (approx. 10-35 words). **Crucial**: Use natural yet nuanced grammar. Avoid overly academic language, but go beyond basic SVO patterns. Create specific, vivid, and non-obvious scenarios. Use "___" for the blank.
+   - **hint**: A simple definition or synonym under 12 words. Do not include the answer.
+   - **explanation**: 10-50 words. Define the meaning and explain the nuance of why this specific form or tense is the most appropriate for the described scenario.
+
+### Scenario Style Examples
+- *Niche Professional*: "The forensic accountant had to ___ the encrypted ledger for hours before discovering the subtle discrepancy that led to the CEO's indictment."
+- *High-Stakes Dialogue*: "Unless you can ___ these claims with empirical evidence, the board of directors will likely veto the merger during tomorrow's emergency session."
+`.trim();
+
 const buildPrompt = (answer: string): string => {
-  const trimmed = answer.trim();
-  return [
-    "You help me create English flashcards.",
-    `User provided answer (may be base form): "${trimmed}".`,
-    "You may change the answer only when all of these are true: it is a single-word base form (infinitive verb or singular noun), changing tense/number makes the sentence more natural, and the new form stays aligned with the original meaning.",
-    "Never change multi-word answers or answers that are already inflected/specific; reuse them as-is.",
-    "If you change the answer, set finalAnswer to the new form and write the question, hint, and explanation using that finalAnswer. Otherwise omit finalAnswer.",
-    "Question: 20-30 English words, natural sentences, include one blank written as ___, never reveal the answer.",
-    "Hint: short, easy English under 12 words; do not include the answer.",
-    "Explanation: 30-50 simple English words; define meaning and how it fits the blank;",
-  ].join("\n");
+  return `Target Word/Phrase: "${answer.trim()}"`;
 };
 
 export const generateCardDraft = action({
@@ -95,6 +108,7 @@ export const generateCardDraft = action({
         thinkingConfig: {
           thinkingLevel: ThinkingLevel.LOW,
         },
+        systemInstruction,
       },
     });
 
