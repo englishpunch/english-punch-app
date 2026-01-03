@@ -16,10 +16,6 @@ import { getGlobalLogger } from "@/lib/globalLogger";
 import useIsMock from "@/hooks/useIsMock";
 const logger = getGlobalLogger();
 
-interface PlansPageProps {
-  userId: Id<"users">;
-}
-
 type Card = {
   _id: Id<"cards">;
   question: string;
@@ -28,15 +24,19 @@ type Card = {
   explanation?: string;
 };
 
-export default function PlansPage({ userId }: PlansPageProps) {
+export default function PlansPage() {
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const userId = loggedInUser?._id;
   const isMock = useIsMock();
   const [currentPage, setCurrentPage] = useState(1);
 
   const bagsArgs = isMock
     ? "skip"
-    : {
-        userId,
-      };
+    : userId
+      ? {
+          userId,
+        }
+      : "skip";
   const bagsQuery = useQuery(api.learning.getUserBags, bagsArgs);
   const createBag = useMutation(api.learning.createBag);
   const deleteBag = useMutation(api.learning.deleteBag);
@@ -47,6 +47,7 @@ export default function PlansPage({ userId }: PlansPageProps) {
   const handleAddBag = async () => {
     const name = newBagName.trim();
     if (!name) return;
+    if (!userId) return;
     await createBag({ userId, name });
     setNewBagName("");
   };
@@ -92,18 +93,12 @@ export default function PlansPage({ userId }: PlansPageProps) {
   }, [bags, safeCurrentPage]);
 
   if (activeBag) {
-    return (
-      <BagDetail
-        bag={activeBag}
-        onBack={() => setActiveBagId(null)}
-        userId={userId}
-      />
-    );
+    return <BagDetail bag={activeBag} onBack={() => setActiveBagId(null)} />;
   }
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-4">
+      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-gray-900">샌드백 추가</h2>
         </div>
@@ -113,7 +108,7 @@ export default function PlansPage({ userId }: PlansPageProps) {
           </label>
           <input
             id="new-bag-name"
-            className="flex-1 px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+            className="focus:border-primary-500 focus:ring-primary-500 flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
             placeholder="새 샌드백 이름"
             value={newBagName}
             onChange={(e) => setNewBagName(e.target.value)}
@@ -198,19 +193,21 @@ export default function PlansPage({ userId }: PlansPageProps) {
 function BagDetail({
   bag,
   onBack,
-  userId,
 }: {
   bag: { _id: Id<"bags">; name: string };
   onBack: () => void;
-  userId: Id<"users">;
 }) {
   const isMock = useIsMock();
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const userId = loggedInUser?._id;
   const cardArgs = isMock
     ? "skip"
-    : {
-        bagId: bag._id,
-        userId,
-      };
+    : userId
+      ? {
+          bagId: bag._id,
+          userId,
+        }
+      : "skip";
 
   const cards = useQuery(api.learning.getBagCards, cardArgs);
   const createCard = useMutation(api.learning.createCard);
@@ -228,7 +225,10 @@ function BagDetail({
     }));
   }, [isMock]);
 
-  const cardsToShow = (isMock ? mockCards : cards) ?? [];
+  const cardsToShow = useMemo(
+    () => (isMock ? mockCards : cards) ?? [],
+    [cards, isMock, mockCards]
+  );
   const CARD_PAGE_SIZE = 20;
   const [cardPage, setCardPage] = useState(1);
 
@@ -266,7 +266,6 @@ function BagDetail({
         mode={cardEditor.mode}
         bag={bag}
         card={"card" in cardEditor ? cardEditor.card : undefined}
-        userId={userId}
         onBack={() => setCardEditor(null)}
         onSaved={() => setCardEditor(null)}
         createCard={createCard}
@@ -304,8 +303,8 @@ function BagDetail({
             <p className="text-sm font-semibold text-gray-900">
               {card.question}
             </p>
-            <p className="text-xs text-gray-600 mt-1">정답: {card.answer}</p>
-            <div className="flex gap-2 mt-2">
+            <p className="mt-1 text-xs text-gray-600">정답: {card.answer}</p>
+            <div className="mt-2 flex gap-2">
               <Button
                 size="sm"
                 variant="secondary"
@@ -369,7 +368,6 @@ function CardEditorPage({
   mode,
   bag,
   card,
-  userId,
   onBack,
   onSaved,
   createCard,
@@ -378,13 +376,14 @@ function CardEditorPage({
   mode: "create" | "edit";
   bag: { _id: Id<"bags">; name: string };
   card?: Card;
-  userId: Id<"users">;
   onBack: () => void;
   onSaved: () => void;
   createCard: ReactMutation<typeof api.learning.createCard>;
   updateCard: ReactMutation<typeof api.learning.updateCard>;
 }) {
   const isMock = useIsMock();
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const userId = loggedInUser?._id;
   const generateDraft = useAction(api.ai.generateCardDraft);
   const [form, setForm] = useState({
     question: card?.question || "",
@@ -437,6 +436,7 @@ function CardEditorPage({
       onSaved();
       return;
     }
+    if (!userId) return;
 
     if (mode === "create") {
       await createCard({
@@ -486,7 +486,7 @@ function CardEditorPage({
         </h2>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm space-y-4">
+      <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
         <div className="space-y-1">
           <label
             className="text-sm font-medium text-gray-700"
@@ -496,7 +496,7 @@ function CardEditorPage({
           </label>
           <input
             id="card-question"
-            className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
             placeholder="질문을 입력"
             value={form.question}
             onChange={(e) =>
@@ -515,7 +515,7 @@ function CardEditorPage({
           <div className="flex gap-2">
             <input
               id="card-answer"
-              className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
               placeholder="정답을 입력"
               value={form.answer}
               onChange={(e) =>
@@ -558,7 +558,7 @@ function CardEditorPage({
           </label>
           <input
             id="card-hint"
-            className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
             placeholder="힌트"
             value={form.hint}
             onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
@@ -574,7 +574,7 @@ function CardEditorPage({
           </label>
           <textarea
             id="card-explanation"
-            className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
             placeholder="설명"
             value={form.explanation}
             onChange={(e) =>

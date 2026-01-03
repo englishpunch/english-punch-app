@@ -13,7 +13,7 @@ export function buildConvexRunArgs(email: string, newPassword: string) {
 export function runChangePassword(
   argv: string[] = process.argv.slice(2),
   env: NodeJS.ProcessEnv = process.env,
-  spawn: typeof spawnSync = spawnSync,
+  spawn: typeof spawnSync = spawnSync
 ): SpawnSyncReturns<Buffer> {
   const [email, newPassword] = argv;
 

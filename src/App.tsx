@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useQuery } from "convex/react";
 import { api } from "../convex/_generated/api";
@@ -7,7 +7,7 @@ import "./global.css";
 import { Toaster } from "sonner";
 import { Loader2 } from "lucide-react";
 import { RouterProvider } from "@tanstack/react-router";
-import { createAppRouter } from "./router";
+import { router } from "./router";
 
 export default function App() {
   const { signIn } = useAuthActions();
@@ -23,19 +23,14 @@ export default function App() {
 
   const isLoading = loggedInUser === undefined || loggedInUser === null;
 
-  const router = useMemo(() => {
-    if (!loggedInUser) return null;
-    return createAppRouter({ userId: loggedInUser._id });
-  }, [loggedInUser]);
-
-  if (isLoading || !router) {
+  if (isLoading) {
     return (
       <div
-        className="min-h-screen  flex items-center justify-center bg-gray-50"
+        className="flex min-h-screen items-center justify-center bg-white"
         data-testid="global-loader"
       >
         <Loader2
-          className="w-10 h-10 text-primary-600 animate-spin"
+          className="text-primary-600 h-10 w-10 animate-spin"
           aria-hidden
         />
       </div>
@@ -43,7 +38,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen sm:w-160 sm: mx-auto  sm:shadow overflow-hidden bg-gray-50">
+    <div className="sm: mx-auto min-h-screen overflow-hidden bg-white sm:w-160 sm:shadow">
       <RouterProvider router={router} />
       {(import.meta.env?.MODE === "test" ||
         process.env.NODE_ENV === "test") && (

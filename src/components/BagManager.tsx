@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -8,25 +8,29 @@ import { Button } from "./Button";
 import { ArrowLeft, BarChart3, Eye, Loader2, Plus } from "lucide-react";
 
 interface BagManagerProps {
-  userId: Id<"users">;
   onBack?: () => void;
 }
 
-export default function BagManager({ userId, onBack }: BagManagerProps) {
+export default function BagManager({ onBack }: BagManagerProps) {
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const userId = loggedInUser?._id;
+
+  useEffect(() => {
+    console.log("userId", userId);
+  }, [userId]);
   const [currentView, setCurrentView] = useState<"bags" | "study" | "stats">(
-    "bags",
+    "bags"
   );
-  const [selectedBagId, setSelectedBagId] = useState<Id<"bags"> | null>(
-    null,
-  );
+  const [selectedBagId, setSelectedBagId] = useState<Id<"bags"> | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
   // Convex 쿼리 및 뮤테이션
-  const bags = useQuery(api.learning.getUserBags, { userId });
+  const bags = useQuery(api.learning.getUserBags, userId ? { userId } : "skip");
   const createSampleBag = useMutation(api.learning.createSampleBag);
   const updateBagStats = useMutation(api.learning.updateBagStats);
 
   const handleCreateSampleBag = async () => {
+    if (!userId) return;
     setIsCreatingSample(true);
     try {
       const bagId = await createSampleBag({ userId });
@@ -63,28 +67,23 @@ export default function BagManager({ userId, onBack }: BagManagerProps) {
     return (
       <FSRSStudySession
         bagId={selectedBagId}
-        userId={userId}
         onComplete={handleCompleteStudy}
       />
     );
   }
 
   if (currentView === "stats" && selectedBagId) {
-    return (
-      <BagStats
-        userId={userId}
-        bagId={selectedBagId}
-        onBack={handleBackToBags}
-      />
-    );
+    return <BagStats bagId={selectedBagId} onBack={handleBackToBags} />;
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
+    <div className="mx-auto max-w-4xl space-y-8 px-4 py-10">
       {/* 헤더 */}
       <div className="flex items-start justify-between">
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold text-gray-900">영어 학습 샌드백</h1>
+          <h1 className="text-3xl font-semibold text-gray-900">
+            영어 학습 샌드백
+          </h1>
           <p className="text-base leading-6 text-gray-600">
             과학적인 간격 반복 학습으로 효율적으로 암기하세요. 한 번에 하나의
             주요 행동만 보이도록 단순하게 유지합니다.
@@ -106,8 +105,8 @@ export default function BagManager({ userId, onBack }: BagManagerProps) {
       {/* 샘플 샌드백 생성 버튼 */}
       {(!bags || bags.length === 0) && (
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-sm">
-          <div className="text-center space-y-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-50 text-primary-700 text-xl">
+          <div className="space-y-4 text-center">
+            <div className="bg-primary-50 text-primary-700 mx-auto flex h-14 w-14 items-center justify-center rounded-full text-xl">
               <Plus className="h-6 w-6" aria-hidden />
             </div>
             <div className="space-y-2">
@@ -122,7 +121,7 @@ export default function BagManager({ userId, onBack }: BagManagerProps) {
             <Button
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onClick={handleCreateSampleBag}
-              disabled={isCreatingSample}
+              disabled={isCreatingSample || !userId}
               className="mx-auto px-6"
             >
               {isCreatingSample ? (
@@ -158,7 +157,7 @@ export default function BagManager({ userId, onBack }: BagManagerProps) {
       {/* 로딩 상태 */}
       {!bags && (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+          <div className="border-primary-500 h-8 w-8 animate-spin rounded-full border-b-2"></div>
         </div>
       )}
     </div>
@@ -185,14 +184,14 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
   const dueCount = bag.newCards + bag.learningCards; // 간단히 계산
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow transition-shadow duration-200">
+    <div className="rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow">
       <div className="p-6">
         {/* 샌드백 헤더 */}
-        <div className="flex items-start justify-between mb-3">
+        <div className="mb-3 flex items-start justify-between">
           <h3 className="text-lg font-semibold text-gray-900">{bag.name}</h3>
           <div className="flex items-center space-x-2">
             {!bag.isActive && (
-              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
                 비활성
               </span>
             )}
@@ -201,16 +200,16 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
 
         {/* 샌드백 설명 */}
         {bag.description && (
-          <p className="text-sm text-gray-600 mb-4">{bag.description}</p>
+          <p className="mb-4 text-sm text-gray-600">{bag.description}</p>
         )}
 
         {/* 태그 */}
         {bag.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
+          <div className="mb-4 flex flex-wrap gap-1">
             {bag.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 bg-primary-50 text-primary-700 text-xs rounded-full"
+                className="bg-primary-50 text-primary-700 rounded-full px-2 py-1 text-xs"
               >
                 {tag}
               </span>
@@ -219,26 +218,26 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
         )}
 
         {/* 통계 */}
-        <div className="space-y-2 mb-6">
+        <div className="mb-6 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">전체 카드:</span>
             <span className="font-medium">{bag.totalCards}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">새 카드:</span>
-            <span className="font-semibold text-primary-700">
+            <span className="text-primary-700 font-semibold">
               {bag.newCards}
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">학습 중:</span>
-            <span className="font-semibold text-primary-700">
+            <span className="text-primary-700 font-semibold">
               {bag.learningCards}
             </span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">복습:</span>
-            <span className="font-semibold text-primary-700">
+            <span className="text-primary-700 font-semibold">
               {bag.reviewCards}
             </span>
           </div>

@@ -1,20 +1,20 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
 import { Loader2, Clock3 } from "lucide-react";
 
-interface ActivityPageProps {
-  userId: Id<"users">;
-}
-
-export default function ActivityPage({ userId }: ActivityPageProps) {
-  const logs = useQuery(api.fsrs.getRecentReviewLogs, { userId, limit: 50 });
+export default function ActivityPage() {
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const userId = loggedInUser?._id;
+  const logs = useQuery(
+    api.fsrs.getRecentReviewLogs,
+    userId ? { userId, limit: 50 } : "skip"
+  );
 
   if (logs === undefined) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2
-          className="h-6 w-6 animate-spin text-primary-600"
+          className="text-primary-600 h-6 w-6 animate-spin"
           aria-hidden
         />
       </div>
@@ -23,7 +23,7 @@ export default function ActivityPage({ userId }: ActivityPageProps) {
 
   if (!logs || logs.length === 0) {
     return (
-      <div className="rounded-xl bg-white border border-gray-200 shadow-sm p-8 text-center space-y-3">
+      <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
         <p className="text-lg font-semibold text-gray-900">
           최근 리뷰 로그가 없습니다
         </p>
@@ -39,12 +39,12 @@ export default function ActivityPage({ userId }: ActivityPageProps) {
       {logs.map((log) => (
         <div
           key={log._id}
-          className="rounded-lg bg-white border border-gray-200 shadow-sm p-4 flex items-start justify-between"
+          className="flex items-start justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
         >
           <div className="space-y-1">
             <div className="flex items-center gap-2">
               <RatingPill rating={log.rating} />
-              <span className="text-xs text-gray-500 flex items-center gap-1">
+              <span className="flex items-center gap-1 text-xs text-gray-500">
                 <Clock3 className="h-3.5 w-3.5" aria-hidden />
                 {new Date(log.review).toLocaleString()}
               </span>
@@ -53,7 +53,7 @@ export default function ActivityPage({ userId }: ActivityPageProps) {
               {log.question || "카드 내용 없음"}
             </p>
           </div>
-          <div className="text-xs text-gray-500 text-right">
+          <div className="text-right text-xs text-gray-500">
             {log.duration ? `${Math.round(log.duration)}ms` : ""}
           </div>
         </div>
@@ -72,7 +72,7 @@ function RatingPill({ rating }: { rating: number }) {
   const entry = config[rating as 1 | 2 | 3 | 4] || config[1];
   return (
     <span
-      className={`px-2 py-1 rounded-full text-xs font-semibold ${entry.className}`}
+      className={`rounded-full px-2 py-1 text-xs font-semibold ${entry.className}`}
     >
       {entry.label}
     </span>

@@ -15,7 +15,7 @@ export const setupDeepLinkHandler = async () => {
           try {
             // URL에서 fragment를 추출하여 Supabase에 전달
             const urlObj = new URL(
-              url.replace("english-punch://", "http://localhost/"),
+              url.replace("english-punch://", "http://localhost/")
             );
             const hashParams = new URLSearchParams(urlObj.hash.substring(1));
 

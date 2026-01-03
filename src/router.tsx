@@ -1,26 +1,23 @@
 import {
   createHashHistory,
-  createMemoryHistory,
-  createRootRouteWithContext,
+  createRootRoute,
   createRoute,
   createRouter,
   Navigate,
-  Outlet,
-  useRouter,
 } from "@tanstack/react-router";
-import { Id } from "../convex/_generated/dataModel";
-import BagManager from "./components/BagManager";
-import PlansPage from "./components/PlansPage";
-import ActivityPage from "./components/ActivityPage";
-import ProfilePage from "./components/ProfilePage";
-import MobileShell from "./components/MobileShell";
-import ComingSoon from "./components/ComingSoon";
+import {
+  ActivityRoute,
+  ClubRoute,
+  HomeRoute,
+  PlansRoute,
+  ProfileRoute,
+  RootLayout,
+  RunRoute,
+} from "./router-components";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
 
-type RouterContext = { userId: Id<"users"> };
-
-const rootRoute = createRootRouteWithContext<RouterContext>()({
+const rootRoute = createRootRoute({
   component: RootLayout,
   validateSearch: zodValidator(
     z.object({
@@ -81,83 +78,14 @@ const routeTree = rootRoute.addChildren([
   clubRoute,
 ]);
 
-type History = ReturnType<typeof createMemoryHistory>;
-
-export const createAppRouter = ({
-  userId,
-  history,
-}: {
-  userId: Id<"users">;
-  history?: History;
-}) => {
-  const context = { userId } as RouterContext;
-  const router = createRouter({
-    routeTree,
-    history: history ?? createHashHistory(),
-    context,
-    defaultPreload: "intent",
-  });
-
-  router.update({ context });
-
-  return router;
-};
-
-// Type augmentation for TanStack Router
-const __routerForTypes = createAppRouter({
-  userId: "router-user" as Id<"users">,
-  history: createMemoryHistory({ initialEntries: ["/run"] }),
+export const router = createRouter({
+  routeTree,
+  history: createHashHistory(),
+  defaultPreload: "intent",
 });
 
 declare module "@tanstack/react-router" {
   interface Register {
-    router: typeof __routerForTypes;
+    router: typeof router;
   }
-}
-
-function RootLayout() {
-  const router = useRouter();
-  const userId = router.options.context?.userId;
-
-  if (!userId) {
-    throw new Error("router context missing userId");
-  }
-
-  const user = { _id: userId } as const;
-
-  return (
-    <MobileShell user={user}>
-      <Outlet />
-    </MobileShell>
-  );
-}
-
-function RunRoute() {
-  const router = useRouter();
-  const userId = router.options.context.userId;
-  return <BagManager userId={userId} />;
-}
-
-function PlansRoute() {
-  const router = useRouter();
-  const userId = router.options.context.userId;
-  return <PlansPage userId={userId} />;
-}
-
-function ActivityRoute() {
-  const router = useRouter();
-  const userId = router.options.context.userId;
-  return <ActivityPage userId={userId} />;
-}
-
-function ProfileRoute() {
-  return <ProfilePage />;
-}
-
-function HomeRoute() {
-  return <ComingSoon label="Home" />;
-}
-
-function ClubRoute() {
-  return <ComingSoon label="클럽" />;
 }
