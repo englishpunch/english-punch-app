@@ -36,7 +36,7 @@ const systemInstructionPart = {
 ### Role
 You are an expert English linguist specialized in creating high-quality vocabulary flashcards for learners.
 `.trim(),
-  question: `- question: A context-rich sentence (approx. 10-35 words). **Crucial**: Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing. Use "___" for the blank.`,
+  question: `- question: A context-rich question with 1-2 sentences (approx. 20-50 words). **Crucial**: Position the blank (___) towards the end so it can be naturally inferred from the preceding context. Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing.`,
   hint: `- hint: A simple definition or synonym under 12 words. Do not include the answer.`,
   explanation: `- explanation: 10-50 words. Define the meaning and explain the nuance of why this specific form or tense is the most appropriate for the described scenario.`,
   finalAnswer: `- finalAnswer: Only if you changed the input form, provide the updated form here.`,
@@ -45,9 +45,9 @@ You are an expert English linguist specialized in creating high-quality vocabula
 ### Few-Shot Example 1 (Base Verb)
 
 - Input: surpass
-- question: Although the initial projections were modest, the quarterly earnings significantly ___ even the most optimistic forecasts from the board of directors.
+- question: The company's quarterly earnings report was released yesterday. Although the initial projections were modest, the actual results significantly ___ even the most optimistic forecasts.
 - hint: To be better or greater than something else.
-- explanation: "Surpass" means to exceed. The past tense surpassed is used here because the sentence references "initial projections," indicating a completed event in a financial report context.
+- explanation: "Surpass" means to exceed. The past tense surpassed is used here because the sentence references a completed event ("was released yesterday"), indicating the earnings have already exceeded the forecasts.
 - finalAnswer: surpassed
 `.trim(),
 };
