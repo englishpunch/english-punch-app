@@ -619,6 +619,9 @@ export const createCard = mutation({
     answer: v.string(),
     hint: v.optional(v.string()),
     explanation: v.optional(v.string()),
+    context: v.optional(v.string()),
+    sourceWord: v.optional(v.string()),
+    expression: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const now = Date.now();
@@ -629,6 +632,9 @@ export const createCard = mutation({
       answer: args.answer,
       hint: args.hint,
       explanation: args.explanation,
+      context: args.context,
+      sourceWord: args.sourceWord,
+      expression: args.expression,
       tags: [],
       source: "manual",
       ...initialSchedule(now),
@@ -655,6 +661,9 @@ export const updateCard = mutation({
     answer: v.string(),
     hint: v.optional(v.string()),
     explanation: v.optional(v.string()),
+    context: v.optional(v.string()),
+    sourceWord: v.optional(v.string()),
+    expression: v.optional(v.string()),
     due: v.optional(v.number()),
     stability: v.optional(v.number()),
     difficulty: v.optional(v.number()),
@@ -676,6 +685,9 @@ export const updateCard = mutation({
       answer: args.answer,
       hint: args.hint,
       explanation: args.explanation,
+      context: args.context,
+      sourceWord: args.sourceWord,
+      expression: args.expression,
       ...initialSchedule(now),
     });
 
@@ -719,5 +731,57 @@ export const deleteCard = mutation({
       lastModified: new Date().toISOString(),
     });
     return null;
+  },
+});
+
+/** 카드 일괄 생성 (다중 표현용) */
+export const createCardsBatch = mutation({
+  args: {
+    bagId: v.id("bags"),
+    userId: v.id("users"),
+    cards: v.array(
+      v.object({
+        question: v.string(),
+        answer: v.string(),
+        hint: v.optional(v.string()),
+        explanation: v.optional(v.string()),
+        context: v.optional(v.string()),
+        sourceWord: v.optional(v.string()),
+        expression: v.optional(v.string()),
+      })
+    ),
+  },
+  handler: async (ctx, args) => {
+    const now = Date.now();
+    const cardIds = [];
+
+    for (const cardData of args.cards) {
+      const cardId = await ctx.db.insert("cards", {
+        bagId: args.bagId,
+        userId: args.userId,
+        question: cardData.question,
+        answer: cardData.answer,
+        hint: cardData.hint,
+        explanation: cardData.explanation,
+        context: cardData.context,
+        sourceWord: cardData.sourceWord,
+        expression: cardData.expression,
+        tags: [],
+        source: "multi-expression",
+        ...initialSchedule(now),
+      });
+      cardIds.push(cardId);
+    }
+
+    const bag = await ctx.db.get("bags", args.bagId);
+    if (bag) {
+      await ctx.db.patch("bags", args.bagId, {
+        totalCards: bag.totalCards + args.cards.length,
+        newCards: bag.newCards + args.cards.length,
+        lastModified: new Date(now).toISOString(),
+      });
+    }
+
+    return cardIds;
   },
 });

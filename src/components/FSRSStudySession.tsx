@@ -287,30 +287,6 @@ export default function FSRSStudySession({
           )}
         </div>
       </div>
-
-      {/* 하단 통계 */}
-      <div className="fixed right-0 bottom-0 left-0 border-t bg-white shadow">
-        <div className="mx-auto max-w-4xl px-4 py-2">
-          <div className="flex justify-center space-x-6 text-sm">
-            <div className="flex items-center space-x-1">
-              <div className="h-3 w-3 rounded-full bg-red-500"></div>
-              <span>{sessionStats.again}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="bg-primary-500 h-3 w-3 rounded-full"></div>
-              <span>{sessionStats.hard}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="bg-primary-600 h-3 w-3 rounded-full"></div>
-              <span>{sessionStats.good}</span>
-            </div>
-            <div className="flex items-center space-x-1">
-              <div className="bg-primary-700 h-3 w-3 rounded-full"></div>
-              <span>{sessionStats.easy}</span>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

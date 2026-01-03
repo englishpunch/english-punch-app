@@ -19,11 +19,8 @@ const cardSchema = z.object({
     ),
 });
 
-const hintSchema = z.object({
+const hintAndExplanationSchema = z.object({
   hint: z.string().describe("A short hint for the question."),
-});
-
-const explanationSchema = z.object({
   explanation: z
     .string()
     .describe(
@@ -34,25 +31,17 @@ const explanationSchema = z.object({
 const GEMINI_MODEL = "gemini-3-pro-preview";
 const logger = getGlobalLogger();
 
-/**
- * System Instruction for the AI model.
- * This should be passed to config.systemInstruction.
- */
-const systemInstruction = `
+const systemInstructionPart = {
+  role: `
 ### Role
 You are an expert English linguist specialized in creating high-quality vocabulary flashcards for learners.
-
-### Task & Logic
-1. **Analyze Form**: Determine if the input is a single-word base form (infinitive verb or singular noun).
-2. **Inflection Rule**: 
-   - If (and only if) changing the tense or number makes the sentence significantly more natural, update the form (e.g., "apply" -> "applied").
-   - If the input is multi-word or already specific (e.g., "went", "apple tree"), reuse them exactly as-is.
-3. **Generate Content**:
-   - **question**: A context-rich sentence (approx. 10-35 words). **Crucial**: Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing. Use "___" for the blank.
-   - **hint**: A simple definition or synonym under 12 words. Do not include the answer.
-   - **explanation**: 10-50 words. Define the meaning and explain the nuance of why this specific form or tense is the most appropriate for the described scenario.
-   - **finalAnswer**: Only if you changed the input form, provide the updated form here.
-
+`.trim(),
+  question: `- question: A context-rich sentence (approx. 10-35 words). **Crucial**: Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing. Use "___" for the blank.`,
+  hint: `- hint: A simple definition or synonym under 12 words. Do not include the answer.`,
+  explanation: `- explanation: 10-50 words. Define the meaning and explain the nuance of why this specific form or tense is the most appropriate for the described scenario.`,
+  finalAnswer: `- finalAnswer: Only if you changed the input form, provide the updated form here.`,
+  contextAwareness: `Context Awareness: If a context/situation is provided (e.g., "친구에게 조언하는 상황", "회의에서 제안하는 말투"), use it consistently across all generated content`,
+  fewShotExample1: `
 ### Few-Shot Example 1 (Base Verb)
 
 - Input: surpass
@@ -60,14 +49,47 @@ You are an expert English linguist specialized in creating high-quality vocabula
 - hint: To be better or greater than something else.
 - explanation: "Surpass" means to exceed. The past tense surpassed is used here because the sentence references "initial projections," indicating a completed event in a financial report context.
 - finalAnswer: surpassed
+`.trim(),
+};
+
+/**
+ * System Instruction for the AI model.
+ */
+const generateAllSystemInstruction = `
+${systemInstructionPart.role}
+
+### Task
+1. Inflection Rule: If changing the tense or number makes the sentence significantly more natural, update the form (e.g., "apply" -> "applied").
+2. ${systemInstructionPart.contextAwareness}
+3. **Generate Content**:
+   ${systemInstructionPart.question}
+   ${systemInstructionPart.hint}
+   ${systemInstructionPart.explanation}
+   ${systemInstructionPart.finalAnswer}
+
+${systemInstructionPart.fewShotExample1}
 `.trim();
 
-const buildPrompt = (answer: string): string => {
-  return `Target Word/Phrase: "${answer.trim()}"`;
+const regenerateHintAndExplanationSystemInstruction = `
+${systemInstructionPart.role}
+
+### Task
+1. ${systemInstructionPart.contextAwareness}
+2. **Generate both hint and explanation**:
+   ${systemInstructionPart.hint}
+   ${systemInstructionPart.explanation}
+`.trim();
+
+const buildPrompt = (answer: string, context?: string): string => {
+  let prompt = `Target Word/Phrase: "${answer.trim()}"`;
+  if (context && context.trim()) {
+    prompt += `\nContext/Situation: "${context.trim()}"`;
+  }
+  return prompt;
 };
 
 export const generateCardDraft = action({
-  args: { answer: v.string() },
+  args: { answer: v.string(), context: v.optional(v.string()) },
 
   returns: v.object({
     question: v.string(),
@@ -78,31 +100,30 @@ export const generateCardDraft = action({
 
   handler: async (_ctx, args) => {
     const answer = args.answer.trim();
+    const context = args.context?.trim();
     const runId =
       "ai:generateCardDraft:" + Math.random().toString(36).slice(2, 8);
     if (!answer) {
       throw new Error("정답을 입력해주세요.");
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
-    }
+    requireApiKey();
 
     logger.info(runId, {
       stage: "start",
       model: GEMINI_MODEL,
       answerLength: answer.length,
+      hasContext: !!context,
     });
 
-    const prompt = buildPrompt(answer);
+    const prompt = buildPrompt(answer, context);
 
     logger.info(runId, {
       stage: "prompt_built",
       promptPreview: prompt.slice(0, 120),
     });
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = getAiClient();
 
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
@@ -113,7 +134,7 @@ export const generateCardDraft = action({
         thinkingConfig: {
           thinkingLevel: ThinkingLevel.LOW,
         },
-        systemInstruction,
+        systemInstruction: generateAllSystemInstruction,
       },
     });
 
@@ -140,22 +161,6 @@ export const generateCardDraft = action({
   },
 });
 
-const buildHintPrompt = (question: string, answer: string): string =>
-  [
-    "You help me refine flashcard hints.",
-    `Question text (includes a blank as ___): "${question.trim()}"`,
-    `Correct answer to fit the blank: "${answer.trim()}"`,
-    "Hint: under 12 English words, give a nudge without revealing the answer.",
-  ].join("\n");
-
-const buildExplanationPrompt = (question: string, answer: string): string =>
-  [
-    "You help me refine flashcard explanations.",
-    `Question text (includes a blank as ___): "${question.trim()}"`,
-    `Correct answer to fit the blank: "${answer.trim()}"`,
-    "Explanation: 30-50 simple English words explaining meaning and why the answer fits the blank. Avoid repeating the question verbatim.",
-  ].join("\n");
-
 const requireInputs = (question: string, answer: string) => {
   if (!question.trim()) {
     throw new Error("질문을 입력해주세요.");
@@ -165,21 +170,40 @@ const requireInputs = (question: string, answer: string) => {
   }
 };
 
-const getAiClient = () => {
+const requireApiKey = () => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
   }
+  return apiKey;
+};
+
+const getAiClient = () => {
+  const apiKey = requireApiKey();
   return new GoogleGenAI({ apiKey });
 };
 
-export const regenerateHint = action({
-  args: { question: v.string(), answer: v.string() },
-  returns: v.object({ hint: v.string() }),
+/**
+ * One-shot regeneration of both hint and explanation
+ * Uses the unified system instruction for consistency
+ */
+export const regenerateHintAndExplanation = action({
+  args: {
+    question: v.string(),
+    answer: v.string(),
+    context: v.optional(v.string()),
+  },
+  returns: v.object({
+    hint: v.string(),
+    explanation: v.string(),
+  }),
   handler: async (_ctx, args) => {
     const question = args.question.trim();
     const answer = args.answer.trim();
-    const runId = "ai:regenerateHint:" + Math.random().toString(36).slice(2, 8);
+    const context = args.context?.trim();
+    const runId =
+      "ai:regenerateHintAndExplanation:" +
+      Math.random().toString(36).slice(2, 8);
 
     requireInputs(question, answer);
 
@@ -188,25 +212,38 @@ export const regenerateHint = action({
       model: GEMINI_MODEL,
       questionLength: question.length,
       answerLength: answer.length,
+      hasContext: !!context,
     });
 
-    const prompt = buildHintPrompt(question, answer);
+    // Build prompt with context awareness
+    const prompt = [
+      "You help me refine flashcard hints and explanations.",
+      `Question text (includes a blank as ___): "${question}"`,
+      `Correct answer to fit the blank: "${answer}"`,
+    ];
+
+    if (context) {
+      prompt.push(`Context/Situation: "${context}"`);
+    }
+
+    const promptStr = prompt.join("\n");
 
     logger.info(runId, {
       stage: "prompt_built",
-      promptPreview: prompt.slice(0, 120),
+      promptPreview: promptStr.slice(0, 120),
     });
 
     const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
-      contents: prompt,
+      contents: promptStr,
       config: {
         responseMimeType: "application/json",
-        responseJsonSchema: zodToJsonSchema(hintSchema),
+        responseJsonSchema: zodToJsonSchema(hintAndExplanationSchema),
         thinkingConfig: {
           thinkingLevel: ThinkingLevel.LOW,
         },
+        systemInstruction: regenerateHintAndExplanationSystemInstruction,
       },
     });
 
@@ -214,52 +251,87 @@ export const regenerateHint = action({
       throw new Error("Gemini 응답이 비어있습니다.");
     }
 
-    const result = hintSchema.parse(JSON.parse(response.text));
+    const result = hintAndExplanationSchema.parse(JSON.parse(response.text));
 
     logger.info(runId, {
       stage: "parsed",
       hintPreview: result.hint.slice(0, 60),
+      explanationPreview: result.explanation.slice(0, 80),
     });
 
     return result;
   },
 });
 
-export const regenerateExplanation = action({
-  args: { question: v.string(), answer: v.string() },
-  returns: v.object({ explanation: v.string() }),
-  handler: async (_ctx, args) => {
-    const question = args.question.trim();
-    const answer = args.answer.trim();
-    const runId =
-      "ai:regenerateExplanation:" + Math.random().toString(36).slice(2, 8);
+/**
+ * Multi-expression generation: Input (Korean or English) → English expression candidates
+ */
+const expressionCandidatesSchema = z.object({
+  expressions: z
+    .array(z.string())
+    .describe(
+      "Array of 3 natural English expressions/phrases that convey the input meaning"
+    ),
+});
 
-    requireInputs(question, answer);
+const expressionCandidatesSystemInstruction = `
+You are an expert English linguist helping learners find natural English expressions.
+Your task is to generate exactly 3 natural, idiomatic English expressions or phrases.
+Vary the formality and style. Focus on expressions that would be useful in real conversation or writing.
+`.trim();
+
+export const generateExpressionCandidates = action({
+  args: {
+    input: v.string(),
+    context: v.optional(v.string()),
+  },
+  returns: v.object({
+    expressions: v.array(v.string()),
+  }),
+  handler: async (_ctx, args) => {
+    const input = args.input.trim();
+    const context = args.context?.trim();
+    const runId =
+      "ai:generateExpressionCandidates:" +
+      Math.random().toString(36).slice(2, 8);
+
+    if (!input) {
+      throw new Error("표현을 입력해주세요.");
+    }
+
+    requireApiKey();
 
     logger.info(runId, {
       stage: "start",
       model: GEMINI_MODEL,
-      questionLength: question.length,
-      answerLength: answer.length,
+      inputLength: input.length,
+      hasContext: !!context,
     });
 
-    const prompt = buildExplanationPrompt(question, answer);
+    const prompt = [`Expression/intent: "${input}"`];
+
+    if (context) {
+      prompt.push(`Context/Situation: "${context}"`);
+    }
+
+    const promptStr = prompt.join("\n");
 
     logger.info(runId, {
       stage: "prompt_built",
-      promptPreview: prompt.slice(0, 120),
+      promptPreview: promptStr.slice(0, 120),
     });
 
     const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
-      contents: prompt,
+      contents: promptStr,
       config: {
         responseMimeType: "application/json",
-        responseJsonSchema: zodToJsonSchema(explanationSchema),
+        responseJsonSchema: zodToJsonSchema(expressionCandidatesSchema),
         thinkingConfig: {
           thinkingLevel: ThinkingLevel.LOW,
         },
+        systemInstruction: expressionCandidatesSystemInstruction,
       },
     });
 
@@ -267,11 +339,12 @@ export const regenerateExplanation = action({
       throw new Error("Gemini 응답이 비어있습니다.");
     }
 
-    const result = explanationSchema.parse(JSON.parse(response.text));
+    const result = expressionCandidatesSchema.parse(JSON.parse(response.text));
 
     logger.info(runId, {
       stage: "parsed",
-      explanationPreview: result.explanation.slice(0, 80),
+      expressionsCount: result.expressions.length,
+      expressions: result.expressions,
     });
 
     return result;
