@@ -48,6 +48,11 @@ const plansRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/plans",
   component: PlansRoute,
+  validateSearch: zodValidator(
+    z.object({
+      search: fallback(z.string().optional(), ""),
+    })
+  ),
 });
 
 const activityRoute = createRoute({

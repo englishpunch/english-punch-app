@@ -550,6 +550,7 @@ export const getBagCards = query({
   returns: v.array(
     v.object({
       _id: v.id("cards"),
+      _creationTime: v.number(),
       question: v.string(),
       answer: v.string(),
       hint: v.optional(v.string()),
@@ -561,10 +562,12 @@ export const getBagCards = query({
       .query("cards")
       .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
       .filter((q) => q.eq(q.field("userId"), args.userId))
+      .order("desc")
       .collect();
 
     return cards.map((c) => ({
       _id: c._id,
+      _creationTime: c._creationTime,
       question: c.question,
       answer: c.answer,
       hint: c.hint,
