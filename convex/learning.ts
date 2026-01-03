@@ -576,6 +576,7 @@ export const getBagCards = query({
       answer: v.string(),
       hint: v.optional(v.string()),
       explanation: v.optional(v.string()),
+      context: v.optional(v.string()),
     })
   ),
   handler: async (ctx, args) => {
@@ -593,6 +594,7 @@ export const getBagCards = query({
       answer: c.answer,
       hint: c.hint,
       explanation: c.explanation,
+      context: c.context,
     }));
   },
 });
