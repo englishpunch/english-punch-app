@@ -562,41 +562,6 @@ export const deleteBag = mutation({
   },
 });
 
-/** 백의 카드 전체 조회 */
-export const getBagCards = query({
-  args: {
-    bagId: v.id("bags"),
-    userId: v.id("users"),
-  },
-  returns: v.array(
-    v.object({
-      _id: v.id("cards"),
-      _creationTime: v.number(),
-      question: v.string(),
-      answer: v.string(),
-      hint: v.optional(v.string()),
-      explanation: v.optional(v.string()),
-    })
-  ),
-  handler: async (ctx, args) => {
-    const cards = await ctx.db
-      .query("cards")
-      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
-      .filter((q) => q.eq(q.field("userId"), args.userId))
-      .order("desc")
-      .collect();
-
-    return cards.map((c) => ({
-      _id: c._id,
-      _creationTime: c._creationTime,
-      question: c.question,
-      answer: c.answer,
-      hint: c.hint,
-      explanation: c.explanation,
-    }));
-  },
-});
-
 /** 백의 카드 페이지네이션 조회 (30개 단위) */
 export const getBagCardsPaginated = query({
   args: {
