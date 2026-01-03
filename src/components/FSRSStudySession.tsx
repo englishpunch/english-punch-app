@@ -8,7 +8,6 @@ import { ArrowLeft, CheckCircle2, FileText } from "lucide-react";
 
 interface FSRSStudySessionProps {
   bagId: Id<"bags">;
-  userId: Id<"users">;
   onComplete: () => void;
 }
 
@@ -23,7 +22,12 @@ type SessionCard = {
   reps: number;
 };
 
-export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStudySessionProps) {
+export default function FSRSStudySession({
+  bagId,
+  onComplete,
+}: FSRSStudySessionProps) {
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const userId = loggedInUser?._id;
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
@@ -36,11 +40,16 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
   });
 
   // Convex 쿼리 및 뮤테이션
-  const dueCards = useQuery(api.learning.getDueCards, {
-    userId,
-    bagId,
-    limit: 30,
-  });
+  const dueCards = useQuery(
+    api.learning.getDueCards,
+    userId
+      ? {
+          userId,
+          bagId,
+          limit: 30,
+        }
+      : "skip"
+  );
 
   const startSession = useMutation(api.fsrs.startSession);
   const endSession = useMutation(api.fsrs.endSession);
@@ -48,6 +57,7 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
 
   // 세션 시작
   useEffect(() => {
+    if (!userId) return;
     const initSession = async () => {
       try {
         const newSessionId = await startSession({
@@ -93,7 +103,7 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
   const isSessionComplete = currentCardIndex >= totalCards;
 
   const handleGrade = async (rating: 1 | 2 | 3 | 4, duration: number) => {
-    if (!currentCard || !sessionId || isReviewing) return;
+    if (!userId || !currentCard || !sessionId || isReviewing) return;
 
     setIsReviewing(true);
 
@@ -151,8 +161,8 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
   // 로딩 상태
   if (!allCards) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="border-primary-500 h-12 w-12 animate-spin rounded-full border-b-2"></div>
       </div>
     );
   }
@@ -160,32 +170,44 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
   // 세션 완료
   if (isSessionComplete) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow p-8 max-w-md w-full border border-gray-200">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-8 shadow">
           <div className="text-center">
-            <div className="w-16 h-16 bg-primary-50 rounded-full flex items-center justify-center mx-auto mb-4 text-primary-700">
+            <div className="bg-primary-50 text-primary-700 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
               <CheckCircle2 className="h-8 w-8" aria-hidden />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">학습 완료!</h2>
-            <p className="text-gray-600 mb-6">총 {completedCount}장의 카드를 학습했습니다.</p>
+            <h2 className="mb-2 text-2xl font-bold text-gray-900">
+              학습 완료!
+            </h2>
+            <p className="mb-6 text-gray-600">
+              총 {completedCount}장의 카드를 학습했습니다.
+            </p>
 
             {/* 세션 통계 */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="mb-6 grid grid-cols-2 gap-4">
               <div className="rounded-lg border border-gray-200 bg-red-50 p-3">
-                <div className="text-red-600 font-semibold text-lg">{sessionStats.again}</div>
-                <div className="text-red-600 text-sm">다시</div>
+                <div className="text-lg font-semibold text-red-600">
+                  {sessionStats.again}
+                </div>
+                <div className="text-sm text-red-600">다시</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">{sessionStats.hard}</div>
-                <div className="text-gray-700 text-sm">어려움</div>
+                <div className="text-primary-700 text-lg font-semibold">
+                  {sessionStats.hard}
+                </div>
+                <div className="text-sm text-gray-700">어려움</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">{sessionStats.good}</div>
-                <div className="text-gray-700 text-sm">보통</div>
+                <div className="text-primary-700 text-lg font-semibold">
+                  {sessionStats.good}
+                </div>
+                <div className="text-sm text-gray-700">보통</div>
               </div>
               <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-                <div className="text-primary-700 font-semibold text-lg">{sessionStats.easy}</div>
-                <div className="text-gray-700 text-sm">쉬움</div>
+                <div className="text-primary-700 text-lg font-semibold">
+                  {sessionStats.easy}
+                </div>
+                <div className="text-sm text-gray-700">쉬움</div>
               </div>
             </div>
 
@@ -202,13 +224,15 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
   // 카드가 없는 경우
   if (totalCards === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow p-8 max-w-md w-full text-center border border-gray-200">
-          <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-500">
-            <FileText className="w-8 h-8" aria-hidden />
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-8 text-center shadow">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-500">
+            <FileText className="h-8 w-8" aria-hidden />
           </div>
-          <h2 className="text-xl font-bold text-gray-900 mb-2">학습할 카드가 없습니다</h2>
-          <p className="text-gray-600 mb-6">
+          <h2 className="mb-2 text-xl font-bold text-gray-900">
+            학습할 카드가 없습니다
+          </h2>
+          <p className="mb-6 text-gray-600">
             모든 카드를 학습했거나 아직 복습 시간이 되지 않았습니다.
           </p>
           <Button fullWidth onClick={handleBack} variant="secondary">
@@ -223,10 +247,15 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
     <div className="min-h-screen bg-gray-50">
       {/* 진행률 표시 */}
       <div className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-2">
-            <Button onClick={handleBack} variant="secondary" size="sm" className="gap-2">
-              <ArrowLeft className="w-4 h-4" aria-hidden />
+        <div className="mx-auto max-w-4xl px-4 py-4">
+          <div className="mb-2 flex items-center justify-between">
+            <Button
+              onClick={handleBack}
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
               <span className="text-sm font-medium">홈으로</span>
             </Button>
             <span className="text-sm font-medium text-gray-700">진행률</span>
@@ -234,7 +263,7 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
               {currentCardIndex + 1} / {totalCards}
             </span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
+          <div className="h-2 w-full rounded-full bg-gray-200">
             <div
               className="bg-primary-600 h-2 rounded-full transition-all duration-300"
               style={{
@@ -260,23 +289,23 @@ export default function FSRSStudySession({ bagId, userId, onComplete }: FSRSStud
       </div>
 
       {/* 하단 통계 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow">
-        <div className="max-w-4xl mx-auto px-4 py-2">
+      <div className="fixed right-0 bottom-0 left-0 border-t bg-white shadow">
+        <div className="mx-auto max-w-4xl px-4 py-2">
           <div className="flex justify-center space-x-6 text-sm">
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <div className="h-3 w-3 rounded-full bg-red-500"></div>
               <span>{sessionStats.again}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-primary-500 rounded-full"></div>
+              <div className="bg-primary-500 h-3 w-3 rounded-full"></div>
               <span>{sessionStats.hard}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-primary-600 rounded-full"></div>
+              <div className="bg-primary-600 h-3 w-3 rounded-full"></div>
               <span>{sessionStats.good}</span>
             </div>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-primary-700 rounded-full"></div>
+              <div className="bg-primary-700 h-3 w-3 rounded-full"></div>
               <span>{sessionStats.easy}</span>
             </div>
           </div>

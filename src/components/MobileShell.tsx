@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
 import {
@@ -14,10 +13,11 @@ import {
 } from "lucide-react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { toast } from "sonner";
-import { Link, useRouter, useRouterState } from "@tanstack/react-router";
+import { useRouter, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
 
 interface MobileShellProps {
-  user: { _id: Id<"users">; email?: string; name?: string };
   children?: React.ReactNode;
 }
 
@@ -52,13 +52,11 @@ const tabs: Record<
   },
 };
 
-export default function MobileShell({ user, children }: MobileShellProps) {
+export default function MobileShell({ children }: MobileShellProps) {
   let pathname = "/run";
-  const navigateTo = (path: string) => router.navigate({ to: path });
 
   const { location } = useRouterState();
   pathname = location.pathname;
-  const router = useRouter();
 
   const activeTab = deriveTabFromPath(pathname);
   const [showProfile, setShowProfile] = useState(false);
@@ -66,53 +64,46 @@ export default function MobileShell({ user, children }: MobileShellProps) {
   const screenTitle = tabs[activeTab].title;
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-gray-200 px-2 py-1 flex items-center justify-between">
+    <div className="min-h-screen pb-20">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white/90 px-2 py-1 backdrop-blur">
         <Button
           variant="ghost"
           size="sm"
-          className="px-2 z-10"
+          className="z-10 px-2"
           aria-label="open profile"
           onClick={() => setShowProfile(true)}
         >
           <User2 className="h-5 w-5 text-gray-700" aria-hidden />
         </Button>
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold text-gray-800">
+        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold text-gray-800">
           {screenTitle}
         </span>
       </header>
 
-      <main className="px-4 py-6 max-w-5xl mx-auto">{children}</main>
+      <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
 
-      <BottomNav activeTab={activeTab} navigateTo={navigateTo} />
-      <ProfileDrawer
-        open={showProfile}
-        onClose={() => setShowProfile(false)}
-        user={user}
-      />
+      <BottomNav activeTab={activeTab} />
+      <ProfileDrawer open={showProfile} onClose={() => setShowProfile(false)} />
     </div>
   );
 }
 
-function BottomNav({
-  activeTab,
-  navigateTo,
-}: {
-  activeTab: TabKey;
-  navigateTo: (path: string) => Promise<void>;
-}) {
+function BottomNav({ activeTab }: { activeTab: TabKey }) {
+  const router = useRouter();
+  const navigateTo = (path: string) => router.navigate({ to: path });
+
   return (
-    <nav className="fixed w-full bottom-0 sm:w-160 left-1/2 -translate-x-1/2 z-30 bg-white border-t border-gray-200 shadow-lg">
-      <div className="max-w-5xl mx-auto flex justify-around">
+    <nav className="fixed bottom-0 left-1/2 z-30 w-full -translate-x-1/2 border-t border-gray-200 bg-white shadow-lg sm:w-160">
+      <div className="mx-auto flex max-w-5xl justify-around">
         {Object.values(tabs).map((tab) => {
           const Icon = tab.icon;
           const isActive = tab.key === activeTab;
           return (
             <Button
               key={tab.key}
-              onClick={() => navigateTo(tabPaths[tab.key])}
+              onClick={() => void navigateTo(tabPaths[tab.key])}
               className={cn(
-                "w-full flex-col items-center py-2 gap-0 text-xs font-medium",
+                "w-full flex-col items-center gap-0 py-2 text-xs font-medium",
                 isActive
                   ? "text-primary-700 font-bold"
                   : "text-gray-500 hover:text-gray-700"
@@ -142,33 +133,32 @@ function BottomNav({
 function ProfileDrawer({
   open,
   onClose,
-  user,
 }: {
   open: boolean;
   onClose: () => void;
-  user: { _id: Id<"users">; email?: string; name?: string };
 }) {
   const { signOut, signIn } = useAuthActions();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
+  const user = useQuery(api.auth.loggedInUser);
 
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-40">
       {/* <div className="absolute inset-0 bg-black/40" onClick={onClose} /> */}
-      <div className="absolute inset-0 bg-white pt-4 px-4 pb-10 flex flex-col">
-        <div className="flex items-center justify-between mb-4">
+      <div className="absolute inset-0 flex flex-col bg-white px-4 pt-4 pb-10">
+        <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-semibold">
-              {(user.name || user.email || "A").slice(0, 1).toUpperCase()}
+            <div className="bg-primary-100 text-primary-700 flex h-12 w-12 items-center justify-center rounded-full font-semibold">
+              {(user?.name || user?.email || "A").slice(0, 1).toUpperCase()}
             </div>
             <div>
               <p className="text-sm text-gray-600">내 프로필</p>
               <p className="text-lg font-semibold text-gray-900">
-                {user.name || "-"}
+                {user?.name || "-"}
               </p>
-              {user.email && (
+              {user?.email && (
                 <p className="text-sm text-gray-600">{user.email}</p>
               )}
             </div>
@@ -178,10 +168,10 @@ function ProfileDrawer({
           </Button>
         </div>
         <div className="space-y-3 text-sm text-gray-700">
-          <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 border border-gray-200">
+          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3">
             <span className="text-gray-600">사용자 ID</span>
-            <span className="font-mono text-gray-900 break-all">
-              {user._id}
+            <span className="font-mono break-all text-gray-900">
+              {user?._id}
             </span>
           </div>
           <form
@@ -199,6 +189,9 @@ function ProfileDrawer({
                   setEmail("");
                   setPassword("");
                   onClose();
+                  // 익명으로 signIn인 상태에서 이메일/비밀번호로 전환 시 context가 자동으로 바뀌지 않음. 일단 새로고침으로 처리
+                  // TODO: 추후 context가 바뀌면 수정
+                  location.reload();
                 })
                 .catch((error) => {
                   console.error("Sign-in error:", error);
@@ -207,7 +200,7 @@ function ProfileDrawer({
             }}
           >
             <input
-              className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
               placeholder="Email"
               type="email"
               value={email}
@@ -215,7 +208,7 @@ function ProfileDrawer({
               required
             />
             <input
-              className="w-full px-3 py-2 rounded-md border border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
               placeholder="Password"
               type="password"
               value={password}

@@ -3,6 +3,7 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
+import eslintPluginPrettierRecommended from "eslint-plugin-prettier/recommended";
 
 export default tseslint.config(
   {
@@ -85,8 +86,6 @@ export default tseslint.config(
       // Allow async functions without await
       // for consistency (esp. Convex `handler`s)
       "@typescript-eslint/require-await": "off",
-
-      "@typescript-eslint/no-misused-promises": "warn",
     },
   },
   {
@@ -106,5 +105,6 @@ export default tseslint.config(
         ],
       },
     },
-  }
+  },
+  eslintPluginPrettierRecommended
 );

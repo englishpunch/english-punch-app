@@ -120,14 +120,14 @@ function StudyCardContent({
   };
 
   return (
-    <div className="relative max-w-2xl mx-auto bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+    <div className="relative mx-auto max-w-2xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
       {/* 카드 헤더 */}
-      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div className="flex justify-between items-center">
+      <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span
               className={cn(
-                "px-2 py-1 rounded-full text-xs font-medium",
+                "rounded-full px-2 py-1 text-xs font-medium",
                 getStateColor(card.state)
               )}
             >
@@ -146,8 +146,8 @@ function StudyCardContent({
       <div className="px-6 py-8">
         {/* 문제 */}
         <div className="mb-6">
-          <h2 className="text-sm font-medium text-gray-500 mb-2">문제</h2>
-          <p className="text-2xl font-semibold text-gray-900 leading-relaxed">
+          <h2 className="mb-2 text-sm font-medium text-gray-500">문제</h2>
+          <p className="text-2xl leading-relaxed font-semibold text-gray-900">
             {card.question}
           </p>
         </div>
@@ -155,7 +155,7 @@ function StudyCardContent({
         {/* 힌트 */}
         {card.hint && !showAnswer && (
           <div className="mb-6">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">힌트</h3>
+            <h3 className="mb-2 text-sm font-medium text-gray-500">힌트</h3>
             <p className="text-gray-600 italic">{card.hint}</p>
           </div>
         )}
@@ -175,8 +175,8 @@ function StudyCardContent({
           <div className="space-y-6">
             {/* 정답 */}
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-2">정답</h3>
-              <p className="text-xl font-semibold text-primary-700">
+              <h3 className="mb-2 text-sm font-medium text-gray-500">정답</h3>
+              <p className="text-primary-700 text-xl font-semibold">
                 {card.answer}
               </p>
             </div>
@@ -184,14 +184,14 @@ function StudyCardContent({
             {/* 설명 */}
             {card.explanation && (
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-2">설명</h3>
+                <h3 className="mb-2 text-sm font-medium text-gray-500">설명</h3>
                 <p className="text-gray-700">{card.explanation}</p>
               </div>
             )}
 
             {/* 평가 버튼들 */}
             <div className="pt-4">
-              <h3 className="text-sm font-medium text-gray-500 mb-4 text-center">
+              <h3 className="mb-4 text-center text-sm font-medium text-gray-500">
                 얼마나 잘 기억하셨나요?
               </h3>
               <div className="grid grid-cols-2 gap-3">
@@ -210,10 +210,10 @@ function StudyCardContent({
                     >
                       <div className="text-center">
                         <div className="font-bold">{config.label}</div>
-                        <div className="text-xs opacity-90 mt-1">
+                        <div className="mt-1 text-xs opacity-90">
                           {config.description}
                         </div>
-                        <div className="text-xs opacity-75 mt-1">
+                        <div className="mt-1 text-xs opacity-75">
                           ({config.shortcut})
                         </div>
                       </div>
@@ -223,11 +223,11 @@ function StudyCardContent({
               </div>
 
               {/* 평가 가이드 */}
-              <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <div className="mt-6 rounded-lg bg-gray-50 p-4">
+                <h4 className="mb-2 text-sm font-medium text-gray-700">
                   평가 가이드
                 </h4>
-                <div className="text-xs text-gray-600 space-y-1">
+                <div className="space-y-1 text-xs text-gray-600">
                   <div>
                     <strong>다시:</strong> 전혀 기억나지 않았음
                   </div>
@@ -249,8 +249,8 @@ function StudyCardContent({
 
       {/* 로딩 오버레이 */}
       {isLoading && (
-        <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
-          <Loader2 className="w-10 h-10 text-primary-600 animate-spin" />
+        <div className="bg-opacity-75 absolute inset-0 flex items-center justify-center bg-white">
+          <Loader2 className="text-primary-600 h-10 w-10 animate-spin" />
         </div>
       )}
     </div>

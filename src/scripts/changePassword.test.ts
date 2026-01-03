@@ -16,7 +16,7 @@ describe("buildConvexRunArgs", () => {
 describe("runChangePassword", () => {
   it("throws when required arguments are missing", () => {
     expect(() => runChangePassword([], {}, vi.fn())).toThrow(
-      /Usage: change-password <email> <newPassword>/,
+      /Usage: change-password <email> <newPassword>/
     );
   });
 
@@ -29,7 +29,7 @@ describe("runChangePassword", () => {
     expect(spawn).toHaveBeenCalledWith(
       "npx",
       buildConvexRunArgs("user@example.com", "hunter2"),
-      { stdio: "inherit", env },
+      { stdio: "inherit", env }
     );
   });
 
@@ -37,7 +37,7 @@ describe("runChangePassword", () => {
     const spawn = vi.fn().mockReturnValue({ status: 1 });
 
     expect(() =>
-      runChangePassword(["user@example.com", "nope"], process.env, spawn),
+      runChangePassword(["user@example.com", "nope"], process.env, spawn)
     ).toThrow(/convex run failed/);
   });
 });

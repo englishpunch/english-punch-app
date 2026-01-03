@@ -21,19 +21,69 @@ jobs:
         run: npm ci
 
       - name: Lint
+        id: lint
         run: npm run lint
+        continue-on-error: true
 
       - name: Vibe rules (must leave no diff)
+        id: vibe_rules
         env:
           npm_config_yes: "true" # auto-confirm npx install prompts
         run: |
           npm run vibe-rules
           git diff --exit-code
+        continue-on-error: true
 
       - name: Knip (dead code/deps)
+        id: knip
         run: npm run knip
+        continue-on-error: true
 
       - name: Test
+        id: test
         env:
           CI: true
         run: npm run test
+        continue-on-error: true
+
+      - name: Fail job if any step failed
+        if: ${{ always() }}
+        shell: bash
+        run: |
+          failed=0
+          failures=()
+          check_step() {
+            local name="$1"
+            local outcome="$2"
+            local command="$3"
+            if [ "$outcome" = "failure" ]; then
+              echo "::error::$name failed"
+              failures+=("$name"$'\t'"$command")
+              failed=1
+            fi
+          }
+
+          check_step "lint" "${{ steps.lint.outcome }}" "npm run lint"
+          check_step "vibe_rules" "${{ steps.vibe_rules.outcome }}" "npm run vibe-rules && git diff --exit-code"
+          check_step "knip" "${{ steps.knip.outcome }}" "npm run knip"
+          check_step "test" "${{ steps.test.outcome }}" "CI=true npm run test"
+
+          if [ "$failed" -eq 1 ]; then
+            run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+            {
+              echo "## CI failure summary"
+              echo ""
+              echo "- Run: ${run_url}"
+              echo "- Failed steps:"
+              for entry in "${failures[@]}"; do
+                IFS=$'\t' read -r step_name step_command <<< "$entry"
+                if [ -n "$step_command" ]; then
+                  printf "  - %s: \`%s\`\n" "$step_name" "$step_command"
+                else
+                  echo "  - ${step_name}"
+                fi
+              done
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice::Run logs: ${run_url}"
+          fi
+          exit $failed

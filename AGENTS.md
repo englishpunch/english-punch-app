@@ -20,7 +20,8 @@ You are a senior software engineer.
 - Use the simplest solution that could possibly work
 - Always import `cn` from `src/lib/utils` instead of importing `clsx` directly.
 - Avoid calling setState directly inside React effects; derive values or trigger state changes from events to prevent cascading renders.
-- Never use `as any`; lint will error—prefer `unknown` or precise types.
+- When `@typescript-eslint/no-misused-promises` reports "Promise-returning function provided to attribute where a void return was expected", prefix the handler with `void`.
+- NEVER use `as any`; lint will error—prefer `unknown` or precise types.
 - Prefer React 19 ref-as-prop: do not introduce `forwardRef` in new components; accept `ref` directly on function components.
 
 # REFACTORING GUIDELINES
@@ -7013,7 +7014,7 @@ function DashboardComponent() {
   return (
     <>
       <div className="flex items-center border-b">
-        <h2 className="text-xl p-2">Dashboard</h2>
+        <h2 className="p-2 text-xl">Dashboard</h2>
       </div>
 
       <div className="flex flex-wrap divide-x">
@@ -10098,7 +10099,7 @@ function Component() {
       // as a custom attribute that will get picked up by the
       // scroll restoration watcher
       data-scroll-restoration-id={scrollRestorationId}
-      className="flex-1 border rounded-lg overflow-auto relative"
+      className="relative flex-1 overflow-auto rounded-lg border"
     >
       ...
     </div>
@@ -13225,7 +13226,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 const RootLayout = () => (
   <>
-    <div className="p-2 flex gap-2">
+    <div className="flex gap-2 p-2">
       <Link to="/" className="[&.active]:font-bold">
         Home
       </Link>{" "}
@@ -13333,7 +13334,7 @@ import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 const rootRoute = createRootRoute({
   component: () => (
     <>
-      <div className="p-2 flex gap-2">
+      <div className="flex gap-2 p-2">
         <Link to="/" className="[&.active]:font-bold">
           Home
         </Link>{" "}

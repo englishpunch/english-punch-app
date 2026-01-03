@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 
 interface BagStatsProps {
-  userId: Id<"users">;
   bagId: Id<"bags">;
   onBack: () => void;
 }
@@ -45,8 +44,8 @@ function StatCard({
         : "text-primary-700";
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-medium text-gray-600">{title}</h3>
         {icon && <div className={accentClass}>{icon}</div>}
       </div>
@@ -70,25 +69,25 @@ interface DistributionBarProps {
 
 function DistributionBar({ title, data, total }: DistributionBarProps) {
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+    <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <h3 className="mb-4 text-lg font-semibold text-gray-900">{title}</h3>
       <div className="space-y-3">
         {data.map((item) => {
           const percentage = total > 0 ? (item.value / total) * 100 : 0;
           return (
             <div key={item.label} className="flex items-center justify-between">
-              <div className="flex items-center space-x-3 flex-1">
-                <span className="text-sm font-medium text-gray-700 w-20">
+              <div className="flex flex-1 items-center space-x-3">
+                <span className="w-20 text-sm font-medium text-gray-700">
                   {item.label}
                 </span>
-                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                <div className="h-2 flex-1 rounded-full bg-gray-200">
                   <div
                     className={`h-2 rounded-full ${item.barClass}`}
                     style={{ width: `${percentage}%` }}
                   ></div>
                 </div>
               </div>
-              <div className="flex items-center space-x-2 ml-3">
+              <div className="ml-3 flex items-center space-x-2">
                 <span className="text-sm font-semibold text-gray-900">
                   {item.value}
                 </span>
@@ -104,28 +103,33 @@ function DistributionBar({ title, data, total }: DistributionBarProps) {
   );
 }
 
-export default function BagStats({ userId, bagId, onBack }: BagStatsProps) {
-  const stats = useQuery(api.learning.getBagDetailStats, { userId, bagId });
+export default function BagStats({ bagId, onBack }: BagStatsProps) {
+  const loggedInUser = useQuery(api.auth.loggedInUser);
+  const userId = loggedInUser?._id;
+  const stats = useQuery(
+    api.learning.getBagDetailStats,
+    userId ? { userId, bagId } : "skip"
+  );
 
   if (stats === undefined) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="border-primary-500 h-8 w-8 animate-spin rounded-full border-b-2"></div>
       </div>
     );
   }
 
   if (stats === null) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-10">
-        <div className="text-center py-12 bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-8 h-8" aria-hidden />
+      <div className="mx-auto max-w-4xl px-4 py-10">
+        <div className="rounded-lg border border-gray-200 bg-white py-12 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <AlertCircle className="h-8 w-8" aria-hidden />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          <h2 className="mb-2 text-xl font-semibold text-gray-900">
             샌드백을 찾을 수 없습니다
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="mb-6 text-gray-600">
             요청하신 샌드백이 존재하지 않거나 접근 권한이 없습니다.
           </p>
           <Button onClick={onBack} className="px-6">
@@ -250,16 +254,16 @@ export default function BagStats({ userId, bagId, onBack }: BagStatsProps) {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-10 space-y-8">
+    <div className="mx-auto max-w-4xl space-y-8 px-4 py-10">
       {/* 헤더 */}
       <div className="space-y-4">
         <Button
           onClick={onBack}
           variant="ghost"
           size="sm"
-          className="gap-2 text-primary-700 hover:text-primary-800"
+          className="text-primary-700 hover:text-primary-800 gap-2"
         >
-          <ArrowLeft className="w-4 h-4" aria-hidden />
+          <ArrowLeft className="h-4 w-4" aria-hidden />
           샌드백 목록으로 돌아가기
         </Button>
         <div className="space-y-2">
@@ -273,7 +277,7 @@ export default function BagStats({ userId, bagId, onBack }: BagStatsProps) {
             {bagInfo.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-1 bg-primary-50 text-primary-700 text-sm rounded-full"
+                className="bg-primary-50 text-primary-700 rounded-full px-2 py-1 text-sm"
               >
                 {tag}
               </span>
@@ -363,8 +367,8 @@ export default function BagStats({ userId, bagId, onBack }: BagStatsProps) {
       </div>
 
       {/* 샌드백 정보 */}
-      <div className="bg-gray-50 rounded-lg p-6 border border-gray-200 shadow-inner">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-inner">
+        <h3 className="mb-4 text-lg font-semibold text-gray-900">
           샌드백 정보
         </h3>
         <div className="text-sm">

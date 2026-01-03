@@ -4,6 +4,7 @@
 
 - Keep one clear primary action per screen; keep everything else visibly secondary.
 - Reduce cognitive load with a simple hierarchy and predictable states.
+- Reuse existing UI from `components/` whenever possible; extend by composition before creating new components.
 
 ## Use Tailwind Defaults First (v4)
 
@@ -18,18 +19,11 @@
 - Body: `text-base leading-6` for paragraphs; `text-sm leading-5` for labels and helper text.
 - Keep line length around 65–75 characters; always show a visible label (no placeholder-only fields).
 
-## Spacing, Radius, Shadow
-
-- Use the spacing scale: stacks with `space-y-4`, layouts with `gap-4`/`gap-6`; section padding `py-12` + `px-4`.
-- Corners: inputs/buttons `rounded-md`; cards `rounded-lg`.
-- Elevation: `shadow-sm` for controls, `shadow` for cards; avoid heavier shadows unless needed for depth.
-
 ## Layout & Background
 
 - Mobile-first; constrain forms/cards with `max-w-md` and `mx-auto`.
 - Single surface: desktop view is the mobile view centered on the screen; do not change layout structure with responsive prefixes (`sm:`, `md:`, `lg:`, `xl:`).
 - Comfortable breathing room: `py-16` around primary sections.
-- Light backgrounds: `bg-gray-50` or a soft gradient like `bg-gradient-to-br from-gray-50 via-white to-gray-100`.
 
 ## Feedback & Interaction States
 
