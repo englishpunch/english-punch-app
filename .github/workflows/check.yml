@@ -55,17 +55,18 @@ jobs:
           check_step() {
             local name="$1"
             local outcome="$2"
+            local command="$3"
             if [ "$outcome" = "failure" ]; then
               echo "::error::$name failed"
-              failures+=("$name")
+              failures+=("$name"$'\t'"$command")
               failed=1
             fi
           }
 
-          check_step "lint" "${{ steps.lint.outcome }}"
-          check_step "vibe_rules" "${{ steps.vibe_rules.outcome }}"
-          check_step "knip" "${{ steps.knip.outcome }}"
-          check_step "test" "${{ steps.test.outcome }}"
+          check_step "lint" "${{ steps.lint.outcome }}" "npm run lint"
+          check_step "vibe_rules" "${{ steps.vibe_rules.outcome }}" "npm run vibe-rules && git diff --exit-code"
+          check_step "knip" "${{ steps.knip.outcome }}" "npm run knip"
+          check_step "test" "${{ steps.test.outcome }}" "CI=true npm run test"
 
           if [ "$failed" -eq 1 ]; then
             run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
@@ -74,8 +75,13 @@ jobs:
               echo ""
               echo "- Run: ${run_url}"
               echo "- Failed steps:"
-              for step_name in "${failures[@]}"; do
-                echo "  - ${step_name}"
+              for entry in "${failures[@]}"; do
+                IFS=$'\t' read -r step_name step_command <<< "$entry"
+                if [ -n "$step_command" ]; then
+                  printf "  - %s: \`%s\`\n" "$step_name" "$step_command"
+                else
+                  echo "  - ${step_name}"
+                fi
               done
             } >> "$GITHUB_STEP_SUMMARY"
             echo "::notice::Run logs: ${run_url}"
