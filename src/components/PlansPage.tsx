@@ -498,17 +498,21 @@ function CardEditorPage({
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
   const generateDraft = useAction(api.ai.generateCardDraft);
-  const regenerateHint = useAction(api.ai.regenerateHint);
-  const regenerateExplanation = useAction(api.ai.regenerateExplanation);
+  const regenerateHintAndExplanation = useAction(
+    api.ai.regenerateHintAndExplanation
+  );
   const [form, setForm] = useState({
     question: card?.question || "",
     answer: card?.answer || "",
     hint: card?.hint || "",
     explanation: card?.explanation || "",
+    context: card?.context || "",
   });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isHintRefreshing, setIsHintRefreshing] = useState(false);
-  const [isExplanationRefreshing, setIsExplanationRefreshing] = useState(false);
+  const [isRegeneratingHelpers, setIsRegeneratingHelpers] = useState(false);
+  const [showQuestionInput, setShowQuestionInput] = useState(
+    !!card?.question || false
+  );
 
   const handleGenerate = async () => {
     if (!form.answer.trim()) {
@@ -519,7 +523,10 @@ function CardEditorPage({
     const previousAnswer = form.answer.trim();
     setIsGenerating(true);
     try {
-      const aiDraft = await generateDraft({ answer: form.answer });
+      const aiDraft = await generateDraft({
+        answer: form.answer,
+        context: form.context || undefined,
+      });
       const nextAnswer = aiDraft.finalAnswer || previousAnswer;
 
       setForm((current) => ({
@@ -547,45 +554,32 @@ function CardEditorPage({
     }
   };
 
-  const handleRefresh = async (target: "hint" | "explanation") => {
+  const handleRegenerateHelpers = async () => {
     if (!form.question.trim() || !form.answer.trim()) {
       toast.error("질문과 정답을 먼저 입력해주세요.");
       return;
     }
 
-    const setLoading =
-      target === "hint" ? setIsHintRefreshing : setIsExplanationRefreshing;
-    setLoading(true);
-
+    setIsRegeneratingHelpers(true);
     try {
-      if (target === "hint") {
-        const aiDraft = await regenerateHint({
-          question: form.question,
-          answer: form.answer,
-        });
-        setForm((current) => ({
-          ...current,
-          hint: aiDraft.hint,
-        }));
-        toast.success("힌트를 새로 만들었어요.");
-      } else {
-        const aiDraft = await regenerateExplanation({
-          question: form.question,
-          answer: form.answer,
-        });
-        setForm((current) => ({
-          ...current,
-          explanation: aiDraft.explanation,
-        }));
-        toast.success("설명을 새로 만들었어요.");
-      }
+      const result = await regenerateHintAndExplanation({
+        question: form.question,
+        answer: form.answer,
+        context: form.context || undefined,
+      });
+      setForm((current) => ({
+        ...current,
+        hint: result.hint,
+        explanation: result.explanation,
+      }));
+      toast.success("힌트와 설명을 새로 만들었어요.");
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
-      logger.error("PlansPage.handleRefresh", message);
+      logger.error("PlansPage.handleRegenerateHelpers", message);
       toast.error(message);
     } finally {
-      setLoading(false);
+      setIsRegeneratingHelpers(false);
     }
   };
 
@@ -605,6 +599,7 @@ function CardEditorPage({
         answer: form.answer,
         hint: form.hint,
         explanation: form.explanation,
+        context: form.context || undefined,
       });
     } else {
       if (!card) {
@@ -619,6 +614,7 @@ function CardEditorPage({
         answer: form.answer,
         hint: form.hint,
         explanation: form.explanation,
+        context: form.context || undefined,
         // 이하 리셋
         due: Date.now(),
         stability: 0,
@@ -646,92 +642,122 @@ function CardEditorPage({
       </div>
 
       <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="space-y-1">
-          <label
-            className="text-sm font-medium text-gray-700"
-            htmlFor="card-question"
-          >
-            질문
-          </label>
-          <input
-            id="card-question"
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-            placeholder="질문을 입력"
-            value={form.question}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, question: e.target.value }))
-            }
-          />
-        </div>
-
+        {/* Answer-first: Answer at the top */}
         <div className="space-y-1">
           <label
             className="text-sm font-medium text-gray-700"
             htmlFor="card-answer"
           >
-            정답
+            정답 (영어 표현)
           </label>
-          <div className="flex gap-2">
-            <input
-              id="card-answer"
-              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-              placeholder="정답을 입력"
-              value={form.answer}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, answer: e.target.value }))
-              }
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              className="whitespace-nowrap"
-              onClick={() => void handleGenerate()}
-              disabled={isGenerating || isMock}
-              aria-label="Gemini로 질문 생성"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  생성 중...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" aria-hidden />
-                  생성
-                </>
-              )}
-            </Button>
-          </div>
-          <p className="text-xs text-gray-500">
-            정답을 적고 생성 버튼을 누르면 질문·힌트·설명이 자동 완성돼요.
-            기본형 단어일 땐 AI가 자연스러운 활용형으로 정답을 바꿀 수도 있어요.
-          </p>
+          <input
+            id="card-answer"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+            placeholder="예: reserve, look forward to"
+            value={form.answer}
+            onChange={(e) => setForm((f) => ({ ...f, answer: e.target.value }))}
+          />
         </div>
 
+        {/* Context input */}
         <div className="space-y-1">
           <label
             className="text-sm font-medium text-gray-700"
-            htmlFor="card-hint"
+            htmlFor="card-context"
           >
-            힌트 (선택)
+            상황/맥락 (선택)
           </label>
-          <div className="flex gap-2">
+          <input
+            id="card-context"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+            placeholder="예: 친구에게 조언하는 상황, 회의에서 제안하는 말투"
+            value={form.context}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, context: e.target.value }))
+            }
+          />
+          <p className="text-xs text-gray-500">
+            맥락을 입력하면 질문, 힌트, 설명이 모두 이 상황에 맞춰 생성됩니다.
+          </p>
+        </div>
+
+        {/* AI Generation button */}
+        <Button
+          variant="primary"
+          className="w-full gap-2"
+          onClick={() => void handleGenerate()}
+          disabled={isGenerating || isMock}
+          aria-label="AI로 질문·힌트·설명 생성"
+        >
+          {isGenerating ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              AI 생성 중...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" aria-hidden />
+              AI로 질문·힌트·설명 생성
+            </>
+          )}
+        </Button>
+
+        <div className="border-t border-gray-200 pt-4">
+          <p className="mb-3 text-xs text-gray-600">
+            정답과 맥락을 입력한 후 위 버튼을 누르면 질문·힌트·설명이 자동
+            완성됩니다. 생성 후 아래에서 직접 수정도 가능합니다.
+          </p>
+        </div>
+
+        {/* Question input - toggleable */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-gray-700">
+              질문 {!showQuestionInput && "(직접 작성)"}
+            </label>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowQuestionInput(!showQuestionInput)}
+              className="text-xs"
+            >
+              {showQuestionInput ? "접기" : "직접 작성"}
+            </Button>
+          </div>
+          {showQuestionInput && (
             <input
-              id="card-hint"
+              id="card-question"
               className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-              placeholder="힌트"
-              value={form.hint}
-              onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
+              placeholder="질문을 입력 (___를 사용해 빈칸 표시)"
+              value={form.question}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, question: e.target.value }))
+              }
             />
+          )}
+          {!showQuestionInput && form.question && (
+            <p className="text-sm text-gray-600 italic">{form.question}</p>
+          )}
+        </div>
+
+        {/* Hint and Explanation - with one-shot regeneration */}
+        <div className="space-y-1">
+          <div className="flex items-center justify-between">
+            <label
+              className="text-sm font-medium text-gray-700"
+              htmlFor="card-hint"
+            >
+              힌트 (선택)
+            </label>
             <Button
               variant="secondary"
               size="sm"
-              className="whitespace-nowrap"
-              onClick={() => void handleRefresh("hint")}
-              disabled={isHintRefreshing || isMock}
-              aria-label="힌트 재생성"
+              className="text-xs whitespace-nowrap"
+              onClick={() => void handleRegenerateHelpers()}
+              disabled={isRegeneratingHelpers || isMock}
+              aria-label="힌트와 설명 재생성"
             >
-              {isHintRefreshing ? (
+              {isRegeneratingHelpers ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
                   재생성 중...
@@ -739,11 +765,18 @@ function CardEditorPage({
               ) : (
                 <>
                   <RefreshCcw className="h-4 w-4" aria-hidden />
-                  재생성
+                  힌트+설명 재생성
                 </>
               )}
             </Button>
           </div>
+          <input
+            id="card-hint"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+            placeholder="힌트"
+            value={form.hint}
+            onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
+          />
         </div>
 
         <div className="space-y-1">
@@ -753,38 +786,18 @@ function CardEditorPage({
           >
             설명 (선택)
           </label>
-          <div className="flex gap-2">
-            <textarea
-              id="card-explanation"
-              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-              placeholder="설명"
-              value={form.explanation}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, explanation: e.target.value }))
-              }
-            />
-            <Button
-              variant="secondary"
-              size="sm"
-              className="self-start whitespace-nowrap"
-              onClick={() => void handleRefresh("explanation")}
-              disabled={isExplanationRefreshing || isMock}
-              aria-label="설명 재생성"
-            >
-              {isExplanationRefreshing ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  재생성 중...
-                </>
-              ) : (
-                <>
-                  <RefreshCcw className="h-4 w-4" aria-hidden />
-                  재생성
-                </>
-              )}
-            </Button>
-          </div>
+          <textarea
+            id="card-explanation"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+            placeholder="설명"
+            rows={3}
+            value={form.explanation}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, explanation: e.target.value }))
+            }
+          />
         </div>
+
         <Button
           // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onClick={handleSave}

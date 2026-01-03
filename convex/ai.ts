@@ -299,12 +299,12 @@ export const regenerateExplanation = action({
  * Uses the unified system instruction for consistency
  */
 export const regenerateHintAndExplanation = action({
-  args: { 
-    question: v.string(), 
+  args: {
+    question: v.string(),
     answer: v.string(),
     context: v.optional(v.string()),
   },
-  returns: v.object({ 
+  returns: v.object({
     hint: v.string(),
     explanation: v.string(),
   }),
@@ -327,16 +327,16 @@ export const regenerateHintAndExplanation = action({
     });
 
     // Build prompt with context awareness
-    let prompt = [
+    const prompt = [
       "You help me refine flashcard hints and explanations.",
       `Question text (includes a blank as ___): "${question}"`,
       `Correct answer to fit the blank: "${answer}"`,
     ];
-    
+
     if (context) {
       prompt.push(`Context/Situation: "${context}"`);
     }
-    
+
     prompt.push(
       "Generate both hint (under 12 English words, give a nudge without revealing the answer) and explanation (30-50 simple English words explaining meaning and why the answer fits the blank). Ensure they align with the provided context."
     );
