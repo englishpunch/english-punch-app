@@ -1,3 +1,4 @@
+import { paginationOptsValidator } from "convex/server";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 
@@ -567,10 +568,7 @@ export const getBagCardsPaginated = query({
   args: {
     bagId: v.id("bags"),
     userId: v.id("users"),
-    paginationOpts: v.object({
-      numItems: v.number(),
-      cursor: v.union(v.string(), v.null()),
-    }),
+    paginationOpts: paginationOptsValidator,
   },
   handler: async (ctx, args) => {
     const result = await ctx.db
