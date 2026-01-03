@@ -344,7 +344,7 @@ export default function BagDetailPage() {
                   colSpan={columns.length}
                   className="px-4 py-8 text-center text-sm text-gray-500"
                 >
-                  {!cardsToShow
+                  {!isMock && status === "LoadingFirstPage"
                     ? "카드를 불러오는 중..."
                     : searchQuery
                       ? "검색 결과가 없습니다."
