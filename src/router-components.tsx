@@ -3,7 +3,8 @@ import ActivityPage from "./components/ActivityPage";
 import BagManager from "./components/BagManager";
 import ComingSoon from "./components/ComingSoon";
 import MobileShell from "./components/MobileShell";
-import PlansPage from "./components/PlansPage";
+import BagListPage from "./components/BagListPage";
+import BagDetailPage from "./components/BagDetailPage";
 import ProfilePage from "./components/ProfilePage";
 
 export function RootLayout() {
@@ -19,7 +20,11 @@ export function RunRoute() {
 }
 
 export function PlansRoute() {
-  return <PlansPage />;
+  return <BagListPage />;
+}
+
+export function PlansBagDetailRoute() {
+  return <BagDetailPage />;
 }
 
 export function ActivityRoute() {
