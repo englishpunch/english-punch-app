@@ -605,14 +605,14 @@ function CardEditorPage({
 
   const handleGenerateExpressions = async () => {
     if (!koreanInput.trim()) {
-      toast.error("한국어 표현을 입력해주세요.");
+      toast.error("표현을 입력해주세요.");
       return;
     }
 
     setIsGeneratingExpressions(true);
     try {
       const result = await generateExpressionCandidates({
-        koreanInput,
+        input: koreanInput,
         context: form.context || undefined,
       });
       setExpressionCandidates(result.expressions);
@@ -921,7 +921,7 @@ function CardEditorPage({
               className="flex w-full items-center justify-between text-left"
             >
               <span className="text-sm font-medium text-gray-700">
-                다중 표현 생성 (한국어 → 여러 영어 표현)
+                다중 표현 생성 (여러 영어 표현 일괄 생성)
               </span>
               {showMultiExpression ? (
                 <ChevronUp className="h-4 w-4 text-gray-500" />
@@ -933,22 +933,22 @@ function CardEditorPage({
             {showMultiExpression && (
               <div className="mt-3 space-y-3">
                 <p className="text-xs text-gray-600">
-                  한국어 표현을 입력하면 여러 영어 표현 후보를 생성하고, 선택한
-                  표현들로 카드를 일괄 생성할 수 있습니다.
+                  한국어나 영어 표현을 입력하면 여러 영어 표현 후보를 생성하고,
+                  선택한 표현들로 카드를 일괄 생성할 수 있습니다.
                 </p>
 
-                {/* Step 1: Korean Input */}
+                {/* Step 1: Input */}
                 <div className="space-y-1">
                   <label
                     className="text-sm font-medium text-gray-700"
                     htmlFor="korean-input"
                   >
-                    한국어 표현/의도
+                    표현/의도
                   </label>
                   <input
                     id="korean-input"
                     className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-                    placeholder="예: 예약하다, 기대하다"
+                    placeholder="예: 예약하다, reserve, 기대하다"
                     value={koreanInput}
                     onChange={(e) => setKoreanInput(e.target.value)}
                   />

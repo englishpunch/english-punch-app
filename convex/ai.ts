@@ -99,10 +99,7 @@ export const generateCardDraft = action({
       throw new Error("정답을 입력해주세요.");
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
-    }
+    requireApiKey();
 
     logger.info(runId, {
       stage: "start",
@@ -118,7 +115,7 @@ export const generateCardDraft = action({
       promptPreview: prompt.slice(0, 120),
     });
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = getAiClient();
 
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
@@ -181,11 +178,16 @@ const requireInputs = (question: string, answer: string) => {
   }
 };
 
-const getAiClient = () => {
+const requireApiKey = () => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
     throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
   }
+  return apiKey;
+};
+
+const getAiClient = () => {
+  const apiKey = requireApiKey();
   return new GoogleGenAI({ apiKey });
 };
 
@@ -379,59 +381,55 @@ export const regenerateHintAndExplanation = action({
 });
 
 /**
- * Multi-expression generation: Korean → English expression candidates
+ * Multi-expression generation: Input (Korean or English) → English expression candidates
  */
 const expressionCandidatesSchema = z.object({
   expressions: z
     .array(z.string())
     .describe(
-      "Array of 3 natural English expressions/phrases that convey the Korean input meaning"
+      "Array of 3 natural English expressions/phrases that convey the input meaning"
     ),
 });
 
+const expressionCandidatesSystemInstruction = `
+You are an expert English linguist helping learners find natural English expressions.
+Your task is to generate exactly 3 natural, idiomatic English expressions or phrases.
+Vary the formality and style. Focus on expressions that would be useful in real conversation or writing.
+`.trim();
+
 export const generateExpressionCandidates = action({
   args: {
-    koreanInput: v.string(),
+    input: v.string(),
     context: v.optional(v.string()),
   },
   returns: v.object({
     expressions: v.array(v.string()),
   }),
   handler: async (_ctx, args) => {
-    const koreanInput = args.koreanInput.trim();
+    const input = args.input.trim();
     const context = args.context?.trim();
     const runId =
       "ai:generateExpressionCandidates:" +
       Math.random().toString(36).slice(2, 8);
 
-    if (!koreanInput) {
-      throw new Error("한국어 표현을 입력해주세요.");
+    if (!input) {
+      throw new Error("표현을 입력해주세요.");
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
-    }
+    requireApiKey();
 
     logger.info(runId, {
       stage: "start",
       model: GEMINI_MODEL,
-      koreanInputLength: koreanInput.length,
+      inputLength: input.length,
       hasContext: !!context,
     });
 
-    const prompt = [
-      "You are an expert English linguist helping Korean learners find natural English expressions.",
-      `Korean expression/intent: "${koreanInput}"`,
-    ];
+    const prompt = [`Expression/intent: "${input}"`];
 
     if (context) {
       prompt.push(`Context/Situation: "${context}"`);
     }
-
-    prompt.push(
-      "Generate exactly 3 natural, idiomatic English expressions or phrases that convey this meaning. Vary the formality and style. Focus on expressions that would be useful in real conversation or writing."
-    );
 
     const promptStr = prompt.join("\n");
 
@@ -440,7 +438,7 @@ export const generateExpressionCandidates = action({
       promptPreview: promptStr.slice(0, 120),
     });
 
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = getAiClient();
     const response = await ai.models.generateContent({
       model: GEMINI_MODEL,
       contents: promptStr,
@@ -450,6 +448,7 @@ export const generateExpressionCandidates = action({
         thinkingConfig: {
           thinkingLevel: ThinkingLevel.LOW,
         },
+        systemInstruction: expressionCandidatesSystemInstruction,
       },
     });
 
