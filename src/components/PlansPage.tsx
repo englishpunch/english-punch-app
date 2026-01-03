@@ -545,7 +545,7 @@ function CardEditorPage({
     try {
       const aiDraft = await generateDraft({
         answer: form.answer,
-        context: form.context || undefined,
+        context: form.context,
       });
       const nextAnswer = aiDraft.finalAnswer || previousAnswer;
 
