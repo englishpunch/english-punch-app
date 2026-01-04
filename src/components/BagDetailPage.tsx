@@ -3,7 +3,15 @@ import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
-import { Plus, Trash2, Edit2, ArrowLeft, Search, Sparkles, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Trash2,
+  Edit2,
+  ArrowLeft,
+  Search,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
 import useIsMock from "@/hooks/useIsMock";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
