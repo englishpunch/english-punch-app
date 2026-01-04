@@ -1,6 +1,5 @@
 import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "@tanstack/react-router";

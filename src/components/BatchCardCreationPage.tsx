@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
 import { ArrowLeft, Loader2, Sparkles, Plus } from "lucide-react";
 import { toast } from "sonner";
