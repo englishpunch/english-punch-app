@@ -587,6 +587,7 @@ export const getBagCardsPaginated = query({
         answer: c.answer,
         hint: c.hint,
         explanation: c.explanation,
+        context: c.context,
       })),
     };
   },

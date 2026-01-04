@@ -5,6 +5,9 @@ import ComingSoon from "./components/ComingSoon";
 import MobileShell from "./components/MobileShell";
 import BagListPage from "./components/BagListPage";
 import BagDetailPage from "./components/BagDetailPage";
+import CardAddPage from "./components/CardAddPage";
+import CardEditPage from "./components/CardEditPage";
+import BatchCardCreationPage from "./components/BatchCardCreationPage";
 import ProfilePage from "./components/ProfilePage";
 
 export function RootLayout() {
@@ -25,6 +28,18 @@ export function PlansRoute() {
 
 export function PlansBagDetailRoute() {
   return <BagDetailPage />;
+}
+
+export function CardAddRoute() {
+  return <CardAddPage />;
+}
+
+export function CardEditRoute() {
+  return <CardEditPage />;
+}
+
+export function BatchCardCreationRoute() {
+  return <BatchCardCreationPage />;
 }
 
 export function ActivityRoute() {
