@@ -18,7 +18,8 @@
     "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css}\" \"convex/**/*.{ts,tsx}\"",
     "knip": "knip",
     "change-password": "tsx src/scripts/changePassword.ts",
-    "vibe-rules": "npx vibe-rules install codex && prettier --write AGENTS.md"
+    "vibe-rules": "npx vibe-rules install codex && prettier --write AGENTS.md",
+    "check:local": "./scripts/check-local.sh"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.90",

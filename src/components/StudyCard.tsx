@@ -120,7 +120,7 @@ function StudyCardContent({
   };
 
   return (
-    <div className="relative mx-auto max-w-2xl overflow-hidden rounded-lg border border-gray-200 bg-white shadow">
+    <div className="relative w-full overflow-hidden border-y border-gray-200 bg-white">
       {/* 카드 헤더 */}
       <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
         <div className="flex items-center justify-between">
@@ -147,7 +147,7 @@ function StudyCardContent({
         {/* 문제 */}
         <div className="mb-6">
           <h2 className="mb-2 text-sm font-medium text-gray-500">문제</h2>
-          <p className="text-2xl leading-relaxed font-semibold text-gray-900">
+          <p className="text-xl leading-relaxed font-semibold text-gray-900">
             {card.question}
           </p>
         </div>

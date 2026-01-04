@@ -171,7 +171,7 @@ export default function FSRSStudySession({
   if (isSessionComplete) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-8 shadow">
+        <div className="w-full max-w-md bg-white p-8">
           <div className="text-center">
             <div className="bg-primary-50 text-primary-700 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
               <CheckCircle2 className="h-8 w-8" aria-hidden />
@@ -225,7 +225,7 @@ export default function FSRSStudySession({
   if (totalCards === 0) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-        <div className="w-full max-w-md rounded-lg border border-gray-200 bg-white p-8 text-center shadow">
+        <div className="w-full max-w-md bg-white p-8 text-center">
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 text-gray-500">
             <FileText className="h-8 w-8" aria-hidden />
           </div>
@@ -244,10 +244,10 @@ export default function FSRSStudySession({
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {/* 진행률 표시 */}
-      <div className="bg-white shadow-sm">
-        <div className="mx-auto max-w-4xl px-4 py-4">
+      <div className="">
+        <div className="w-full p-4">
           <div className="mb-2 flex items-center justify-between">
             <Button
               onClick={handleBack}
@@ -275,7 +275,7 @@ export default function FSRSStudySession({
       </div>
 
       {/* 학습 카드 */}
-      <div className="flex items-center justify-center p-4">
+      <div className="flex items-center justify-center px-0 py-4">
         <div className="w-full">
           {currentCard && (
             <StudyCard
