@@ -221,7 +221,7 @@ export function CardForm({
           />
         )}
         {!showQuestionInput && form.question && (
-          <p className="italic text-sm text-gray-600">{form.question}</p>
+          <p className="text-sm text-gray-600 italic">{form.question}</p>
         )}
       </div>
 
@@ -237,7 +237,7 @@ export function CardForm({
           <Button
             variant="secondary"
             size="sm"
-            className="whitespace-nowrap text-xs"
+            className="text-xs whitespace-nowrap"
             onClick={() => void handleRegenerateHelpers()}
             disabled={isRegeneratingHelpers || isMock}
             aria-label="힌트와 설명 재생성"

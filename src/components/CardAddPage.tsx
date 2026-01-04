@@ -17,11 +17,7 @@ export default function CardAddPage() {
   const createCard = useMutation(api.learning.createCard);
 
   // Get bag info
-  const bagsArgs = isMock
-    ? "skip"
-    : userId
-      ? { userId }
-      : "skip";
+  const bagsArgs = isMock ? "skip" : userId ? { userId } : "skip";
   const bags = useQuery(api.learning.getUserBags, bagsArgs);
   const bag = bags?.find((b) => b._id === bagId);
 

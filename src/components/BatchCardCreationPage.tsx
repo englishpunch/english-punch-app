@@ -292,8 +292,7 @@ export default function BatchCardCreationPage() {
                 <>
                   <Plus className="h-4 w-4" />
                   선택한 표현으로 카드 일괄 생성 (
-                  {selectedExpressions.size +
-                    (customExpression.trim() ? 1 : 0)}
+                  {selectedExpressions.size + (customExpression.trim() ? 1 : 0)}
                   개)
                 </>
               )}
