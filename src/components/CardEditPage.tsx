@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "convex/react";
+import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
@@ -26,11 +26,17 @@ export default function CardEditPage() {
   const bags = useQuery(api.learning.getUserBags, bagsArgs);
   const bag = bags?.find((b) => b._id === bagId);
 
-  // Get cards
-  const cardArgs =
+  // Get cards - use paginated query
+  const paginatedCardsArgs =
     isMock || !userId || !bag ? "skip" : { bagId: bag._id, userId };
-  const cards = useQuery(api.learning.getBagCards, cardArgs);
-  const card = cards?.find((c) => c._id === cardId);
+  const { results: paginatedCards } = usePaginatedQuery(
+    api.learning.getBagCardsPaginated,
+    paginatedCardsArgs,
+    {
+      initialNumItems: 100, // Load more initially to ensure we get the card
+    }
+  );
+  const card = paginatedCards?.find((c) => c._id === cardId);
 
   const handleBack = () => {
     void navigate({ to: "/plans/$bagId", params: { bagId } });
