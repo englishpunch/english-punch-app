@@ -1,6 +1,7 @@
 import { paginationOptsValidator } from "convex/server";
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { shuffle } from "es-toolkit";
 
 /**
  * 샘플 백 생성 - 영어 학습용 기본 카드들
@@ -264,16 +265,18 @@ export const getDueCards = query({
       .order("asc")
       .take(limit);
 
-    return cards.map((card) => ({
-      _id: card._id,
-      question: card.question,
-      answer: card.answer,
-      hint: card.hint,
-      explanation: card.explanation,
-      due: card.due,
-      state: card.state,
-      reps: card.reps,
-    }));
+    return shuffle(
+      cards.map((card) => ({
+        _id: card._id,
+        question: card.question,
+        answer: card.answer,
+        hint: card.hint,
+        explanation: card.explanation,
+        due: card.due,
+        state: card.state,
+        reps: card.reps,
+      }))
+    );
   },
 });
 

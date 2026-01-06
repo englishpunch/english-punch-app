@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -6,18 +6,17 @@ import FSRSStudySession from "./FSRSStudySession";
 import BagStats from "./BagStats";
 import { Button } from "./Button";
 import { ArrowLeft, BarChart3, Eye, Loader2, Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface BagManagerProps {
   onBack?: () => void;
 }
 
 export default function BagManager({ onBack }: BagManagerProps) {
+  const { t } = useTranslation();
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
 
-  useEffect(() => {
-    console.log("userId", userId);
-  }, [userId]);
   const [currentView, setCurrentView] = useState<"bags" | "study" | "stats">(
     "bags"
   );
@@ -35,7 +34,6 @@ export default function BagManager({ onBack }: BagManagerProps) {
     try {
       const bagId = await createSampleBag({ userId });
       await updateBagStats({ bagId });
-      console.log("Sample bag created:", bagId);
     } catch (error) {
       console.error("Failed to create sample bag:", error);
     } finally {
@@ -82,11 +80,10 @@ export default function BagManager({ onBack }: BagManagerProps) {
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold text-gray-900">
-            영어 학습 샌드백
+            {t("bagManager.title")}
           </h1>
           <p className="text-base leading-6 text-gray-600">
-            과학적인 간격 반복 학습으로 효율적으로 암기하세요. 한 번에 하나의
-            주요 행동만 보이도록 단순하게 유지합니다.
+            {t("bagManager.description")}
           </p>
         </div>
         {onBack && (
@@ -97,7 +94,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
             className="gap-2"
           >
             <ArrowLeft className="h-4 w-4" aria-hidden />
-            메인으로 돌아가기
+            {t("bagManager.backToMain")}
           </Button>
         )}
       </div>
@@ -111,28 +108,26 @@ export default function BagManager({ onBack }: BagManagerProps) {
             </div>
             <div className="space-y-2">
               <h2 className="text-xl font-semibold text-gray-900">
-                첫 학습을 시작해보세요!
+                {t("bagManager.sample.title")}
               </h2>
               <p className="text-sm leading-6 text-gray-600">
-                영어 기초 표현들로 구성된 샘플 샌드백으로 스마트 학습을
-                체험해보세요. 10개의 실용적인 영어 문장이 준비되어 있습니다.
+                {t("bagManager.sample.description")}
               </p>
             </div>
             <Button
-              // eslint-disable-next-line @typescript-eslint/no-misused-promises
-              onClick={handleCreateSampleBag}
+              onClick={() => void handleCreateSampleBag()}
               disabled={isCreatingSample || !userId}
               className="mx-auto px-6"
             >
               {isCreatingSample ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  <span>생성 중...</span>
+                  <span>{t("bagManager.sample.creating")}</span>
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4" aria-hidden />
-                  <span>샘플 샌드백 생성하기</span>
+                  <span>{t("bagManager.sample.create")}</span>
                 </>
               )}
             </Button>
@@ -182,6 +177,7 @@ interface BagCardProps {
 
 function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
   const dueCount = bag.newCards + bag.learningCards; // 간단히 계산
+  const { t } = useTranslation();
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow">
@@ -192,7 +188,7 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
           <div className="flex items-center space-x-2">
             {!bag.isActive && (
               <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-                비활성
+                {t("bagManager.inactive")}
               </span>
             )}
           </div>
@@ -220,23 +216,31 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
         {/* 통계 */}
         <div className="mb-6 space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">전체 카드:</span>
+            <span className="text-gray-600">
+              {t("bagManager.stats.totalCards")}:
+            </span>
             <span className="font-medium">{bag.totalCards}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">새 카드:</span>
+            <span className="text-gray-600">
+              {t("bagManager.stats.newCards")}:
+            </span>
             <span className="text-primary-700 font-semibold">
               {bag.newCards}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">학습 중:</span>
+            <span className="text-gray-600">
+              {t("bagManager.stats.learningCards")}:
+            </span>
             <span className="text-primary-700 font-semibold">
               {bag.learningCards}
             </span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600">복습:</span>
+            <span className="text-gray-600">
+              {t("bagManager.stats.reviewCards")}:
+            </span>
             <span className="text-primary-700 font-semibold">
               {bag.reviewCards}
             </span>
@@ -247,11 +251,11 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
         <div className="space-y-2">
           {dueCount > 0 ? (
             <Button onClick={onStartStudy} fullWidth>
-              학습하기 ({dueCount}장)
+              {t("bagManager.actions.studyWithCount", { count: dueCount })}
             </Button>
           ) : (
             <Button fullWidth variant="secondary" disabled>
-              학습할 카드가 없습니다
+              {t("bagManager.actions.noCards")}
             </Button>
           )}
 
@@ -263,7 +267,7 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
               className="flex-1 gap-2"
             >
               <Eye className="h-4 w-4" aria-hidden />
-              모든 카드 보기
+              {t("bagManager.actions.viewAll")}
             </Button>
             <Button
               onClick={onViewStats}
@@ -272,7 +276,7 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
               className="flex-1 gap-2"
             >
               <BarChart3 className="h-4 w-4" aria-hidden />
-              통계
+              {t("bagManager.actions.stats")}
             </Button>
           </div>
         </div>

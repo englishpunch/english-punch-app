@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { useTranslation } from "react-i18next";
+import { languageOptions } from "@/i18n";
 
 interface MobileShellProps {
   children?: React.ReactNode;
@@ -31,28 +33,44 @@ const tabPaths: Record<TabKey, string> = {
   activity: "/activity",
 };
 
-const tabs: Record<
+const tabConfig: Record<
   TabKey,
   {
     key: TabKey;
-    label: string;
-    title: string;
+    labelKey: string;
+    titleKey: string;
     icon: React.ComponentType<LucideProps>;
   }
 > = {
-  home: { key: "home", label: "home", title: "Home", icon: Home },
-  plans: { key: "plans", label: "plans", title: "Plans", icon: ListChecks },
-  run: { key: "run", label: "run", title: "Run", icon: PlayCircle },
-  club: { key: "club", label: "club", title: "Club", icon: Users },
+  home: { key: "home", labelKey: "nav.home", titleKey: "nav.home", icon: Home },
+  plans: {
+    key: "plans",
+    labelKey: "nav.plans",
+    titleKey: "nav.plans",
+    icon: ListChecks,
+  },
+  run: {
+    key: "run",
+    labelKey: "nav.run",
+    titleKey: "nav.run",
+    icon: PlayCircle,
+  },
+  club: {
+    key: "club",
+    labelKey: "nav.club",
+    titleKey: "nav.club",
+    icon: Users,
+  },
   activity: {
     key: "activity",
-    label: "activity",
-    title: "Activity",
+    labelKey: "nav.activity",
+    titleKey: "nav.activity",
     icon: Activity,
   },
 };
 
 export default function MobileShell({ children }: MobileShellProps) {
+  const { t } = useTranslation();
   let pathname = "/run";
 
   const { location } = useRouterState();
@@ -62,7 +80,7 @@ export default function MobileShell({ children }: MobileShellProps) {
   const activeTab = deriveTabFromPath(pathname);
   const [showProfile, setShowProfile] = useState(false);
 
-  const screenTitle = tabs[activeTab].title;
+  const screenTitle = t(tabConfig[activeTab].titleKey);
 
   return (
     <div className="min-h-screen pb-20">
@@ -71,7 +89,7 @@ export default function MobileShell({ children }: MobileShellProps) {
           variant="ghost"
           size="sm"
           className="z-10 px-2"
-          aria-label="open profile"
+          aria-label={t("profileDrawer.openProfile")}
           onClick={() => setShowProfile(true)}
         >
           <User2 className="h-5 w-5 text-gray-700" aria-hidden />
@@ -98,14 +116,16 @@ export default function MobileShell({ children }: MobileShellProps) {
 
 function BottomNav({ activeTab }: { activeTab: TabKey }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const navigateTo = (path: string) => router.navigate({ to: path });
 
   return (
     <nav className="fixed bottom-0 left-1/2 z-30 w-full -translate-x-1/2 border-t border-gray-200 bg-white shadow-lg sm:w-160">
       <div className="mx-auto flex max-w-5xl justify-around">
-        {Object.values(tabs).map((tab) => {
+        {Object.values(tabConfig).map((tab) => {
           const Icon = tab.icon;
           const isActive = tab.key === activeTab;
+          const label = t(tab.labelKey);
           return (
             <Button
               key={tab.key}
@@ -120,7 +140,7 @@ function BottomNav({ activeTab }: { activeTab: TabKey }) {
               size="sm"
               fullWidth
               aria-current={isActive ? "page" : undefined}
-              aria-label={tab.label}
+              aria-label={label}
             >
               <Icon
                 className={cn(
@@ -129,7 +149,7 @@ function BottomNav({ activeTab }: { activeTab: TabKey }) {
                 )}
                 aria-hidden
               />
-              <span className="mt-1 capitalize">{tab.label}</span>
+              <span className="mt-1 capitalize">{label}</span>
             </Button>
           );
         })}
@@ -145,10 +165,12 @@ function ProfileDrawer({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t, i18n } = useTranslation();
   const { signOut, signIn } = useAuthActions();
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const user = useQuery(api.auth.loggedInUser);
+  const selectedLanguage = i18n.resolvedLanguage ?? i18n.language;
 
   if (!open) return null;
 
@@ -162,7 +184,9 @@ function ProfileDrawer({
               {(user?.name || user?.email || "A").slice(0, 1).toUpperCase()}
             </div>
             <div>
-              <p className="text-sm text-gray-600">내 프로필</p>
+              <p className="text-sm text-gray-600">
+                {t("profileDrawer.title")}
+              </p>
               <p className="text-lg font-semibold text-gray-900">
                 {user?.name || "-"}
               </p>
@@ -177,7 +201,7 @@ function ProfileDrawer({
         </div>
         <div className="space-y-3 text-sm text-gray-700">
           <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <span className="text-gray-600">사용자 ID</span>
+            <span className="text-gray-600">{t("common.labels.userId")}</span>
             <span className="font-mono break-all text-gray-900">
               {user?._id}
             </span>
@@ -193,7 +217,7 @@ function ProfileDrawer({
               const signInResult = signIn("password", fd);
               Promise.resolve(signInResult)
                 .then(() => {
-                  toast.success("Signed in");
+                  toast.success(t("profileDrawer.signInSuccess"));
                   setEmail("");
                   setPassword("");
                   onClose();
@@ -203,13 +227,13 @@ function ProfileDrawer({
                 })
                 .catch((error) => {
                   console.error("Sign-in error:", error);
-                  toast.error("로그인에 실패했어요. 다시 시도해주세요.");
+                  toast.error(t("profileDrawer.signInError"));
                 });
             }}
           >
             <input
               className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-              placeholder="Email"
+              placeholder={t("common.labels.email")}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -217,20 +241,44 @@ function ProfileDrawer({
             />
             <input
               className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-              placeholder="Password"
+              placeholder={t("common.labels.password")}
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <Button type="submit" fullWidth aria-label="로그인">
-              로그인
+            <Button
+              type="submit"
+              fullWidth
+              aria-label={t("common.actions.signIn")}
+            >
+              {t("common.actions.signIn")}
             </Button>
           </form>
+          <div className="space-y-2">
+            <label
+              className="text-xs font-medium text-gray-600"
+              htmlFor="language-select"
+            >
+              {t("settings.language.label")}
+            </label>
+            <select
+              id="language-select"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+              value={selectedLanguage}
+              onChange={(event) => void i18n.changeLanguage(event.target.value)}
+            >
+              {languageOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="mt-auto">
           <Button variant="secondary" size="sm" onClick={() => void signOut()}>
-            Sign out
+            {t("common.actions.signOut")}
           </Button>
         </div>
       </div>

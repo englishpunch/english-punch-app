@@ -7,10 +7,12 @@ import useIsMock from "@/hooks/useIsMock";
 import { CardForm } from "./CardForm";
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
+import { useTranslation } from "react-i18next";
 
 const logger = getGlobalLogger();
 
 export default function CardEditPage() {
+  const { t } = useTranslation();
   const { bagId, cardId } = useParams({
     from: "/plans/$bagId/cards/$cardId/edit",
   });
@@ -49,7 +51,7 @@ export default function CardEditPage() {
     context: string;
   }) => {
     if (isMock) {
-      toast.success("Mock 모드에서는 카드를 수정할 수 없습니다.");
+      toast.success(t("cardEdit.mockUnavailable"));
       handleBack();
       return;
     }
@@ -77,7 +79,7 @@ export default function CardEditPage() {
       state: 0,
     });
 
-    toast.success("카드를 수정했습니다.");
+    toast.success(t("cardEdit.updated"));
     handleBack();
   };
 
@@ -94,7 +96,7 @@ export default function CardEditPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden />
           </Button>
           <h2 className="text-base font-semibold text-gray-900">
-            샌드백을 찾을 수 없습니다
+            {t("cardEdit.bagNotFound")}
           </h2>
         </div>
       </div>
@@ -114,7 +116,7 @@ export default function CardEditPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden />
           </Button>
           <h2 className="text-base font-semibold text-gray-900">
-            카드를 찾을 수 없습니다
+            {t("cardEdit.cardNotFound")}
           </h2>
         </div>
       </div>
@@ -127,7 +129,9 @@ export default function CardEditPage() {
         <Button variant="ghost" size="sm" className="px-2" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4" aria-hidden />
         </Button>
-        <h2 className="text-base font-semibold text-gray-900">카드 편집</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          {t("cardEdit.title")}
+        </h2>
         <span className="text-sm text-gray-500">- {bag.name}</span>
       </div>
 
@@ -141,7 +145,7 @@ export default function CardEditPage() {
             context: card.context,
           }}
           onSubmit={(data) => void handleSubmit(data)}
-          submitLabel="수정 완료"
+          submitLabel={t("cardEdit.submitLabel")}
           showQuestionByDefault={true}
         />
       </div>

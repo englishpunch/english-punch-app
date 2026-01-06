@@ -9,29 +9,32 @@ export const setupDeepLinkHandler = async () => {
     await onOpenUrl((urls) => {
       console.log("Deep link received:", urls);
 
-      // eslint-disable-next-line @typescript-eslint/no-misused-promises
-      urls.forEach(async (url) => {
-        if (url.startsWith("english-punch://auth/callback")) {
-          try {
-            // URL에서 fragment를 추출하여 Supabase에 전달
-            const urlObj = new URL(
-              url.replace("english-punch://", "http://localhost/")
-            );
-            const hashParams = new URLSearchParams(urlObj.hash.substring(1));
+      const handleUrls = async () => {
+        for (const url of urls) {
+          if (url.startsWith("english-punch://auth/callback")) {
+            try {
+              // URL에서 fragment를 추출하여 Supabase에 전달
+              const urlObj = new URL(
+                url.replace("english-punch://", "http://localhost/")
+              );
+              const hashParams = new URLSearchParams(urlObj.hash.substring(1));
 
-            const accessToken = hashParams.get("access_token");
-            const refreshToken = hashParams.get("refresh_token");
+              const accessToken = hashParams.get("access_token");
+              const refreshToken = hashParams.get("refresh_token");
 
-            if (accessToken && refreshToken) {
-              const appWindow = getCurrentWindow();
-              await appWindow.setFocus();
-              await appWindow.show();
+              if (accessToken && refreshToken) {
+                const appWindow = getCurrentWindow();
+                await appWindow.setFocus();
+                await appWindow.show();
+              }
+            } catch (error) {
+              console.error("Error processing deep link:", error);
             }
-          } catch (error) {
-            console.error("Error processing deep link:", error);
           }
         }
-      });
+      };
+
+      void handleUrls();
     });
   } catch (error) {
     console.error("Error setting up deep link handler:", error);

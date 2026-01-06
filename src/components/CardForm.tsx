@@ -6,6 +6,7 @@ import { getGlobalLogger } from "@/lib/globalLogger";
 import { useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import useIsMock from "@/hooks/useIsMock";
+import { useTranslation } from "react-i18next";
 
 const logger = getGlobalLogger();
 
@@ -27,9 +28,10 @@ type CardFormProps = {
 export function CardForm({
   initialData,
   onSubmit,
-  submitLabel = "저장",
+  submitLabel,
   showQuestionByDefault = false,
 }: CardFormProps) {
+  const { t } = useTranslation();
   const isMock = useIsMock();
   const generateDraft = useAction(api.ai.generateCardDraft);
   const regenerateHintAndExplanation = useAction(
@@ -49,10 +51,11 @@ export function CardForm({
   const [showQuestionInput, setShowQuestionInput] = useState(
     showQuestionByDefault || !!initialData?.question
   );
+  const resolvedSubmitLabel = submitLabel ?? t("common.actions.save");
 
   const handleGenerate = async () => {
     if (!form.answer.trim()) {
-      toast.error("정답을 먼저 입력해주세요.");
+      toast.error(t("cardForm.toasts.answerRequired"));
       return;
     }
 
@@ -75,14 +78,19 @@ export function CardForm({
 
       if (aiDraft.finalAnswer && aiDraft.finalAnswer !== previousAnswer) {
         toast.success(
-          `정답을 "${previousAnswer}" → "${aiDraft.finalAnswer}"로 바꿨어요. 검토 후 저장하세요.`
+          t("cardForm.toasts.answerUpdated", {
+            prev: previousAnswer,
+            next: aiDraft.finalAnswer,
+          })
         );
       } else {
-        toast.success("질문과 설명을 채웠어요. 검토 후 저장하세요.");
+        toast.success(t("cardForm.toasts.generated"));
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
+        error instanceof Error
+          ? error.message
+          : t("cardForm.toasts.requestError");
       logger.error("CardForm.handleGenerate", message);
       toast.error(message);
     } finally {
@@ -92,7 +100,7 @@ export function CardForm({
 
   const handleRegenerateHelpers = async () => {
     if (!form.question.trim() || !form.answer.trim()) {
-      toast.error("질문과 정답을 먼저 입력해주세요.");
+      toast.error(t("cardForm.toasts.questionAnswerRequired"));
       return;
     }
 
@@ -108,10 +116,12 @@ export function CardForm({
         hint: result.hint,
         explanation: result.explanation,
       }));
-      toast.success("힌트와 설명을 새로 만들었어요.");
+      toast.success(t("cardForm.toasts.helpersRegenerated"));
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
+        error instanceof Error
+          ? error.message
+          : t("cardForm.toasts.requestError");
       logger.error("CardForm.handleRegenerateHelpers", message);
       toast.error(message);
     } finally {
@@ -121,7 +131,7 @@ export function CardForm({
 
   const handleSubmit = () => {
     if (!form.question.trim() || !form.answer.trim()) {
-      toast.error("질문과 정답을 입력해주세요.");
+      toast.error(t("cardForm.toasts.questionAnswerRequired"));
       return;
     }
     void onSubmit(form);
@@ -135,12 +145,12 @@ export function CardForm({
           className="text-sm font-medium text-gray-700"
           htmlFor="card-answer"
         >
-          정답 (영어 표현)
+          {t("cardForm.answerLabel")}
         </label>
         <input
           id="card-answer"
           className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-          placeholder="예: reserve, look forward to"
+          placeholder={t("cardForm.answerPlaceholder")}
           value={form.answer}
           onChange={(e) => setForm((f) => ({ ...f, answer: e.target.value }))}
         />
@@ -152,18 +162,16 @@ export function CardForm({
           className="text-sm font-medium text-gray-700"
           htmlFor="card-context"
         >
-          상황/맥락 (선택)
+          {t("cardForm.contextLabel")}
         </label>
         <input
           id="card-context"
           className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-          placeholder="예: 친구에게 조언하는 상황, 회의에서 제안하는 말투"
+          placeholder={t("cardForm.contextPlaceholder")}
           value={form.context}
           onChange={(e) => setForm((f) => ({ ...f, context: e.target.value }))}
         />
-        <p className="text-xs text-gray-500">
-          맥락을 입력하면 질문, 힌트, 설명이 모두 이 상황에 맞춰 생성됩니다.
-        </p>
+        <p className="text-xs text-gray-500">{t("cardForm.contextHelp")}</p>
       </div>
 
       {/* AI Generation button */}
@@ -172,25 +180,24 @@ export function CardForm({
         className="w-full gap-2"
         onClick={() => void handleGenerate()}
         disabled={isGenerating || isMock}
-        aria-label="AI로 질문·힌트·설명 생성"
+        aria-label={t("cardForm.generateAria")}
       >
         {isGenerating ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            AI 생성 중...
+            {t("cardForm.generating")}
           </>
         ) : (
           <>
             <Sparkles className="h-4 w-4" aria-hidden />
-            AI로 질문·힌트·설명 생성
+            {t("cardForm.generateButton")}
           </>
         )}
       </Button>
 
       <div className="border-t border-gray-200 pt-4">
         <p className="mb-3 text-xs text-gray-600">
-          정답과 맥락을 입력한 후 위 버튼을 누르면 질문·힌트·설명이 자동
-          완성됩니다. 생성 후 아래에서 직접 수정도 가능합니다.
+          {t("cardForm.generationHelp")}
         </p>
       </div>
 
@@ -198,7 +205,8 @@ export function CardForm({
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-700">
-            질문 {!showQuestionInput && "(직접 작성)"}
+            {t("cardForm.questionLabel")}{" "}
+            {!showQuestionInput && t("cardForm.questionManualSuffix")}
           </label>
           <Button
             variant="ghost"
@@ -206,14 +214,16 @@ export function CardForm({
             onClick={() => setShowQuestionInput(!showQuestionInput)}
             className="text-xs"
           >
-            {showQuestionInput ? "접기" : "직접 작성"}
+            {showQuestionInput
+              ? t("cardForm.questionToggleClose")
+              : t("cardForm.questionToggleOpen")}
           </Button>
         </div>
         {showQuestionInput && (
           <input
             id="card-question"
             className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-            placeholder="질문을 입력 (___를 사용해 빈칸 표시)"
+            placeholder={t("cardForm.questionPlaceholder")}
             value={form.question}
             onChange={(e) =>
               setForm((f) => ({ ...f, question: e.target.value }))
@@ -232,7 +242,7 @@ export function CardForm({
             className="text-sm font-medium text-gray-700"
             htmlFor="card-hint"
           >
-            힌트 (선택)
+            {t("cardForm.hintLabel")}
           </label>
           <Button
             variant="secondary"
@@ -240,17 +250,17 @@ export function CardForm({
             className="text-xs whitespace-nowrap"
             onClick={() => void handleRegenerateHelpers()}
             disabled={isRegeneratingHelpers || isMock}
-            aria-label="힌트와 설명 재생성"
+            aria-label={t("cardForm.regenerateButton")}
           >
             {isRegeneratingHelpers ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                재생성 중...
+                {t("cardForm.regenerating")}
               </>
             ) : (
               <>
                 <RefreshCcw className="h-4 w-4" aria-hidden />
-                힌트+설명 재생성
+                {t("cardForm.regenerateButton")}
               </>
             )}
           </Button>
@@ -258,7 +268,7 @@ export function CardForm({
         <input
           id="card-hint"
           className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-          placeholder="힌트"
+          placeholder={t("cardForm.hintPlaceholder")}
           value={form.hint}
           onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
         />
@@ -269,12 +279,12 @@ export function CardForm({
           className="text-sm font-medium text-gray-700"
           htmlFor="card-explanation"
         >
-          설명 (선택)
+          {t("cardForm.explanationLabel")}
         </label>
         <textarea
           id="card-explanation"
           className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-          placeholder="설명"
+          placeholder={t("cardForm.explanationPlaceholder")}
           rows={3}
           value={form.explanation}
           onChange={(e) =>
@@ -288,9 +298,9 @@ export function CardForm({
         onClick={handleSubmit}
         className="w-full"
         disabled={isGenerating}
-        aria-label={submitLabel}
+        aria-label={resolvedSubmitLabel}
       >
-        {submitLabel}
+        {resolvedSubmitLabel}
       </Button>
     </div>
   );

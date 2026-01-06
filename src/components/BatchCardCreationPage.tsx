@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import useIsMock from "@/hooks/useIsMock";
+import { useTranslation } from "react-i18next";
 
 const logger = getGlobalLogger();
 
 export default function BatchCardCreationPage() {
+  const { t } = useTranslation();
   const { bagId } = useParams({ from: "/plans/$bagId/cards/batch" });
   const isMock = useIsMock();
   const loggedInUser = useQuery(api.auth.loggedInUser);
@@ -46,7 +48,7 @@ export default function BatchCardCreationPage() {
 
   const handleGenerateExpressions = async () => {
     if (!koreanInput.trim()) {
-      toast.error("표현을 입력해주세요.");
+      toast.error(t("batchCreate.toasts.inputRequired"));
       return;
     }
 
@@ -59,10 +61,16 @@ export default function BatchCardCreationPage() {
       setExpressionCandidates(result.expressions);
       setSelectedExpressions(new Set());
       setCustomExpression("");
-      toast.success(`${result.expressions.length}개의 표현을 생성했어요.`);
+      toast.success(
+        t("batchCreate.toasts.generated", {
+          count: result.expressions.length,
+        })
+      );
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
+        error instanceof Error
+          ? error.message
+          : t("batchCreate.toasts.requestError");
       logger.error("BatchCardCreationPage.handleGenerateExpressions", message);
       toast.error(message);
     } finally {
@@ -72,13 +80,13 @@ export default function BatchCardCreationPage() {
 
   const handleCreateBatchCards = async () => {
     if (selectedExpressions.size === 0 && !customExpression.trim()) {
-      toast.error("최소 하나의 표현을 선택하거나 입력해주세요.");
+      toast.error(t("batchCreate.toasts.selectRequired"));
       return;
     }
 
     if (!userId || !bag) return;
     if (isMock) {
-      toast.success("Mock 모드에서는 카드를 생성할 수 없습니다.");
+      toast.success(t("batchCreate.toasts.mockUnavailable"));
       return;
     }
 
@@ -114,11 +122,15 @@ export default function BatchCardCreationPage() {
         cards: cardsToCreate,
       });
 
-      toast.success(`${cardsToCreate.length}개의 카드를 생성했어요.`);
+      toast.success(
+        t("batchCreate.toasts.created", { count: cardsToCreate.length })
+      );
       handleBack();
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "요청 중 문제가 발생했습니다.";
+        error instanceof Error
+          ? error.message
+          : t("batchCreate.toasts.requestError");
       logger.error("BatchCardCreationPage.handleCreateBatchCards", message);
       toast.error(message);
     } finally {
@@ -151,7 +163,7 @@ export default function BatchCardCreationPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden />
           </Button>
           <h2 className="text-base font-semibold text-gray-900">
-            샌드백을 찾을 수 없습니다
+            {t("cardAdd.bagNotFound")}
           </h2>
         </div>
       </div>
@@ -165,16 +177,13 @@ export default function BatchCardCreationPage() {
           <ArrowLeft className="h-4 w-4" aria-hidden />
         </Button>
         <h2 className="text-base font-semibold text-gray-900">
-          다중 표현 생성
+          {t("batchCreate.title")}
         </h2>
         <span className="text-sm text-gray-500">- {bag.name}</span>
       </div>
 
       <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
-        <p className="text-sm text-gray-600">
-          한국어나 영어 표현을 입력하면 여러 영어 표현 후보를 생성하고, 선택한
-          표현들로 카드를 일괄 생성할 수 있습니다.
-        </p>
+        <p className="text-sm text-gray-600">{t("batchCreate.description")}</p>
 
         {/* Context input */}
         <div className="space-y-1">
@@ -182,17 +191,17 @@ export default function BatchCardCreationPage() {
             className="text-sm font-medium text-gray-700"
             htmlFor="batch-context"
           >
-            상황/맥락 (선택)
+            {t("cardForm.contextLabel")}
           </label>
           <input
             id="batch-context"
             className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-            placeholder="예: 친구에게 조언하는 상황, 회의에서 제안하는 말투"
+            placeholder={t("cardForm.contextPlaceholder")}
             value={context}
             onChange={(e) => setContext(e.target.value)}
           />
           <p className="text-xs text-gray-500">
-            맥락을 입력하면 생성되는 모든 카드가 이 상황에 맞춰집니다.
+            {t("batchCreate.contextHelp")}
           </p>
         </div>
 
@@ -202,12 +211,12 @@ export default function BatchCardCreationPage() {
             className="text-sm font-medium text-gray-700"
             htmlFor="korean-input"
           >
-            표현/의도
+            {t("batchCreate.intentLabel")}
           </label>
           <input
             id="korean-input"
             className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-            placeholder="예: 예약하다, reserve, 기대하다"
+            placeholder={t("batchCreate.intentPlaceholder")}
             value={koreanInput}
             onChange={(e) => setKoreanInput(e.target.value)}
           />
@@ -222,12 +231,12 @@ export default function BatchCardCreationPage() {
           {isGeneratingExpressions ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              표현 생성 중...
+              {t("batchCreate.generating")}
             </>
           ) : (
             <>
               <Sparkles className="h-4 w-4" aria-hidden />
-              영어 표현 후보 생성
+              {t("batchCreate.generateButton")}
             </>
           )}
         </Button>
@@ -236,7 +245,7 @@ export default function BatchCardCreationPage() {
         {expressionCandidates.length > 0 && (
           <div className="space-y-3 border-t border-gray-200 pt-4">
             <label className="text-sm font-medium text-gray-700">
-              생성된 표현 (선택)
+              {t("batchCreate.generatedLabel")}
             </label>
             <div className="space-y-2">
               {expressionCandidates.map((expr, index) => (
@@ -260,12 +269,12 @@ export default function BatchCardCreationPage() {
                 className="text-sm font-medium text-gray-700"
                 htmlFor="custom-expression"
               >
-                직접 입력 (선택)
+                {t("batchCreate.customLabel")}
               </label>
               <input
                 id="custom-expression"
                 className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
-                placeholder="다른 표현을 직접 입력"
+                placeholder={t("batchCreate.customPlaceholder")}
                 value={customExpression}
                 onChange={(e) => setCustomExpression(e.target.value)}
               />
@@ -285,14 +294,16 @@ export default function BatchCardCreationPage() {
               {isCreatingBatch ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  카드 생성 중...
+                  {t("batchCreate.creating")}
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4" />
-                  선택한 표현으로 카드 일괄 생성 (
-                  {selectedExpressions.size + (customExpression.trim() ? 1 : 0)}
-                  개)
+                  {t("batchCreate.createButton", {
+                    count:
+                      selectedExpressions.size +
+                      (customExpression.trim() ? 1 : 0),
+                  })}
                 </>
               )}
             </Button>

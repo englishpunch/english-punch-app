@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -24,6 +24,8 @@ import {
   type SortingState,
   type ColumnFiltersState,
 } from "@tanstack/react-table";
+import { useTranslation } from "react-i18next";
+import { getLocaleForLanguage } from "@/i18n";
 
 type Card = {
   _id: Id<"cards">;
@@ -38,6 +40,8 @@ type Card = {
 };
 
 export default function BagDetailPage() {
+  const { t, i18n } = useTranslation();
+  const locale = getLocaleForLanguage(i18n.language);
   const { bagId } = useParams({ from: "/plans/$bagId" });
   const isMock = useIsMock();
   const loggedInUser = useQuery(api.auth.loggedInUser);
@@ -60,10 +64,10 @@ export default function BagDetailPage() {
     if (!isMock) return [];
     return Array.from({ length: 500 }, (_, i) => ({
       _id: `mock-${i + 1}` as Id<"bags">,
-      name: `Mock Bag ${i + 1}`,
+      name: t("mock.bagName", { number: i + 1 }),
       totalCards: 0,
     }));
-  }, [isMock]);
+  }, [isMock, t]);
 
   const bagsToShow = isMock ? mockBags : bags;
   const bag = useMemo(
@@ -95,12 +99,12 @@ export default function BagDetailPage() {
     return Array.from({ length: 500 }, (_, i) => ({
       _id: `mock-card-${i + 1}` as Id<"cards">,
       _creationTime: Date.now() - i * 1000,
-      question: `Mock Question ${i + 1}`,
-      answer: `Mock Answer ${i + 1}`,
-      hint: `Mock Hint ${i + 1}`,
-      explanation: `Mock Explanation ${i + 1}`,
+      question: t("mock.question", { number: i + 1 }),
+      answer: t("mock.answer", { number: i + 1 }),
+      hint: t("mock.hint", { number: i + 1 }),
+      explanation: t("mock.explanation", { number: i + 1 }),
     }));
-  }, [isMock]);
+  }, [isMock, t]);
 
   const cardsToShow = useMemo(
     () => (isMock ? mockCards : paginatedCards) ?? [],
@@ -110,21 +114,24 @@ export default function BagDetailPage() {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "_creationTime", desc: true },
   ]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const columnFilters = useMemo<ColumnFiltersState>(() => {
+    if (!searchQuery) return [];
+    return [{ id: "answer", value: searchQuery }];
+  }, [searchQuery]);
 
   const columnHelper = createColumnHelper<Card>();
 
   const columns = useMemo(
     () => [
       columnHelper.accessor("answer", {
-        header: "Answer",
+        header: t("bagDetail.tableHeaders.answer"),
         cell: (info) => (
           <div className="font-semibold text-gray-900">{info.getValue()}</div>
         ),
         size: 200,
       }),
       columnHelper.accessor("question", {
-        header: "Question",
+        header: t("bagDetail.tableHeaders.question"),
         cell: (info) => {
           const question = info.getValue();
           const truncated =
@@ -134,12 +141,12 @@ export default function BagDetailPage() {
         size: 400,
       }),
       columnHelper.accessor("_creationTime", {
-        header: "Created",
+        header: t("bagDetail.tableHeaders.created"),
         cell: (info) => {
           const date = new Date(info.getValue());
           return (
             <div className="text-xs text-gray-500">
-              {date.toLocaleDateString("ko-KR", {
+              {date.toLocaleDateString(locale, {
                 year: "numeric",
                 month: "2-digit",
                 day: "2-digit",
@@ -151,7 +158,7 @@ export default function BagDetailPage() {
       }),
       columnHelper.display({
         id: "actions",
-        header: "Actions",
+        header: t("bagDetail.tableHeaders.actions"),
         cell: (info) => {
           const card = info.row.original;
           return (
@@ -166,7 +173,7 @@ export default function BagDetailPage() {
                   })
                 }
                 disabled={isMock}
-                aria-label={`수정 ${card._id}`}
+                aria-label={t("bagDetail.editAria", { id: card._id })}
               >
                 <Edit2 className="h-4 w-4" aria-hidden />
               </Button>
@@ -177,7 +184,7 @@ export default function BagDetailPage() {
                   void deleteCard({ cardId: card._id, bagId: bag!._id })
                 }
                 disabled={isMock || !bag}
-                aria-label={`삭제 ${card._id}`}
+                aria-label={t("bagDetail.deleteAria", { id: card._id })}
               >
                 <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
               </Button>
@@ -187,17 +194,8 @@ export default function BagDetailPage() {
         size: 120,
       }),
     ],
-    [columnHelper, isMock, deleteCard, bag, navigate]
+    [bag, columnHelper, deleteCard, isMock, locale, navigate, t]
   );
-
-  // Apply search filter via useEffect
-  useEffect(() => {
-    if (searchQuery) {
-      setColumnFilters([{ id: "answer", value: searchQuery }]);
-    } else {
-      setColumnFilters([]);
-    }
-  }, [searchQuery]);
 
   const table = useReactTable({
     data: cardsToShow,
@@ -207,7 +205,6 @@ export default function BagDetailPage() {
       columnFilters,
     },
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -230,7 +227,7 @@ export default function BagDetailPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden />
           </Button>
           <h2 className="text-base font-semibold text-gray-900">
-            샌드백을 찾을 수 없습니다
+            {t("bagDetail.notFound")}
           </h2>
         </div>
       </div>
@@ -263,9 +260,10 @@ export default function BagDetailPage() {
               })
             }
             disabled={isMock}
-            aria-label="다중 표현 생성"
+            aria-label={t("bagDetail.multiCreateAria")}
           >
-            <Sparkles className="h-4 w-4" aria-hidden /> 다중 생성
+            <Sparkles className="h-4 w-4" aria-hidden />{" "}
+            {t("bagDetail.multiCreate")}
           </Button>
           <Button
             size="sm"
@@ -277,9 +275,9 @@ export default function BagDetailPage() {
               })
             }
             disabled={isMock}
-            aria-label="카드 추가"
+            aria-label={t("bagDetail.addCardAria")}
           >
-            <Plus className="h-4 w-4" aria-hidden /> 카드 추가
+            <Plus className="h-4 w-4" aria-hidden /> {t("bagDetail.addCard")}
           </Button>
         </div>
       </div>
@@ -289,7 +287,7 @@ export default function BagDetailPage() {
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by answer..."
+            placeholder={t("bagDetail.searchPlaceholder")}
             value={searchQuery}
             onChange={(e) => {
               void navigate({
@@ -303,8 +301,7 @@ export default function BagDetailPage() {
         </div>
         {searchQuery && (
           <p className="mt-2 text-xs text-gray-500">
-            검색은 현재 로드된 카드에서만 수행됩니다. 더 많은 결과를 보려면 "더
-            보기"를 클릭하세요.
+            {t("bagDetail.searchNotice")}
           </p>
         )}
       </div>
@@ -339,10 +336,10 @@ export default function BagDetailPage() {
                   className="px-4 py-8 text-center text-sm text-gray-500"
                 >
                   {!isMock && status === "LoadingFirstPage"
-                    ? "카드를 불러오는 중..."
+                    ? t("bagDetail.emptyLoading")
                     : searchQuery
-                      ? "검색 결과가 없습니다."
-                      : "카드가 없습니다."}
+                      ? t("bagDetail.emptyNoResults")
+                      : t("bagDetail.emptyNoCards")}
                 </td>
               </tr>
             ) : (
@@ -370,23 +367,28 @@ export default function BagDetailPage() {
       {table.getRowModel().rows.length > 0 && (
         <div className="flex items-center justify-between text-xs text-gray-600">
           <span>
-            총 {table.getRowModel().rows.length}개
-            {searchQuery && ` (필터링됨: ${cardsToShow.length}개 중)`}
+            {t("bagDetail.totalCount", {
+              count: table.getRowModel().rows.length,
+            })}
+            {searchQuery &&
+              ` ${t("bagDetail.filteredCount", {
+                total: cardsToShow.length,
+              })}`}
           </span>
           {!isMock && status === "CanLoadMore" && (
             <Button
               size="sm"
               variant="secondary"
               onClick={() => loadMore(30)}
-              aria-label="더 보기"
+              aria-label={t("bagDetail.loadMoreAria")}
             >
-              더 보기 (30개)
+              {t("bagDetail.loadMore", { count: 30 })}
             </Button>
           )}
           {!isMock && status === "LoadingMore" && (
             <span className="flex items-center gap-2 text-gray-500">
               <Loader2 className="h-4 w-4 animate-spin" />
-              로딩 중...
+              {t("bagDetail.loadingMore")}
             </span>
           )}
         </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface StudyCardProps {
   card: {
@@ -26,6 +27,7 @@ function StudyCardContent({
   onGrade,
   isLoading = false,
 }: StudyCardProps) {
+  const { t } = useTranslation();
   const [showAnswer, setShowAnswer] = useState(false);
   const startTimeRef = useRef<number>(0);
 
@@ -50,30 +52,30 @@ function StudyCardContent({
   const getRatingConfig = (rating: 1 | 2 | 3 | 4) => {
     const configs = {
       1: {
-        label: "다시",
+        label: t("ratings.labels.again"),
         className: "bg-red-500 hover:bg-red-600",
-        description: "기억나지 않음",
+        description: t("ratings.descriptions.again"),
         shortcut: "1",
         variant: "danger" as const,
       },
       2: {
-        label: "어려움",
+        label: t("ratings.labels.hard"),
         className: "bg-primary-500 hover:bg-primary-600",
-        description: "어렵게 기억남",
+        description: t("ratings.descriptions.hard"),
         shortcut: "2",
         variant: "plain" as const,
       },
       3: {
-        label: "보통",
+        label: t("ratings.labels.good"),
         className: "bg-primary-600 hover:bg-primary-700",
-        description: "잘 기억남",
+        description: t("ratings.descriptions.good"),
         shortcut: "3",
         variant: "plain" as const,
       },
       4: {
-        label: "쉬움",
+        label: t("ratings.labels.easy"),
         className: "bg-primary-700 hover:bg-primary-800",
-        description: "매우 쉬움",
+        description: t("ratings.descriptions.easy"),
         shortcut: "4",
         variant: "plain" as const,
       },
@@ -105,8 +107,13 @@ function StudyCardContent({
   }, [handleGrade, handleShowAnswer, showAnswer]);
 
   const getStateLabel = (state: number) => {
-    const labels = ["새 카드", "학습 중", "복습", "재학습"];
-    return labels[state] || "알 수 없음";
+    const labels = [
+      t("studyCard.state.new"),
+      t("studyCard.state.learning"),
+      t("studyCard.state.review"),
+      t("studyCard.state.relearning"),
+    ];
+    return labels[state] || t("studyCard.state.unknown");
   };
 
   const getStateColor = (state: number) => {
@@ -133,11 +140,13 @@ function StudyCardContent({
             >
               {getStateLabel(card.state)}
             </span>
-            <span className="text-sm text-gray-600">복습 {card.reps}회</span>
+            <span className="text-sm text-gray-600">
+              {t("studyCard.reps", { count: card.reps })}
+            </span>
           </div>
           <div className="text-xs font-medium text-gray-600">
-            {!showAnswer && "Space: 답 보기"}
-            {showAnswer && "1-4: 평가하기"}
+            {!showAnswer && t("studyCard.shortcuts.showAnswer")}
+            {showAnswer && t("studyCard.shortcuts.grade")}
           </div>
         </div>
       </div>
@@ -146,7 +155,9 @@ function StudyCardContent({
       <div className="px-6 py-8">
         {/* 문제 */}
         <div className="mb-6">
-          <h2 className="mb-2 text-sm font-medium text-gray-500">문제</h2>
+          <h2 className="mb-2 text-sm font-medium text-gray-500">
+            {t("studyCard.sections.question")}
+          </h2>
           <p className="text-xl leading-relaxed font-semibold text-gray-900">
             {card.question}
           </p>
@@ -155,7 +166,9 @@ function StudyCardContent({
         {/* 힌트 */}
         {card.hint && !showAnswer && (
           <div className="mb-6">
-            <h3 className="mb-2 text-sm font-medium text-gray-500">힌트</h3>
+            <h3 className="mb-2 text-sm font-medium text-gray-500">
+              {t("studyCard.sections.hint")}
+            </h3>
             <p className="text-gray-600 italic">{card.hint}</p>
           </div>
         )}
@@ -168,14 +181,19 @@ function StudyCardContent({
               className="px-8"
               disabled={isLoading}
             >
-              답 보기 <span className="text-sm opacity-80">(Space)</span>
+              {t("studyCard.showAnswer")}{" "}
+              <span className="text-sm opacity-80">
+                {t("studyCard.showAnswerShortcut")}
+              </span>
             </Button>
           </div>
         ) : (
           <div className="space-y-6">
             {/* 정답 */}
             <div>
-              <h3 className="mb-2 text-sm font-medium text-gray-500">정답</h3>
+              <h3 className="mb-2 text-sm font-medium text-gray-500">
+                {t("studyCard.sections.answer")}
+              </h3>
               <p className="text-primary-700 text-xl font-semibold">
                 {card.answer}
               </p>
@@ -184,7 +202,9 @@ function StudyCardContent({
             {/* 설명 */}
             {card.explanation && (
               <div>
-                <h3 className="mb-2 text-sm font-medium text-gray-500">설명</h3>
+                <h3 className="mb-2 text-sm font-medium text-gray-500">
+                  {t("studyCard.sections.explanation")}
+                </h3>
                 <p className="text-gray-700">{card.explanation}</p>
               </div>
             )}
@@ -192,7 +212,7 @@ function StudyCardContent({
             {/* 평가 버튼들 */}
             <div className="pt-4">
               <h3 className="mb-4 text-center text-sm font-medium text-gray-500">
-                얼마나 잘 기억하셨나요?
+                {t("studyCard.ratingPrompt")}
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {([1, 2, 3, 4] as const).map((rating) => {
@@ -214,7 +234,9 @@ function StudyCardContent({
                           {config.description}
                         </div>
                         <div className="mt-1 text-xs opacity-75">
-                          ({config.shortcut})
+                          {t("studyCard.ratingShortcut", {
+                            shortcut: config.shortcut,
+                          })}
                         </div>
                       </div>
                     </Button>
@@ -225,21 +247,13 @@ function StudyCardContent({
               {/* 평가 가이드 */}
               <div className="mt-6 rounded-lg bg-gray-50 p-4">
                 <h4 className="mb-2 text-sm font-medium text-gray-700">
-                  평가 가이드
+                  {t("ratings.guide.title")}
                 </h4>
                 <div className="space-y-1 text-xs text-gray-600">
-                  <div>
-                    <strong>다시:</strong> 전혀 기억나지 않았음
-                  </div>
-                  <div>
-                    <strong>어려움:</strong> 기억하는데 어려움이 있었음
-                  </div>
-                  <div>
-                    <strong>보통:</strong> 적절한 노력으로 기억함
-                  </div>
-                  <div>
-                    <strong>쉬움:</strong> 매우 쉽게 기억함
-                  </div>
+                  <div>{t("ratings.guide.again")}</div>
+                  <div>{t("ratings.guide.hard")}</div>
+                  <div>{t("ratings.guide.good")}</div>
+                  <div>{t("ratings.guide.easy")}</div>
                 </div>
               </div>
             </div>

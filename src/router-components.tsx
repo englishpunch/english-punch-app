@@ -9,6 +9,7 @@ import CardAddPage from "./components/CardAddPage";
 import CardEditPage from "./components/CardEditPage";
 import BatchCardCreationPage from "./components/BatchCardCreationPage";
 import ProfilePage from "./components/ProfilePage";
+import { useTranslation } from "react-i18next";
 
 export function RootLayout() {
   return (
@@ -51,9 +52,11 @@ export function ProfileRoute() {
 }
 
 export function HomeRoute() {
-  return <ComingSoon label="Home" />;
+  const { t } = useTranslation();
+  return <ComingSoon label={t("nav.home")} />;
 }
 
 export function ClubRoute() {
-  return <ComingSoon label="클럽" />;
+  const { t } = useTranslation();
+  return <ComingSoon label={t("nav.club")} />;
 }
