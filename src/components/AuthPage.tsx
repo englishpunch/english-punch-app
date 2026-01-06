@@ -59,10 +59,7 @@ export default function AuthPage() {
         isSignUp ? t("auth.signUpSuccess") : t("auth.signInSuccess")
       );
     } catch (submitError) {
-      console.error(
-        `${isSignUp ? "Sign-up" : "Sign-in"} error:`,
-        submitError
-      );
+      console.error(`${isSignUp ? "Sign-up" : "Sign-in"} error:`, submitError);
       setError(
         isSignUp ? t("auth.errors.signUpFailed") : t("auth.errors.signInFailed")
       );
@@ -82,7 +79,7 @@ export default function AuthPage() {
     <div className="min-h-screen bg-white px-4 py-16">
       <div className="mx-auto w-full max-w-md space-y-8">
         <div className="space-y-3 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wide text-primary-600">
+          <p className="text-primary-600 text-sm font-semibold tracking-wide uppercase">
             English Punch
           </p>
           <h1 className="text-3xl font-semibold text-gray-900">
@@ -111,7 +108,10 @@ export default function AuthPage() {
 
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700" htmlFor="email">
+              <label
+                className="text-sm font-medium text-gray-700"
+                htmlFor="email"
+              >
                 {t("common.labels.email")}
               </label>
               <input
@@ -152,9 +152,7 @@ export default function AuthPage() {
                 required
                 disabled={isSubmitting}
               />
-              <p className="text-xs text-gray-500">
-                {t("auth.passwordHint")}
-              </p>
+              <p className="text-xs text-gray-500">{t("auth.passwordHint")}</p>
             </div>
 
             {isSignUp && (
@@ -204,7 +202,11 @@ export default function AuthPage() {
                   {t("auth.submitting")}
                 </>
               ) : (
-                <>{isSignUp ? t("common.actions.signUp") : t("common.actions.signIn")}</>
+                <>
+                  {isSignUp
+                    ? t("common.actions.signUp")
+                    : t("common.actions.signIn")}
+                </>
               )}
             </Button>
           </form>
