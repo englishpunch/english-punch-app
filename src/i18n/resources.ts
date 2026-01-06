@@ -345,7 +345,7 @@ const enTranslation = {
   },
 };
 
-export type TranslationSchema = typeof enTranslation;
+type TranslationSchema = typeof enTranslation;
 
 const koTranslation = {
   nav: {
