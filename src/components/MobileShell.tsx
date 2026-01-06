@@ -221,9 +221,6 @@ function ProfileDrawer({
                   setEmail("");
                   setPassword("");
                   onClose();
-                  // 익명으로 signIn인 상태에서 이메일/비밀번호로 전환 시 context가 자동으로 바뀌지 않음. 일단 새로고침으로 처리
-                  // TODO: 추후 context가 바뀌면 수정
-                  location.reload();
                 })
                 .catch((error) => {
                   console.error("Sign-in error:", error);
