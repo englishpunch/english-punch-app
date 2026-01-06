@@ -6,8 +6,10 @@ import { useNavigate, useParams } from "@tanstack/react-router";
 import useIsMock from "@/hooks/useIsMock";
 import { CardForm } from "./CardForm";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 export default function CardAddPage() {
+  const { t } = useTranslation();
   const { bagId } = useParams({ from: "/plans/$bagId/cards/new" });
   const isMock = useIsMock();
   const loggedInUser = useQuery(api.auth.loggedInUser);
@@ -32,7 +34,7 @@ export default function CardAddPage() {
     context: string;
   }) => {
     if (isMock) {
-      toast.success("Mock 모드에서는 카드를 추가할 수 없습니다.");
+      toast.success(t("cardAdd.mockUnavailable"));
       handleBack();
       return;
     }
@@ -48,7 +50,7 @@ export default function CardAddPage() {
       context: formData.context || undefined,
     });
 
-    toast.success("카드를 추가했습니다.");
+    toast.success(t("cardAdd.added"));
     handleBack();
   };
 
@@ -65,7 +67,7 @@ export default function CardAddPage() {
             <ArrowLeft className="h-4 w-4" aria-hidden />
           </Button>
           <h2 className="text-base font-semibold text-gray-900">
-            샌드백을 찾을 수 없습니다
+            {t("cardAdd.bagNotFound")}
           </h2>
         </div>
       </div>
@@ -78,7 +80,9 @@ export default function CardAddPage() {
         <Button variant="ghost" size="sm" className="px-2" onClick={handleBack}>
           <ArrowLeft className="h-4 w-4" aria-hidden />
         </Button>
-        <h2 className="text-base font-semibold text-gray-900">카드 추가</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          {t("cardAdd.title")}
+        </h2>
         <span className="text-sm text-gray-500">- {bag.name}</span>
       </div>
 

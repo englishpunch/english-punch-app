@@ -1,8 +1,12 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Loader2, Clock3 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { getLocaleForLanguage } from "@/i18n";
 
 export default function ActivityPage() {
+  const { t, i18n } = useTranslation();
+  const locale = getLocaleForLanguage(i18n.language);
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
   const logs = useQuery(
@@ -25,10 +29,10 @@ export default function ActivityPage() {
     return (
       <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
         <p className="text-lg font-semibold text-gray-900">
-          최근 리뷰 로그가 없습니다
+          {t("activity.emptyTitle")}
         </p>
         <p className="text-sm text-gray-600">
-          학습을 시작하면 기록이 여기에 표시됩니다.
+          {t("activity.emptyDescription")}
         </p>
       </div>
     );
@@ -46,15 +50,19 @@ export default function ActivityPage() {
               <RatingPill rating={log.rating} />
               <span className="flex items-center gap-1 text-xs text-gray-500">
                 <Clock3 className="h-3.5 w-3.5" aria-hidden />
-                {new Date(log.review).toLocaleString()}
+                {new Date(log.review).toLocaleString(locale)}
               </span>
             </div>
             <p className="text-sm font-semibold text-gray-900">
-              {log.question || "카드 내용 없음"}
+              {log.question || t("activity.noCardContent")}
             </p>
           </div>
           <div className="text-right text-xs text-gray-500">
-            {log.duration ? `${Math.round(log.duration)}ms` : ""}
+            {log.duration
+              ? t("activity.durationMs", {
+                  ms: Math.round(log.duration),
+                })
+              : ""}
           </div>
         </div>
       ))}
@@ -63,11 +71,24 @@ export default function ActivityPage() {
 }
 
 function RatingPill({ rating }: { rating: number }) {
+  const { t } = useTranslation();
   const config = {
-    1: { label: "Again", className: "bg-red-100 text-red-700" },
-    2: { label: "Hard", className: "bg-primary-100 text-primary-700" },
-    3: { label: "Good", className: "bg-primary-200 text-primary-800" },
-    4: { label: "Easy", className: "bg-primary-300 text-primary-900" },
+    1: {
+      label: t("ratings.labels.again"),
+      className: "bg-red-100 text-red-700",
+    },
+    2: {
+      label: t("ratings.labels.hard"),
+      className: "bg-primary-100 text-primary-700",
+    },
+    3: {
+      label: t("ratings.labels.good"),
+      className: "bg-primary-200 text-primary-800",
+    },
+    4: {
+      label: t("ratings.labels.easy"),
+      className: "bg-primary-300 text-primary-900",
+    },
   } as const;
   const entry = config[rating as 1 | 2 | 3 | 4] || config[1];
   return (

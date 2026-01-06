@@ -13,6 +13,8 @@ import {
   SquareStack,
   Target,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { getLocaleForLanguage } from "@/i18n";
 
 interface BagStatsProps {
   bagId: Id<"bags">;
@@ -104,6 +106,8 @@ function DistributionBar({ title, data, total }: DistributionBarProps) {
 }
 
 export default function BagStats({ bagId, onBack }: BagStatsProps) {
+  const { t, i18n } = useTranslation();
+  const locale = getLocaleForLanguage(i18n.language);
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
   const stats = useQuery(
@@ -127,13 +131,13 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
             <AlertCircle className="h-8 w-8" aria-hidden />
           </div>
           <h2 className="mb-2 text-xl font-semibold text-gray-900">
-            샌드백을 찾을 수 없습니다
+            {t("bagStats.notFoundTitle")}
           </h2>
           <p className="mb-6 text-gray-600">
-            요청하신 샌드백이 존재하지 않거나 접근 권한이 없습니다.
+            {t("bagStats.notFoundDescription")}
           </p>
           <Button onClick={onBack} className="px-6">
-            돌아가기
+            {t("bagStats.back")}
           </Button>
         </div>
       </div>
@@ -152,27 +156,27 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
   // 분포 데이터 정리
   const difficultyData = [
     {
-      label: "매우 쉬움",
+      label: t("bagStats.difficultyLabels.veryEasy"),
       value: difficultyDistribution.veryEasy,
       barClass: "bg-primary-700",
     },
     {
-      label: "쉬움",
+      label: t("bagStats.difficultyLabels.easy"),
       value: difficultyDistribution.easy,
       barClass: "bg-primary-600",
     },
     {
-      label: "보통",
+      label: t("bagStats.difficultyLabels.medium"),
       value: difficultyDistribution.medium,
       barClass: "bg-primary-500",
     },
     {
-      label: "어려움",
+      label: t("bagStats.difficultyLabels.hard"),
       value: difficultyDistribution.hard,
       barClass: "bg-primary-400",
     },
     {
-      label: "매우 어려움",
+      label: t("bagStats.difficultyLabels.veryHard"),
       value: difficultyDistribution.veryHard,
       barClass: "bg-primary-300",
     },
@@ -180,51 +184,55 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
 
   const stabilityData = [
     {
-      label: "매우 낮음",
+      label: t("bagStats.stabilityLabels.veryLow"),
       value: stabilityDistribution.veryLow,
       barClass: "bg-primary-300",
     },
     {
-      label: "낮음",
+      label: t("bagStats.stabilityLabels.low"),
       value: stabilityDistribution.low,
       barClass: "bg-primary-400",
     },
     {
-      label: "보통",
+      label: t("bagStats.stabilityLabels.medium"),
       value: stabilityDistribution.medium,
       barClass: "bg-primary-500",
     },
     {
-      label: "높음",
+      label: t("bagStats.stabilityLabels.high"),
       value: stabilityDistribution.high,
       barClass: "bg-primary-600",
     },
     {
-      label: "매우 높음",
+      label: t("bagStats.stabilityLabels.veryHigh"),
       value: stabilityDistribution.veryHigh,
       barClass: "bg-primary-700",
     },
   ];
 
   const repsData = [
-    { label: "새 카드", value: repsDistribution.new, barClass: "bg-gray-400" },
     {
-      label: "초급 (1-3회)",
+      label: t("bagStats.repsLabels.new"),
+      value: repsDistribution.new,
+      barClass: "bg-gray-400",
+    },
+    {
+      label: t("bagStats.repsLabels.beginner"),
       value: repsDistribution.beginner,
       barClass: "bg-primary-400",
     },
     {
-      label: "중급 (4-10회)",
+      label: t("bagStats.repsLabels.intermediate"),
       value: repsDistribution.intermediate,
       barClass: "bg-primary-500",
     },
     {
-      label: "고급 (11-20회)",
+      label: t("bagStats.repsLabels.advanced"),
       value: repsDistribution.advanced,
       barClass: "bg-primary-600",
     },
     {
-      label: "전문가 (21회+)",
+      label: t("bagStats.repsLabels.expert"),
       value: repsDistribution.expert,
       barClass: "bg-primary-700",
     },
@@ -232,22 +240,22 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
 
   const lapsesData = [
     {
-      label: "완벽 (0회)",
+      label: t("bagStats.lapsesLabels.perfect"),
       value: lapsesDistribution.perfect,
       barClass: "bg-primary-700",
     },
     {
-      label: "가끔 (1-2회)",
+      label: t("bagStats.lapsesLabels.occasional"),
       value: lapsesDistribution.occasional,
       barClass: "bg-primary-500",
     },
     {
-      label: "자주 (3-5회)",
+      label: t("bagStats.lapsesLabels.frequent"),
       value: lapsesDistribution.frequent,
       barClass: "bg-primary-400",
     },
     {
-      label: "문제 (6회+)",
+      label: t("bagStats.lapsesLabels.problematic"),
       value: lapsesDistribution.problematic,
       barClass: "bg-red-500",
     },
@@ -264,11 +272,11 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
           className="text-primary-700 hover:text-primary-800 gap-2"
         >
           <ArrowLeft className="h-4 w-4" aria-hidden />
-          샌드백 목록으로 돌아가기
+          {t("bagStats.backToList")}
         </Button>
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold text-gray-900">
-            {bagInfo.name} 통계
+            {t("bagStats.title", { name: bagInfo.name })}
           </h1>
           <p className="text-base leading-6 text-gray-600">
             {bagInfo.description}
@@ -289,27 +297,27 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
       {/* 기본 통계 카드들 */}
       <div className="grid grid-cols-1 gap-4">
         <StatCard
-          title="전체 카드"
+          title={t("bagStats.cards.total")}
           value={cardStats.totalCards}
           tone="muted"
           icon={<SquareStack className="h-5 w-5" aria-hidden />}
         />
         <StatCard
-          title="새 카드"
+          title={t("bagStats.cards.new")}
           value={cardStats.newCards}
           total={cardStats.totalCards}
           tone="primary"
           icon={<Sparkles className="h-5 w-5" aria-hidden />}
         />
         <StatCard
-          title="학습 중"
+          title={t("bagStats.cards.learning")}
           value={cardStats.learningCards}
           total={cardStats.totalCards}
           tone="primary"
           icon={<Target className="h-5 w-5" aria-hidden />}
         />
         <StatCard
-          title="복습 카드"
+          title={t("bagStats.cards.review")}
           value={cardStats.reviewCards}
           total={cardStats.totalCards}
           tone="primary"
@@ -320,21 +328,21 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
       {/* 추가 통계 카드들 */}
       <div className="grid grid-cols-1 gap-4">
         <StatCard
-          title="재학습 중"
+          title={t("bagStats.cards.relearning")}
           value={cardStats.relearningCards}
           total={cardStats.totalCards}
           tone="danger"
           icon={<RotateCcw className="h-5 w-5" aria-hidden />}
         />
         <StatCard
-          title="복습 예정"
+          title={t("bagStats.cards.due")}
           value={cardStats.dueCards}
           total={cardStats.totalCards}
           tone="primary"
           icon={<Clock3 className="h-5 w-5" aria-hidden />}
         />
         <StatCard
-          title="정지된 카드"
+          title={t("bagStats.cards.suspended")}
           value={cardStats.suspendedCards}
           total={cardStats.totalCards}
           tone="muted"
@@ -345,22 +353,22 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
       {/* 분포 차트들 */}
       <div className="grid grid-cols-1 gap-6">
         <DistributionBar
-          title="난이도 분포"
+          title={t("bagStats.distributions.difficulty")}
           data={difficultyData}
           total={cardStats.totalCards}
         />
         <DistributionBar
-          title="기억 안정성 분포"
+          title={t("bagStats.distributions.stability")}
           data={stabilityData}
           total={cardStats.totalCards}
         />
         <DistributionBar
-          title="학습 경험 분포"
+          title={t("bagStats.distributions.reps")}
           data={repsData}
           total={cardStats.totalCards}
         />
         <DistributionBar
-          title="실수 빈도 분포"
+          title={t("bagStats.distributions.lapses")}
           data={lapsesData}
           total={cardStats.totalCards}
         />
@@ -369,13 +377,13 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
       {/* 샌드백 정보 */}
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-inner">
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
-          샌드백 정보
+          {t("bagStats.infoTitle")}
         </h3>
         <div className="text-sm">
           <div>
-            <span className="text-gray-600">마지막 수정:</span>
+            <span className="text-gray-600">{t("bagStats.lastModified")}:</span>
             <span className="ml-2 font-medium">
-              {new Date(bagInfo.lastModified).toLocaleDateString("ko-KR")}
+              {new Date(bagInfo.lastModified).toLocaleDateString(locale)}
             </span>
           </div>
         </div>
