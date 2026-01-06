@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -11,17 +11,6 @@ interface FSRSStudySessionProps {
   bagId: Id<"bags">;
   onComplete: () => void;
 }
-
-type SessionCard = {
-  _id: Id<"cards">;
-  question: string;
-  answer: string;
-  hint?: string;
-  explanation?: string;
-  due: number;
-  state: number;
-  reps: number;
-};
 
 export default function FSRSStudySession({
   bagId,
@@ -75,34 +64,8 @@ export default function FSRSStudySession({
     initSession().catch(console.error);
   }, [startSession, userId]);
 
-  // 학습할 카드들을 세션 시작 시점에 고정 (실시간 업데이트 방지)
-  const sessionCardsRef = useRef<SessionCard[] | null>(null);
-  const allCards: SessionCard[] = useMemo(() => {
-    if (sessionCardsRef.current) {
-      return sessionCardsRef.current;
-    }
-    if (!dueCards) {
-      return [];
-    }
-
-    const allDue = dueCards;
-    const newCardsOnly = allDue.filter((card) => card.state === 0);
-    const reviewAndLearningCards = allDue.filter((card) => card.state !== 0);
-
-    // 복습/학습 카드를 우선하고, 새 카드를 복습 카드 사이에 배치 (3:1 비율)
-    const combined = [...reviewAndLearningCards];
-
-    newCardsOnly.forEach((cardItem, index) => {
-      const insertIndex = Math.min((index + 1) * 4, combined.length);
-      combined.splice(insertIndex, 0, cardItem);
-    });
-
-    sessionCardsRef.current = combined;
-    return combined;
-  }, [dueCards]);
-
-  const currentCard = allCards?.[currentCardIndex];
-  const totalCards = allCards?.length || 0;
+  const currentCard = dueCards?.[currentCardIndex];
+  const totalCards = dueCards?.length || 0;
   const isSessionComplete = currentCardIndex >= totalCards;
 
   const handleGrade = async (rating: 1 | 2 | 3 | 4, duration: number) => {
@@ -152,20 +115,18 @@ export default function FSRSStudySession({
       }
     }
     // 세션 카드 목록 초기화 (다음 세션을 위해)
-    sessionCardsRef.current = null;
     sessionIdRef.current = null;
     onComplete();
   };
 
   // 뒤로 가기 핸들러 (카드 목록 초기화 포함)
   const handleBack = () => {
-    sessionCardsRef.current = null;
     sessionIdRef.current = null;
     onComplete();
   };
 
   // 로딩 상태
-  if (!allCards) {
+  if (!dueCards) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="border-primary-500 h-12 w-12 animate-spin rounded-full border-b-2"></div>

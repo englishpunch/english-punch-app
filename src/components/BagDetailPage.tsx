@@ -67,7 +67,7 @@ export default function BagDetailPage() {
       name: t("mock.bagName", { number: i + 1 }),
       totalCards: 0,
     }));
-  }, [isMock, i18n.language, t]);
+  }, [isMock, t]);
 
   const bagsToShow = isMock ? mockBags : bags;
   const bag = useMemo(
@@ -104,7 +104,7 @@ export default function BagDetailPage() {
       hint: t("mock.hint", { number: i + 1 }),
       explanation: t("mock.explanation", { number: i + 1 }),
     }));
-  }, [isMock, i18n.language, t]);
+  }, [isMock, t]);
 
   const cardsToShow = useMemo(
     () => (isMock ? mockCards : paginatedCards) ?? [],
