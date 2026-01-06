@@ -1,8 +1,16 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
+import * as Popover from "@radix-ui/react-popover";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { isTauri } from "@tauri-apps/api/core";
+import { openUrl } from "@tauri-apps/plugin-opener";
+
+const normalizeSelectionText = (value: string) =>
+  value.replace(/\s+/g, " ").trim();
+
+const buildQuickActionPrompt = (value: string) => `What does "${value}" mean?`;
 
 interface StudyCardProps {
   card: {
@@ -30,6 +38,12 @@ function StudyCardContent({
   const { t } = useTranslation();
   const [showAnswer, setShowAnswer] = useState(false);
   const startTimeRef = useRef<number>(0);
+  const selectionContainerRef = useRef<HTMLDivElement | null>(null);
+  const selectionAnchorRef = useRef<{
+    getBoundingClientRect: () => DOMRect;
+  } | null>(null);
+  const [selectionText, setSelectionText] = useState("");
+  const [isSelectionPopoverOpen, setIsSelectionPopoverOpen] = useState(false);
 
   useEffect(() => {
     startTimeRef.current = Date.now();
@@ -106,6 +120,77 @@ function StudyCardContent({
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [handleGrade, handleShowAnswer, showAnswer]);
 
+  const closeSelectionPopover = useCallback(() => {
+    setIsSelectionPopoverOpen(false);
+    setSelectionText("");
+  }, []);
+
+  const openSelectionPopover = useCallback((text: string, rect: DOMRect) => {
+    selectionAnchorRef.current = {
+      getBoundingClientRect: () => rect,
+    };
+    setSelectionText(text);
+    setIsSelectionPopoverOpen(true);
+  }, []);
+
+  const handleSelectionEvent = useCallback(() => {
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed || selection.rangeCount === 0) {
+      closeSelectionPopover();
+      return;
+    }
+
+    const container = selectionContainerRef.current;
+    if (!container || !selection.anchorNode || !selection.focusNode) {
+      closeSelectionPopover();
+      return;
+    }
+
+    if (
+      !container.contains(selection.anchorNode) ||
+      !container.contains(selection.focusNode)
+    ) {
+      return;
+    }
+
+    const text = normalizeSelectionText(selection.toString());
+    if (!text) {
+      closeSelectionPopover();
+      return;
+    }
+
+    const rect = selection.getRangeAt(0).getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) {
+      closeSelectionPopover();
+      return;
+    }
+
+    openSelectionPopover(text, rect);
+  }, [closeSelectionPopover, openSelectionPopover]);
+
+  const handleQuickActionOpen = useCallback(
+    (provider: "chatgpt" | "gemini") => {
+      if (!selectionText) return;
+
+      const prompt = buildQuickActionPrompt(selectionText);
+      const query = encodeURIComponent(prompt);
+      const url =
+        provider === "chatgpt"
+          ? `https://chat.openai.com/?q=${query}`
+          : `https://gemini.google.com/app?prompt=${query}`;
+
+      if (typeof window === "undefined") return;
+      if (isTauri()) {
+        void openUrl(url);
+      } else {
+        window.open(url, "_blank", "noopener,noreferrer");
+      }
+
+      closeSelectionPopover();
+    },
+    [closeSelectionPopover, selectionText]
+  );
+
   const getStateLabel = (state: number) => {
     const labels = [
       t("studyCard.state.new"),
@@ -127,146 +212,210 @@ function StudyCardContent({
   };
 
   return (
-    <div className="relative w-full overflow-hidden border-y border-gray-200 bg-white">
-      {/* 카드 헤더 */}
-      <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span
-              className={cn(
-                "rounded-full px-2 py-1 text-xs font-medium",
-                getStateColor(card.state)
-              )}
-            >
-              {getStateLabel(card.state)}
-            </span>
-            <span className="text-sm text-gray-600">
-              {t("studyCard.reps", { count: card.reps })}
-            </span>
-          </div>
-          <div className="text-xs font-medium text-gray-600">
-            {!showAnswer && t("studyCard.shortcuts.showAnswer")}
-            {showAnswer && t("studyCard.shortcuts.grade")}
-          </div>
-        </div>
-      </div>
-
-      {/* 카드 본문 */}
-      <div className="px-6 py-8">
-        {/* 문제 */}
-        <div className="mb-6">
-          <h2 className="mb-2 text-sm font-medium text-gray-500">
-            {t("studyCard.sections.question")}
-          </h2>
-          <p className="text-xl leading-relaxed font-semibold text-gray-900">
-            {card.question}
-          </p>
-        </div>
-
-        {/* 힌트 */}
-        {card.hint && !showAnswer && (
-          <div className="mb-6">
-            <h3 className="mb-2 text-sm font-medium text-gray-500">
-              {t("studyCard.sections.hint")}
-            </h3>
-            <p className="text-gray-600 italic">{card.hint}</p>
-          </div>
-        )}
-
-        {/* 답 영역 */}
-        {!showAnswer ? (
-          <div className="text-center">
-            <Button
-              onClick={handleShowAnswer}
-              className="px-8"
-              disabled={isLoading}
-            >
-              {t("studyCard.showAnswer")}{" "}
-              <span className="text-sm opacity-80">
-                {t("studyCard.showAnswerShortcut")}
+    <Popover.Root
+      open={isSelectionPopoverOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          closeSelectionPopover();
+          return;
+        }
+        setIsSelectionPopoverOpen(true);
+      }}
+    >
+      <Popover.Anchor virtualRef={selectionAnchorRef} />
+      <div className="relative w-full overflow-hidden border-y border-gray-200 bg-white">
+        {/* 카드 헤더 */}
+        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span
+                className={cn(
+                  "rounded-full px-2 py-1 text-xs font-medium",
+                  getStateColor(card.state)
+                )}
+              >
+                {getStateLabel(card.state)}
               </span>
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* 정답 */}
-            <div>
-              <h3 className="mb-2 text-sm font-medium text-gray-500">
-                {t("studyCard.sections.answer")}
-              </h3>
-              <p className="text-primary-700 text-xl font-semibold">
-                {card.answer}
-              </p>
+              <span className="text-sm text-gray-600">
+                {t("studyCard.reps", { count: card.reps })}
+              </span>
             </div>
+            <div className="text-xs font-medium text-gray-600">
+              {!showAnswer && t("studyCard.shortcuts.showAnswer")}
+              {showAnswer && t("studyCard.shortcuts.grade")}
+            </div>
+          </div>
+        </div>
 
-            {/* 설명 */}
-            {card.explanation && (
+        {/* 카드 본문 */}
+        <div
+          ref={selectionContainerRef}
+          onMouseUp={handleSelectionEvent}
+          onKeyUp={handleSelectionEvent}
+          onTouchEnd={handleSelectionEvent}
+          className="px-6 py-8"
+        >
+          {/* 문제 */}
+          <div className="mb-6">
+            <h2 className="mb-2 text-sm font-medium text-gray-500">
+              {t("studyCard.sections.question")}
+            </h2>
+            <p className="text-xl leading-relaxed font-semibold text-gray-900">
+              {card.question}
+            </p>
+          </div>
+
+          {/* 힌트 */}
+          {card.hint && !showAnswer && (
+            <div className="mb-6">
+              <h3 className="mb-2 text-sm font-medium text-gray-500">
+                {t("studyCard.sections.hint")}
+              </h3>
+              <p className="text-gray-600 italic">{card.hint}</p>
+            </div>
+          )}
+
+          {/* 답 영역 */}
+          {!showAnswer ? (
+            <div className="text-center">
+              <Button
+                onClick={handleShowAnswer}
+                className="px-8"
+                disabled={isLoading}
+              >
+                {t("studyCard.showAnswer")}{" "}
+                <span className="text-sm opacity-80">
+                  {t("studyCard.showAnswerShortcut")}
+                </span>
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {/* 정답 */}
               <div>
                 <h3 className="mb-2 text-sm font-medium text-gray-500">
-                  {t("studyCard.sections.explanation")}
+                  {t("studyCard.sections.answer")}
                 </h3>
-                <p className="text-gray-700">{card.explanation}</p>
-              </div>
-            )}
-
-            {/* 평가 버튼들 */}
-            <div className="pt-4">
-              <h3 className="mb-4 text-center text-sm font-medium text-gray-500">
-                {t("studyCard.ratingPrompt")}
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                {([1, 2, 3, 4] as const).map((rating) => {
-                  const config = getRatingConfig(rating);
-                  return (
-                    <Button
-                      key={rating}
-                      onClick={() => handleGrade(rating)}
-                      disabled={isLoading}
-                      variant={config.variant}
-                      className={cn(
-                        "px-4 py-3 text-white shadow-sm",
-                        config.className
-                      )}
-                    >
-                      <div className="text-center">
-                        <div className="font-bold">{config.label}</div>
-                        <div className="mt-1 text-xs opacity-90">
-                          {config.description}
-                        </div>
-                        <div className="mt-1 text-xs opacity-75">
-                          {t("studyCard.ratingShortcut", {
-                            shortcut: config.shortcut,
-                          })}
-                        </div>
-                      </div>
-                    </Button>
-                  );
-                })}
+                <p className="text-primary-700 text-xl font-semibold">
+                  {card.answer}
+                </p>
               </div>
 
-              {/* 평가 가이드 */}
-              <div className="mt-6 rounded-lg bg-gray-50 p-4">
-                <h4 className="mb-2 text-sm font-medium text-gray-700">
-                  {t("ratings.guide.title")}
-                </h4>
-                <div className="space-y-1 text-xs text-gray-600">
-                  <div>{t("ratings.guide.again")}</div>
-                  <div>{t("ratings.guide.hard")}</div>
-                  <div>{t("ratings.guide.good")}</div>
-                  <div>{t("ratings.guide.easy")}</div>
+              {/* 설명 */}
+              {card.explanation && (
+                <div>
+                  <h3 className="mb-2 text-sm font-medium text-gray-500">
+                    {t("studyCard.sections.explanation")}
+                  </h3>
+                  <p className="text-gray-700">{card.explanation}</p>
+                </div>
+              )}
+
+              {/* 평가 버튼들 */}
+              <div className="pt-4">
+                <h3 className="mb-4 text-center text-sm font-medium text-gray-500">
+                  {t("studyCard.ratingPrompt")}
+                </h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {([1, 2, 3, 4] as const).map((rating) => {
+                    const config = getRatingConfig(rating);
+                    return (
+                      <Button
+                        key={rating}
+                        onClick={() => handleGrade(rating)}
+                        disabled={isLoading}
+                        variant={config.variant}
+                        className={cn(
+                          "px-4 py-3 text-white shadow-sm",
+                          config.className
+                        )}
+                      >
+                        <div className="text-center">
+                          <div className="font-bold">{config.label}</div>
+                          <div className="mt-1 text-xs opacity-90">
+                            {config.description}
+                          </div>
+                          <div className="mt-1 text-xs opacity-75">
+                            {t("studyCard.ratingShortcut", {
+                              shortcut: config.shortcut,
+                            })}
+                          </div>
+                        </div>
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                {/* 평가 가이드 */}
+                <div className="mt-6 rounded-lg bg-gray-50 p-4">
+                  <h4 className="mb-2 text-sm font-medium text-gray-700">
+                    {t("ratings.guide.title")}
+                  </h4>
+                  <div className="space-y-1 text-xs text-gray-600">
+                    <div>{t("ratings.guide.again")}</div>
+                    <div>{t("ratings.guide.hard")}</div>
+                    <div>{t("ratings.guide.good")}</div>
+                    <div>{t("ratings.guide.easy")}</div>
+                  </div>
                 </div>
               </div>
             </div>
+          )}
+        </div>
+
+        {/* 로딩 오버레이 */}
+        {isLoading && (
+          <div className="bg-opacity-75 absolute inset-0 flex items-center justify-center bg-white">
+            <Loader2 className="text-primary-600 h-10 w-10 animate-spin" />
           </div>
         )}
       </div>
 
-      {/* 로딩 오버레이 */}
-      {isLoading && (
-        <div className="bg-opacity-75 absolute inset-0 flex items-center justify-center bg-white">
-          <Loader2 className="text-primary-600 h-10 w-10 animate-spin" />
-        </div>
-      )}
-    </div>
+      <Popover.Portal>
+        <Popover.Content
+          sideOffset={8}
+          className="z-50 w-72 rounded-xl border border-gray-200 bg-white p-4 shadow-lg outline-none"
+          onOpenAutoFocus={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => event.preventDefault()}
+        >
+          <div className="mb-3 text-xs font-semibold tracking-wide text-gray-400 uppercase">
+            Selected text
+          </div>
+          <div className="mb-4 text-sm font-semibold text-gray-900">
+            {selectionText}
+          </div>
+          <div className="grid gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleQuickActionOpen("chatgpt")}
+              fullWidth
+            >
+              Open ChatGPT
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => handleQuickActionOpen("gemini")}
+              fullWidth
+            >
+              Open Gemini
+            </Button>
+          </div>
+          <div className="mt-3 border-t border-gray-100 pt-3">
+            <Button
+              size="sm"
+              variant="secondary"
+              fullWidth
+              disabled
+              className="gap-2 text-gray-400"
+            >
+              <Settings className="h-4 w-4" aria-hidden />
+              Quick actions settings
+            </Button>
+          </div>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 }

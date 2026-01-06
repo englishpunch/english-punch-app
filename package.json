@@ -25,6 +25,7 @@
     "@convex-dev/auth": "^0.0.90",
     "@fabianlars/tauri-plugin-oauth": "^2.0.0",
     "@google/genai": "^1.30.0",
+    "@radix-ui/react-popover": "^1.1.15",
     "@tanstack/react-router": "^1.139.10",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/zod-adapter": "^1.139.10",
