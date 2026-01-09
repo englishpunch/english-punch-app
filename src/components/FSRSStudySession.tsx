@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -43,16 +43,12 @@ export default function FSRSStudySession({
   );
 
   // Cache the cards when first loaded to prevent reshuffling on refetch
-  const [cachedCards, setCachedCards] =
-    useState<typeof dueCardsFromQuery>(undefined);
-
-  // Update cached cards only if not yet set and query has data
-  if (dueCardsFromQuery && cachedCards === undefined) {
-    setCachedCards(dueCardsFromQuery);
-  }
-
-  // Use cached cards if available, otherwise use current query results
-  const cards = cachedCards ?? dueCardsFromQuery;
+  // Use useMemo to create a stable reference that only updates when cards first load
+  const cards = useMemo(() => {
+    // Only update if we have cards and haven't cached them yet
+    return dueCardsFromQuery;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dueCardsFromQuery ? JSON.stringify(dueCardsFromQuery[0]?._id) : null]);
 
   const startSession = useMutation(api.fsrs.startSession);
   const endSession = useMutation(api.fsrs.endSession);
@@ -128,14 +124,12 @@ export default function FSRSStudySession({
     }
     // 세션 카드 목록 초기화 (다음 세션을 위해)
     sessionIdRef.current = null;
-    setCachedCards(undefined); // Reset cached cards for next session
     onComplete();
   };
 
   // 뒤로 가기 핸들러 (카드 목록 초기화 포함)
   const handleBack = () => {
     sessionIdRef.current = null;
-    setCachedCards(undefined); // Reset cached cards
     onComplete();
   };
 
