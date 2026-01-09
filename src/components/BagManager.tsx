@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -7,6 +7,7 @@ import BagStats from "./BagStats";
 import { Button } from "./Button";
 import { ArrowLeft, BarChart3, Eye, Loader2, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useRouterState } from "@tanstack/react-router";
 
 interface BagManagerProps {
   onBack?: () => void;
@@ -16,6 +17,8 @@ export default function BagManager({ onBack }: BagManagerProps) {
   const { t } = useTranslation();
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
+  const { location } = useRouterState();
+  const prevPathnameRef = useRef<string | null>(null);
 
   const [currentView, setCurrentView] = useState<"bags" | "study" | "stats">(
     "bags"
@@ -23,11 +26,20 @@ export default function BagManager({ onBack }: BagManagerProps) {
   const [selectedBagId, setSelectedBagId] = useState<Id<"bags"> | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
-  // Reset to bags view on mount to ensure clean state when navigating back
+  // Reset to bags view when navigating back to this route from a different route
   useEffect(() => {
-    setCurrentView("bags");
-    setSelectedBagId(null);
-  }, []);
+    const currentPathname = location.pathname;
+    const wasOnDifferentRoute =
+      prevPathnameRef.current !== null &&
+      prevPathnameRef.current !== currentPathname;
+
+    if (wasOnDifferentRoute && currentPathname === "/run") {
+      setCurrentView("bags");
+      setSelectedBagId(null);
+    }
+
+    prevPathnameRef.current = currentPathname;
+  }, [location.pathname]);
 
   // Convex 쿼리 및 뮤테이션
   const bags = useQuery(api.learning.getUserBags, userId ? { userId } : "skip");

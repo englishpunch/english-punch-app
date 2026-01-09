@@ -40,7 +40,6 @@ const runRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/run",
   component: RunRoute,
-  remountDeps: () => Date.now(),
 });
 
 const homeRoute = createRoute({
