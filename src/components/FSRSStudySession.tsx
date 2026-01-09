@@ -43,12 +43,13 @@ export default function FSRSStudySession({
   );
 
   // Cache the cards when first loaded to prevent reshuffling on refetch
-  // Use useMemo to create a stable reference that only updates when cards first load
+  // Use useMemo to create a stable reference based on the first card's ID
+  // This ensures cards don't reshuffle when the query refetches
   const cards = useMemo(() => {
-    // Only update if we have cards and haven't cached them yet
     return dueCardsFromQuery;
+    // Only recompute when the first card ID changes (i.e., new session data loaded)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dueCardsFromQuery ? JSON.stringify(dueCardsFromQuery[0]?._id) : null]);
+  }, [dueCardsFromQuery?.[0]?._id]);
 
   const startSession = useMutation(api.fsrs.startSession);
   const endSession = useMutation(api.fsrs.endSession);
