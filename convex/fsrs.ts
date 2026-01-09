@@ -345,13 +345,12 @@ export const startSession = mutation({
     ),
     limit: v.optional(v.number()),
   },
-  returns: v.string(), // sessionId
+  returns: v.string(), // Return string sessionId for backward compatibility
   handler: async (ctx, args) => {
     const runId = `${args.userId}-start-${Date.now()}`;
 
     logger.info(runId, { m: "🚀 StartSession called:", args });
 
-    const sessionId = `session_${args.userId}_${Date.now()}`;
     const limit = args.limit || 30;
     const nowTimestamp = Date.now();
 
@@ -368,10 +367,13 @@ export const startSession = mutation({
 
     const shuffledCardIds = shuffle(cards.map((card) => card._id));
 
-    const sessionResult = await ctx.db.insert("sessions", {
+    const startTime = new Date().toISOString();
+    const sessionId = `session_${args.userId}_${Date.now()}`;
+
+    await ctx.db.insert("sessions", {
       userId: args.userId,
       bagId: args.bagId,
-      startTime: new Date().toISOString(),
+      startTime,
       cardIds: shuffledCardIds,
       cardsReviewed: 0,
       cardsNew: 0,
@@ -390,7 +392,6 @@ export const startSession = mutation({
     logger.info(runId, {
       m: "✅ Session created:",
       sessionId,
-      sessionResult,
       cardCount: shuffledCardIds.length,
     });
     return sessionId;
@@ -492,35 +493,44 @@ export const getSessionCards = query({
     })
   ),
   handler: async (ctx, args) => {
-    // Find the session by matching the timestamp in the sessionId
-    const sessions = await ctx.db.query("sessions").collect();
-    const session = sessions.find((s) => {
-      const sessionTimestamp = s.startTime;
-      return args.sessionId.includes(sessionTimestamp);
-    });
+    // Extract timestamp from sessionId (format: session_<userId>_<timestamp>)
+    const parts = args.sessionId.split("_");
+    const timestamp = parts[2];
+    if (!timestamp) {
+      return [];
+    }
+
+    // Query sessions by startTime
+    const session = await ctx.db
+      .query("sessions")
+      .filter((q) =>
+        q.eq(q.field("startTime"), new Date(parseInt(timestamp)).toISOString())
+      )
+      .first();
 
     if (!session || !session.cardIds) {
       return [];
     }
 
-    // Fetch cards in the order stored in the session
-    const cards = [];
-    for (const cardId of session.cardIds) {
-      const card = await ctx.db.get("cards", cardId);
-      if (card) {
-        cards.push({
-          _id: card._id,
-          question: card.question,
-          answer: card.answer,
-          hint: card.hint,
-          explanation: card.explanation,
-          due: card.due,
-          state: card.state,
-          reps: card.reps,
-        });
-      }
-    }
+    // Fetch cards in parallel for better performance
+    const cardPromises = session.cardIds.map((cardId) =>
+      ctx.db.get("cards", cardId)
+    );
+    const cardResults = await Promise.all(cardPromises);
 
-    return cards;
+    // Filter out null results and map to return type
+    const validCards = cardResults.filter(
+      (card): card is NonNullable<typeof card> => card !== null
+    );
+    return validCards.map((card) => ({
+      _id: card._id,
+      question: card.question,
+      answer: card.answer,
+      hint: card.hint,
+      explanation: card.explanation,
+      due: card.due,
+      state: card.state,
+      reps: card.reps,
+    }));
   },
 });
