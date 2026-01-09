@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -20,7 +20,7 @@ export default function FSRSStudySession({
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const sessionIdRef = useRef<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [isReviewing, setIsReviewing] = useState(false);
   const [completedCount, setCompletedCount] = useState(0);
   const [sessionStats, setSessionStats] = useState({
@@ -30,55 +30,41 @@ export default function FSRSStudySession({
     easy: 0,
   });
 
-  // Convex 쿼리 및 뮤테이션
-  const dueCardsFromQuery = useQuery(
-    api.learning.getDueCards,
-    userId
-      ? {
-          userId,
-          bagId,
-          limit: 30,
-        }
-      : "skip"
-  );
-
-  // Cache the cards when first loaded to prevent reshuffling on refetch
-  // Use useMemo to create a stable reference based on the first card's ID
-  // This ensures cards don't reshuffle when the query refetches
-  const cards = useMemo(() => {
-    return dueCardsFromQuery;
-    // Only recompute when the first card ID changes (i.e., new session data loaded)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dueCardsFromQuery?.[0]?._id]);
-
   const startSession = useMutation(api.fsrs.startSession);
   const endSession = useMutation(api.fsrs.endSession);
   const reviewCard = useMutation(api.fsrs.reviewCard);
 
+  // Get cards from session (pre-shuffled order)
+  const sessionCards = useQuery(
+    api.fsrs.getSessionCards,
+    sessionId ? { sessionId } : "skip"
+  );
+
   // 세션 시작
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || sessionId) return;
     const initSession = async () => {
       try {
         const newSessionId = await startSession({
           userId,
+          bagId,
           sessionType: "daily",
+          limit: 30,
         });
-        sessionIdRef.current = newSessionId;
+        setSessionId(newSessionId);
       } catch (error) {
         console.error("Failed to start session:", error);
       }
     };
 
     initSession().catch(console.error);
-  }, [startSession, userId]);
+  }, [startSession, userId, bagId, sessionId]);
 
-  const currentCard = cards?.[currentCardIndex];
-  const totalCards = cards?.length || 0;
+  const currentCard = sessionCards?.[currentCardIndex];
+  const totalCards = sessionCards?.length || 0;
   const isSessionComplete = currentCardIndex >= totalCards;
 
   const handleGrade = async (rating: 1 | 2 | 3 | 4, duration: number) => {
-    const sessionId = sessionIdRef.current;
     if (!userId || !currentCard || !sessionId || isReviewing) return;
 
     setIsReviewing(true);
@@ -115,7 +101,6 @@ export default function FSRSStudySession({
   };
 
   const handleCompleteSession = async () => {
-    const sessionId = sessionIdRef.current;
     if (sessionId) {
       try {
         await endSession({ sessionId });
@@ -124,18 +109,18 @@ export default function FSRSStudySession({
       }
     }
     // 세션 카드 목록 초기화 (다음 세션을 위해)
-    sessionIdRef.current = null;
+    setSessionId(null);
     onComplete();
   };
 
   // 뒤로 가기 핸들러 (카드 목록 초기화 포함)
   const handleBack = () => {
-    sessionIdRef.current = null;
+    setSessionId(null);
     onComplete();
   };
 
   // 로딩 상태
-  if (!cards) {
+  if (!sessionCards) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="border-primary-500 h-12 w-12 animate-spin rounded-full border-b-2"></div>

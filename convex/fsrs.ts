@@ -3,6 +3,7 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { fsrs, State, Grade, Steps } from "ts-fsrs";
 import { getGlobalLogger } from "../src/lib/globalLogger";
+import { shuffle } from "es-toolkit";
 
 type ReviewCardArgs = {
   userId: Id<"users">;
@@ -336,11 +337,13 @@ export const getUserSettings = query({
 export const startSession = mutation({
   args: {
     userId: v.id("users"),
+    bagId: v.id("bags"),
     sessionType: v.union(
       v.literal("daily"),
       v.literal("custom"),
       v.literal("cramming")
     ),
+    limit: v.optional(v.number()),
   },
   returns: v.string(), // sessionId
   handler: async (ctx, args) => {
@@ -349,10 +352,27 @@ export const startSession = mutation({
     logger.info(runId, { m: "🚀 StartSession called:", args });
 
     const sessionId = `session_${args.userId}_${Date.now()}`;
+    const limit = args.limit || 30;
+    const nowTimestamp = Date.now();
+
+    // Fetch and shuffle cards once at session start
+    const cards = await ctx.db
+      .query("cards")
+      .withIndex("by_user_and_due", (q) =>
+        q.eq("userId", args.userId).lte("due", nowTimestamp)
+      )
+      .filter((q) => q.eq(q.field("bagId"), args.bagId))
+      .filter((q) => q.eq(q.field("suspended"), false))
+      .order("asc")
+      .take(limit);
+
+    const shuffledCardIds = shuffle(cards.map((card) => card._id));
 
     const sessionResult = await ctx.db.insert("sessions", {
       userId: args.userId,
+      bagId: args.bagId,
       startTime: new Date().toISOString(),
+      cardIds: shuffledCardIds,
       cardsReviewed: 0,
       cardsNew: 0,
       cardsLearning: 0,
@@ -367,7 +387,12 @@ export const startSession = mutation({
       sessionType: args.sessionType,
     });
 
-    logger.info(runId, { m: "✅ Session created:", sessionId, sessionResult });
+    logger.info(runId, {
+      m: "✅ Session created:",
+      sessionId,
+      sessionResult,
+      cardCount: shuffledCardIds.length,
+    });
     return sessionId;
   },
 });
@@ -444,5 +469,58 @@ export const endSession = mutation({
       stats: sessionStats,
     });
     return null;
+  },
+});
+
+/**
+ * Get cards for a session in the pre-shuffled order
+ */
+export const getSessionCards = query({
+  args: {
+    sessionId: v.string(),
+  },
+  returns: v.array(
+    v.object({
+      _id: v.id("cards"),
+      question: v.string(),
+      answer: v.string(),
+      hint: v.optional(v.string()),
+      explanation: v.optional(v.string()),
+      due: v.number(),
+      state: v.number(),
+      reps: v.number(),
+    })
+  ),
+  handler: async (ctx, args) => {
+    // Find the session by matching the timestamp in the sessionId
+    const sessions = await ctx.db.query("sessions").collect();
+    const session = sessions.find((s) => {
+      const sessionTimestamp = s.startTime;
+      return args.sessionId.includes(sessionTimestamp);
+    });
+
+    if (!session || !session.cardIds) {
+      return [];
+    }
+
+    // Fetch cards in the order stored in the session
+    const cards = [];
+    for (const cardId of session.cardIds) {
+      const card = await ctx.db.get("cards", cardId);
+      if (card) {
+        cards.push({
+          _id: card._id,
+          question: card.question,
+          answer: card.answer,
+          hint: card.hint,
+          explanation: card.explanation,
+          due: card.due,
+          state: card.state,
+          reps: card.reps,
+        });
+      }
+    }
+
+    return cards;
   },
 });
