@@ -29,11 +29,11 @@ export default function BagManager({ onBack }: BagManagerProps) {
   // Reset to bags view when navigating back to this route from a different route
   useEffect(() => {
     const currentPathname = location.pathname;
+    const previousPathname = prevPathnameRef.current;
     const wasOnDifferentRoute =
-      prevPathnameRef.current !== null &&
-      prevPathnameRef.current !== currentPathname;
+      previousPathname !== null && previousPathname !== "/run";
 
-    if (wasOnDifferentRoute && currentPathname === "/run") {
+    if (currentPathname === "/run" && wasOnDifferentRoute) {
       setCurrentView("bags");
       setSelectedBagId(null);
     }
