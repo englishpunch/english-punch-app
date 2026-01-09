@@ -31,7 +31,7 @@ export default function FSRSStudySession({
   });
 
   // Convex 쿼리 및 뮤테이션
-  const dueCards = useQuery(
+  const dueCardsFromQuery = useQuery(
     api.learning.getDueCards,
     userId
       ? {
@@ -41,6 +41,18 @@ export default function FSRSStudySession({
         }
       : "skip"
   );
+
+  // Cache the cards when first loaded to prevent reshuffling on refetch
+  const [cachedCards, setCachedCards] =
+    useState<typeof dueCardsFromQuery>(undefined);
+
+  // Update cached cards only if not yet set and query has data
+  if (dueCardsFromQuery && cachedCards === undefined) {
+    setCachedCards(dueCardsFromQuery);
+  }
+
+  // Use cached cards if available, otherwise use current query results
+  const cards = cachedCards ?? dueCardsFromQuery;
 
   const startSession = useMutation(api.fsrs.startSession);
   const endSession = useMutation(api.fsrs.endSession);
@@ -64,8 +76,8 @@ export default function FSRSStudySession({
     initSession().catch(console.error);
   }, [startSession, userId]);
 
-  const currentCard = dueCards?.[currentCardIndex];
-  const totalCards = dueCards?.length || 0;
+  const currentCard = cards?.[currentCardIndex];
+  const totalCards = cards?.length || 0;
   const isSessionComplete = currentCardIndex >= totalCards;
 
   const handleGrade = async (rating: 1 | 2 | 3 | 4, duration: number) => {
@@ -116,17 +128,19 @@ export default function FSRSStudySession({
     }
     // 세션 카드 목록 초기화 (다음 세션을 위해)
     sessionIdRef.current = null;
+    setCachedCards(undefined); // Reset cached cards for next session
     onComplete();
   };
 
   // 뒤로 가기 핸들러 (카드 목록 초기화 포함)
   const handleBack = () => {
     sessionIdRef.current = null;
+    setCachedCards(undefined); // Reset cached cards
     onComplete();
   };
 
   // 로딩 상태
-  if (!dueCards) {
+  if (!cards) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="border-primary-500 h-12 w-12 animate-spin rounded-full border-b-2"></div>
