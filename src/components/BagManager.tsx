@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -22,6 +22,12 @@ export default function BagManager({ onBack }: BagManagerProps) {
   );
   const [selectedBagId, setSelectedBagId] = useState<Id<"bags"> | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
+
+  // Reset to bags view on mount to ensure clean state when navigating back
+  useEffect(() => {
+    setCurrentView("bags");
+    setSelectedBagId(null);
+  }, []);
 
   // Convex 쿼리 및 뮤테이션
   const bags = useQuery(api.learning.getUserBags, userId ? { userId } : "skip");
