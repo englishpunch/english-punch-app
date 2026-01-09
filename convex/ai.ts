@@ -150,14 +150,20 @@ export const generateCardDraft = action({
 
     const card = cardSchema.parse(JSON.parse(response.text));
 
+    // Sanitize finalAnswer to handle string "null" or "undefined"
+    const sanitizedCard = {
+      ...card,
+      finalAnswer: sanitizeFinalAnswer(card.finalAnswer),
+    };
+
     logger.info(runId, {
       stage: "card parsed",
-      questionPreview: card.question.slice(0, 60),
-      hintPreview: card.hint.slice(0, 40),
-      finalAnswerApplied: card.finalAnswer,
+      questionPreview: sanitizedCard.question.slice(0, 60),
+      hintPreview: sanitizedCard.hint.slice(0, 40),
+      finalAnswerApplied: sanitizedCard.finalAnswer,
     });
 
-    return card;
+    return sanitizedCard;
   },
 });
 
@@ -181,6 +187,23 @@ const requireApiKey = () => {
 const getAiClient = () => {
   const apiKey = requireApiKey();
   return new GoogleGenAI({ apiKey });
+};
+
+/**
+ * Sanitizes the finalAnswer field by checking if it's the string "null" or "undefined"
+ * and converting it to undefined if so.
+ */
+const sanitizeFinalAnswer = (
+  finalAnswer: string | undefined
+): string | undefined => {
+  if (
+    finalAnswer === "null" ||
+    finalAnswer === "undefined" ||
+    finalAnswer === ""
+  ) {
+    return undefined;
+  }
+  return finalAnswer;
 };
 
 /**
