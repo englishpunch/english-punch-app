@@ -26,6 +26,12 @@
   --color-primary-active: var(--color-primary-700);
 }
 
+@layer components {
+  button {
+    @apply cursor-pointer;
+  }
+}
+
 /* only use this to update the style of the auth input fields. use a different class for all other input fields */
 .auth-input-field {
   @apply w-full px-4 py-3 bg-white border border-gray-200 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow shadow-sm hover:shadow;

@@ -33,7 +33,7 @@
   // Dependencies driven outside the TS analyzer (Rust plugins, Tailwind CSS import)
   "ignoreDependencies": [
     "@fabianlars/tauri-plugin-oauth",
-    "@tauri-apps/plugin-opener",
+    "es-toolkit",
     "tailwindcss",
     "@testing-library/*",
   ],

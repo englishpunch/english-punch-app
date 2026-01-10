@@ -30,16 +30,12 @@ run_and_capture() {
   return 0
 }
 
-run_vibe_rules() {
-  npm run vibe-rules
-  git diff --exit-code
-}
-
 set +e
 run_and_capture "lint" npm run lint
-run_and_capture "vibe-rules" run_vibe_rules
+run_and_capture "vibe-rules" bash -c "npm run vibe-rules && git diff --exit-code"
 run_and_capture "knip" npm run knip
 run_and_capture "test" env CI=true npm run test
+run_and_capture "dedupe" bash -c "npm dedupe && git diff --exit-code"
 set -e
 
 if [[ "${#failures[@]}" -ne 0 ]]; then

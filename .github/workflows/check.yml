@@ -34,6 +34,13 @@ jobs:
           git diff --exit-code
         continue-on-error: true
 
+      - name: package dedupe
+        id: dedupe
+        run: |
+          npm dedupe
+          git diff --exit-code
+        continue-on-error: true
+
       - name: Knip (dead code/deps)
         id: knip
         run: npm run knip
@@ -67,6 +74,7 @@ jobs:
           check_step "vibe_rules" "${{ steps.vibe_rules.outcome }}" "npm run vibe-rules && git diff --exit-code"
           check_step "knip" "${{ steps.knip.outcome }}" "npm run knip"
           check_step "test" "${{ steps.test.outcome }}" "CI=true npm run test"
+          check_step "dedupe" "${{ steps.dedupe.outcome }}" "npm dedupe && git diff --exit-code"
 
           if [ "$failed" -eq 1 ]; then
             run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
