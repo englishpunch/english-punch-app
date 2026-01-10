@@ -3,7 +3,6 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { fsrs, State, Grade, Steps } from "ts-fsrs";
 import { getGlobalLogger } from "../src/lib/globalLogger";
-import { shuffle } from "es-toolkit";
 
 type ReviewCardArgs = {
   userId: Id<"users">;
