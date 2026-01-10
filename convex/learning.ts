@@ -213,7 +213,9 @@ export const getUserBags = query({
   handler: async (ctx, args) => {
     const bags = await ctx.db
       .query("bags")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user_and_deleted_at", (q) =>
+        q.eq("userId", args.userId).eq("deletedAt", undefined)
+      )
       .collect();
 
     return bags.map((bag) => ({
@@ -249,6 +251,7 @@ export const getOneDueCard = query({
         q.eq("userId", userId).lte("due", nowTimestamp)
       )
       .filter((q) => q.eq(q.field("bagId"), args.bagId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .filter((q) => q.eq(q.field("suspended"), false))
       .order("asc")
       .take(1);
@@ -271,10 +274,16 @@ export const updateBagStats = mutation({
   },
   returns: v.null(),
   handler: async (ctx, args) => {
+    const bag = await ctx.db.get("bags", args.bagId);
+    if (!bag || bag.deletedAt !== undefined) {
+      return null;
+    }
     // 각 상태별 카드 수 계산
     const allCards = await ctx.db
       .query("cards")
-      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
+      .withIndex("by_bag_and_deleted_at", (q) =>
+        q.eq("bagId", args.bagId).eq("deletedAt", undefined)
+      )
       .collect();
 
     const stats = {
@@ -357,14 +366,16 @@ export const getBagDetailStats = query({
   handler: async (ctx, args) => {
     // 백 정보 조회
     const bag = await ctx.db.get("bags", args.bagId);
-    if (!bag || bag.userId !== args.userId) {
+    if (!bag || bag.userId !== args.userId || bag.deletedAt !== undefined) {
       return null;
     }
 
     // 모든 카드 조회
     const allCards = await ctx.db
       .query("cards")
-      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
+      .withIndex("by_bag_and_deleted_at", (q) =>
+        q.eq("bagId", args.bagId).eq("deletedAt", undefined)
+      )
       .collect();
 
     const nowTimestamp = Date.now();
@@ -488,17 +499,29 @@ export const deleteBag = mutation({
   },
   handler: async (ctx, args) => {
     const bag = await ctx.db.get("bags", args.bagId);
-    if (!bag) {
+    if (!bag || bag.deletedAt !== undefined) {
       return null;
     }
 
+    const deletedAt = Date.now();
     const cards = await ctx.db
       .query("cards")
-      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
+      .withIndex("by_bag_and_deleted_at", (q) =>
+        q.eq("bagId", args.bagId).eq("deletedAt", undefined)
+      )
       .collect();
 
-    await Promise.all(cards.map((c) => ctx.db.delete("cards", c._id)));
-    await ctx.db.delete("bags", args.bagId);
+    await Promise.all(
+      cards.map((card) =>
+        ctx.db.patch("cards", card._id, {
+          deletedAt,
+        })
+      )
+    );
+    await ctx.db.patch("bags", args.bagId, {
+      deletedAt,
+      lastModified: new Date(deletedAt).toISOString(),
+    });
     return null;
   },
 });
@@ -513,7 +536,9 @@ export const getBagCardsPaginated = query({
   handler: async (ctx, args) => {
     const result = await ctx.db
       .query("cards")
-      .withIndex("by_bag", (q) => q.eq("bagId", args.bagId))
+      .withIndex("by_bag_and_deleted_at", (q) =>
+        q.eq("bagId", args.bagId).eq("deletedAt", undefined)
+      )
       .filter((q) => q.eq(q.field("userId"), args.userId))
       .order("desc")
       .paginate(args.paginationOpts);
@@ -577,7 +602,7 @@ export const createCard = mutation({
     });
 
     const bag = await ctx.db.get("bags", args.bagId);
-    if (bag) {
+    if (bag && bag.deletedAt === undefined) {
       await ctx.db.patch("bags", args.bagId, {
         totalCards: bag.totalCards + 1,
         newCards: bag.newCards + 1,
@@ -613,7 +638,7 @@ export const updateCard = mutation({
   },
   handler: async (ctx, args) => {
     const card = await ctx.db.get("cards", args.cardId);
-    if (!card || card.bagId !== args.bagId) {
+    if (!card || card.bagId !== args.bagId || card.deletedAt !== undefined) {
       return null;
     }
 
@@ -630,7 +655,7 @@ export const updateCard = mutation({
     });
 
     const bag = await ctx.db.get("bags", args.bagId);
-    if (bag) {
+    if (bag && bag.deletedAt === undefined) {
       // 이전 상태가 0이 아니면 newCards 증가, 다른 상태 감소는 생략 (간단 집계)
       const newCards = bag.newCards + (card.state === 0 ? 0 : 1);
       const learningCards = bag.learningCards - (card.state === 1 ? 1 : 0);
@@ -655,10 +680,18 @@ export const deleteCard = mutation({
   handler: async (ctx, args) => {
     const card = await ctx.db.get("cards", args.cardId);
     const bag = await ctx.db.get("bags", args.bagId);
-    if (!card || !bag) {
+    if (
+      !card ||
+      !bag ||
+      card.deletedAt !== undefined ||
+      bag.deletedAt !== undefined
+    ) {
       return null;
     }
-    await ctx.db.delete("cards", args.cardId);
+    const deletedAt = Date.now();
+    await ctx.db.patch("cards", args.cardId, {
+      deletedAt,
+    });
 
     const counts = {
       totalCards: bag.totalCards - 1,
@@ -668,7 +701,7 @@ export const deleteCard = mutation({
     };
     await ctx.db.patch("bags", args.bagId, {
       ...counts,
-      lastModified: new Date().toISOString(),
+      lastModified: new Date(deletedAt).toISOString(),
     });
     return null;
   },
@@ -714,7 +747,7 @@ export const createCardsBatch = mutation({
     }
 
     const bag = await ctx.db.get("bags", args.bagId);
-    if (bag) {
+    if (bag && bag.deletedAt === undefined) {
       await ctx.db.patch("bags", args.bagId, {
         totalCards: bag.totalCards + args.cards.length,
         newCards: bag.newCards + args.cards.length,

@@ -62,9 +62,11 @@ export const learningTables = {
     // 메타데이터
     tags: v.array(v.string()),
     lastModified: v.string(),
+    deletedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
-    .index("by_user_and_active", ["userId", "isActive"]),
+    .index("by_user_and_active", ["userId", "isActive"])
+    .index("by_user_and_deleted_at", ["userId", "deletedAt"]),
 
   /**
    * 학습 카드 (ts-fsrs Card 인터페이스 완전 호환)
@@ -107,9 +109,12 @@ export const learningTables = {
     tags: v.array(v.string()),
     source: v.optional(v.string()), // 카드 출처
     suspended: v.boolean(), // 일시 중지 여부
+    deletedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
     .index("by_bag", ["bagId"])
+    .index("by_user_and_deleted_at", ["userId", "deletedAt"])
+    .index("by_bag_and_deleted_at", ["bagId", "deletedAt"])
     .index("by_due", ["due"]) // 전체 due 날짜 순 정렬
     .index("by_user_and_due", ["userId", "due"]) // 사용자별 due 날짜 순
     .index("by_bag_and_due", ["bagId", "due"]) // 샌드백별 due 날짜 순
