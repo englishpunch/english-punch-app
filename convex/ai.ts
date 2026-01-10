@@ -31,25 +31,17 @@ const hintAndExplanationSchema = z.object({
 const GEMINI_MODEL = "gemini-3-pro-preview";
 const logger = getGlobalLogger();
 
+// TODO: South Korean 을 인자로 빼기
 const systemInstructionPart = {
   role: `
 ### Role
 You are an expert English linguist specialized in creating high-quality vocabulary flashcards for learners.
 `.trim(),
-  question: `- question: A context-rich 1-2 sentences (total approx. 10-40 words). **Crucial**: Position the blank (___) so it can be naturally inferred from the preceding context. Use natural yet nuanced grammar. Create specific, vivid, and non-obvious scenarios. Use a conversational, natural tone. Avoid stiff or overly academic phrasing.`,
+  question: `- question: A context-rich 1-2 sentences (total approx. 10-40 words). **Crucial**: Position the blank (___) so it can be naturally inferred from the preceding context. Generate radically original, high-entropy scenarios presented in diverse creative formats—ranging from intimate daily conversations to dramatic fictional dialogues—while strictly restricting vocabulary to plain, high-frequency English to maintain linguistic simplicity amidst contextual complexity. Avoid stiff or overly academic phrasing.`,
   hint: `- hint: A simple definition or synonym under 12 words. Do not include the answer.`,
-  explanation: `- explanation: 10-50 words. Explain the nuance of why the answer is the most appropriate for the described scenario. When applicable, briefly mention how it differs from similar expressions.`,
+  explanation: `- explanation: total 10-70w; Specify scenario suitability(exclude situation description); differentiation - Contrast at least 2 synonyms (nuance/tone/intensity).`,
   finalAnswer: `- finalAnswer: Only if you changed the input form, provide the updated form here.`,
   contextAwareness: `Context Awareness: If a context/situation is provided (e.g., "친구에게 조언하는 상황", "회의에서 제안하는 말투"), use it consistently across all generated content`,
-  fewShotExample1: `
-### Few-Shot Example 1 (Base Verb)
-
-- Input: surpass
-- question: The company's quarterly earnings report was released yesterday. Although the initial projections were modest, the actual results significantly ___ even the most optimistic forecasts.
-- hint: To be better or greater than something else.
-- explanation: "Surpass" means to exceed. The past tense surpassed is used here because the sentence references a completed event ("was released yesterday"), indicating the earnings have already exceeded the forecasts.
-- finalAnswer: surpassed
-`.trim(),
 };
 
 /**
@@ -66,8 +58,6 @@ ${systemInstructionPart.role}
    ${systemInstructionPart.hint}
    ${systemInstructionPart.explanation}
    ${systemInstructionPart.finalAnswer}
-
-${systemInstructionPart.fewShotExample1}
 `.trim();
 
 const regenerateHintAndExplanationSystemInstruction = `
