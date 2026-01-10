@@ -1,7 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
 import { mutation, query } from "./_generated/server";
 import { ConvexError, v } from "convex/values";
-import { shuffle } from "es-toolkit";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
@@ -260,106 +259,6 @@ export const getOneDueCard = query({
     }
 
     return card;
-  },
-});
-
-/**
- * 백의 학습 가능한 카드들 조회 (due date 기준)
- */
-export const getDueCards = query({
-  args: {
-    bagId: v.id("bags"),
-    limit: v.optional(v.number()),
-  },
-  returns: v.array(
-    v.object({
-      _id: v.id("cards"),
-      question: v.string(),
-      answer: v.string(),
-      hint: v.optional(v.string()),
-      explanation: v.optional(v.string()),
-      due: v.number(),
-      state: v.number(),
-      reps: v.number(),
-    })
-  ),
-  handler: async (ctx, args) => {
-    const nowTimestamp = Date.now();
-    const limit = args.limit || 10;
-    const userId = await getAuthUserId(ctx);
-    if (!userId) {
-      throw new ConvexError("Unauthorized");
-    }
-
-    const cards = await ctx.db
-      .query("cards")
-      .withIndex("by_user_and_due", (q) =>
-        q.eq("userId", userId).lte("due", nowTimestamp)
-      )
-      .filter((q) => q.eq(q.field("bagId"), args.bagId))
-      .filter((q) => q.eq(q.field("suspended"), false))
-      .order("asc")
-      .take(limit);
-
-    return shuffle(
-      cards.map((card) => ({
-        _id: card._id,
-        question: card.question,
-        answer: card.answer,
-        hint: card.hint,
-        explanation: card.explanation,
-        due: card.due,
-        state: card.state,
-        reps: card.reps,
-      }))
-    );
-  },
-});
-
-/**
- * 새로운 카드들 조회 (state = 0)
- */
-export const getNewCards = query({
-  args: {
-    userId: v.id("users"),
-    bagId: v.id("bags"),
-    limit: v.optional(v.number()),
-  },
-  returns: v.array(
-    v.object({
-      _id: v.id("cards"),
-      question: v.string(),
-      answer: v.string(),
-      hint: v.optional(v.string()),
-      explanation: v.optional(v.string()),
-      due: v.number(),
-      state: v.number(),
-      reps: v.number(),
-    })
-  ),
-  handler: async (ctx, args) => {
-    const limit = args.limit || 10;
-
-    const cards = await ctx.db
-      .query("cards")
-      .withIndex(
-        "by_user_and_state",
-        (q) => q.eq("userId", args.userId).eq("state", 0) // New cards
-      )
-      .filter((q) => q.eq(q.field("bagId"), args.bagId))
-      .filter((q) => q.eq(q.field("suspended"), false))
-      .take(limit);
-
-    return cards.map((card) => ({
-      _id: card._id,
-      question: card.question,
-      answer: card.answer,
-      hint: card.hint,
-      explanation: card.explanation,
-      due: card.due,
-      state: card.state,
-      reps: card.reps,
-    }));
   },
 });
 
