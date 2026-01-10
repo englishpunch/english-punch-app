@@ -100,7 +100,7 @@ export default function BagListPage() {
           </label>
           <input
             id="new-bag-name"
-            className="focus:border-primary-500 focus:ring-primary-500 flex-1 rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+            className="focus:border-primary-500 focus:ring-primary-500 flex-1 rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
             placeholder={t("bagList.newBagPlaceholder")}
             value={newBagName}
             onChange={(e) => setNewBagName(e.target.value)}

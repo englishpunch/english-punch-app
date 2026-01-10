@@ -302,7 +302,7 @@ export default function BagDetailPage() {
                 search: { search: e.target.value },
               });
             }}
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 py-2 pr-3 pl-10 text-sm focus:ring-1"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 py-2 pr-3 pl-10 text-base focus:ring-1"
           />
         </div>
         {searchQuery && (

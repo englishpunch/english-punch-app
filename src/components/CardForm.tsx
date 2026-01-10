@@ -149,7 +149,7 @@ export function CardForm({
         </label>
         <input
           id="card-answer"
-          className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+          className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
           placeholder={t("cardForm.answerPlaceholder")}
           value={form.answer}
           onChange={(e) => setForm((f) => ({ ...f, answer: e.target.value }))}
@@ -166,7 +166,7 @@ export function CardForm({
         </label>
         <input
           id="card-context"
-          className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+          className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
           placeholder={t("cardForm.contextPlaceholder")}
           value={form.context}
           onChange={(e) => setForm((f) => ({ ...f, context: e.target.value }))}
@@ -222,7 +222,7 @@ export function CardForm({
         {showQuestionInput && (
           <input
             id="card-question"
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
             placeholder={t("cardForm.questionPlaceholder")}
             value={form.question}
             onChange={(e) =>
@@ -267,7 +267,7 @@ export function CardForm({
         </div>
         <input
           id="card-hint"
-          className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+          className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
           placeholder={t("cardForm.hintPlaceholder")}
           value={form.hint}
           onChange={(e) => setForm((f) => ({ ...f, hint: e.target.value }))}
@@ -283,7 +283,7 @@ export function CardForm({
         </label>
         <textarea
           id="card-explanation"
-          className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+          className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
           placeholder={t("cardForm.explanationPlaceholder")}
           rows={3}
           value={form.explanation}

@@ -231,7 +231,7 @@ function ProfileDrawer({
             }}
           >
             <input
-              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
               placeholder={t("common.labels.email")}
               type="email"
               value={email}
@@ -239,7 +239,7 @@ function ProfileDrawer({
               required
             />
             <input
-              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
               placeholder={t("common.labels.password")}
               type="password"
               value={password}
@@ -263,7 +263,7 @@ function ProfileDrawer({
             </label>
             <select
               id="language-select"
-              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
               value={selectedLanguage}
               onChange={(event) => void i18n.changeLanguage(event.target.value)}
             >

@@ -197,7 +197,7 @@ export default function BatchCardCreationPage() {
           </label>
           <input
             id="batch-context"
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
             placeholder={t("cardForm.contextPlaceholder")}
             value={context}
             onChange={(e) => setContext(e.target.value)}
@@ -217,7 +217,7 @@ export default function BatchCardCreationPage() {
           </label>
           <input
             id="korean-input"
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
             placeholder={t("batchCreate.intentPlaceholder")}
             value={koreanInput}
             onChange={(e) => setKoreanInput(e.target.value)}
@@ -275,7 +275,7 @@ export default function BatchCardCreationPage() {
               </label>
               <input
                 id="custom-expression"
-                className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
+                className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
                 placeholder={t("batchCreate.customPlaceholder")}
                 value={customExpression}
                 onChange={(e) => setCustomExpression(e.target.value)}
