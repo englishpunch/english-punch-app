@@ -3,10 +3,9 @@ import { Slot } from "@radix-ui/react-slot";
 import { cn } from "@/lib/utils";
 import { buttonVariants, type ButtonVariantProps } from "./buttonVariants";
 
-type ButtonProps = React.ComponentPropsWithoutRef<"button"> &
+type ButtonProps = React.ComponentProps<"button"> &
   ButtonVariantProps & {
     asChild?: boolean;
-    ref?: React.Ref<HTMLButtonElement>;
   };
 
 export function Button({

@@ -3,6 +3,7 @@ import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
+import { Input } from "./Input";
 import {
   Plus,
   Trash2,
@@ -291,7 +292,7 @@ export default function BagDetailPage() {
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <div className="relative">
           <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <input
+          <Input
             type="text"
             placeholder={t("bagDetail.searchPlaceholder")}
             value={searchQuery}
@@ -302,7 +303,7 @@ export default function BagDetailPage() {
                 search: { search: e.target.value },
               });
             }}
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 py-2 pr-3 pl-10 text-base focus:ring-1"
+            padding="icon"
           />
         </div>
         {searchQuery && (

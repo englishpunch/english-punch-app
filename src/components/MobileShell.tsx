@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "./Button";
+import { Input, Select } from "./Input";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -230,16 +231,14 @@ function ProfileDrawer({
                 });
             }}
           >
-            <input
-              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
+            <Input
               placeholder={t("common.labels.email")}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <input
-              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
+            <Input
               placeholder={t("common.labels.password")}
               type="password"
               value={password}
@@ -261,9 +260,8 @@ function ProfileDrawer({
             >
               {t("settings.language.label")}
             </label>
-            <select
+            <Select
               id="language-select"
-              className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
               value={selectedLanguage}
               onChange={(event) => void i18n.changeLanguage(event.target.value)}
             >
@@ -272,7 +270,7 @@ function ProfileDrawer({
                   {option.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         </div>
         <div className="mt-auto">

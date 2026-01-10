@@ -3,6 +3,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
+import { Input } from "./Input";
 import { Plus, Trash2 } from "lucide-react";
 import useIsMock from "@/hooks/useIsMock";
 import { useNavigate } from "@tanstack/react-router";
@@ -98,9 +99,10 @@ export default function BagListPage() {
           <label className="sr-only" htmlFor="new-bag-name">
             {t("bagList.newBagLabel")}
           </label>
-          <input
+          <Input
             id="new-bag-name"
-            className="focus:border-primary-500 focus:ring-primary-500 flex-1 rounded-md border border-gray-200 px-3 py-2 text-base focus:ring-1"
+            className="flex-1"
+            fullWidth={false}
             placeholder={t("bagList.newBagPlaceholder")}
             value={newBagName}
             onChange={(e) => setNewBagName(e.target.value)}

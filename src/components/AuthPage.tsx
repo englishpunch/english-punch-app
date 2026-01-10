@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "./Button";
+import { Input } from "./Input";
 
 const PASSWORD_MIN_LENGTH = 8;
 
@@ -114,12 +115,12 @@ export default function AuthPage() {
               >
                 {t("common.labels.email")}
               </label>
-              <input
+              <Input
                 id="email"
                 name="email"
                 type="email"
                 autoComplete="email"
-                className="auth-input-field h-11"
+                className="h-11"
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);
@@ -139,12 +140,12 @@ export default function AuthPage() {
               >
                 {t("common.labels.password")}
               </label>
-              <input
+              <Input
                 id="password"
                 name="password"
                 type="password"
                 autoComplete={isSignUp ? "new-password" : "current-password"}
-                className="auth-input-field h-11"
+                className="h-11"
                 minLength={isSignUp ? PASSWORD_MIN_LENGTH : undefined}
                 value={password}
                 onChange={(event) => {
@@ -167,12 +168,12 @@ export default function AuthPage() {
                 >
                   {t("auth.confirmPasswordLabel")}
                 </label>
-                <input
+                <Input
                   id="password-confirm"
                   name="passwordConfirm"
                   type="password"
                   autoComplete="new-password"
-                  className="auth-input-field h-11"
+                  className="h-11"
                   minLength={PASSWORD_MIN_LENGTH}
                   value={passwordConfirm}
                   onChange={(event) => {
