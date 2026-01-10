@@ -7,9 +7,6 @@ import { useTranslation } from "react-i18next";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
-const normalizeSelectionText = (value: string) =>
-  value.replace(/\s+/g, " ").trim();
-
 const buildQuickActionPrompt = (value: string) => `What does "${value}" mean?`;
 
 interface StudyCardProps {
@@ -41,7 +38,9 @@ function StudyCardContent({
   const selectionContainerRef = useRef<HTMLDivElement | null>(null);
   const selectionAnchorRef = useRef<{
     getBoundingClientRect: () => DOMRect;
-  } | null>(null);
+  }>({
+    getBoundingClientRect: () => new DOMRect(),
+  });
   const [selectionText, setSelectionText] = useState("");
   const [isSelectionPopoverOpen, setIsSelectionPopoverOpen] = useState(false);
 
@@ -153,7 +152,7 @@ function StudyCardContent({
       return;
     }
 
-    const text = normalizeSelectionText(selection.toString());
+    const text = selection.toString().replace(/\s+/g, " ").trim();
     if (!text) {
       closeSelectionPopover();
       return;
@@ -170,7 +169,9 @@ function StudyCardContent({
 
   const handleQuickActionOpen = useCallback(
     (provider: "chatgpt" | "gemini") => {
-      if (!selectionText) return;
+      if (!selectionText) {
+        return;
+      }
 
       const prompt = buildQuickActionPrompt(selectionText);
       const query = encodeURIComponent(prompt);
@@ -179,7 +180,9 @@ function StudyCardContent({
           ? `https://chat.openai.com/?q=${query}`
           : `https://gemini.google.com/app?prompt=${query}`;
 
-      if (typeof window === "undefined") return;
+      if (typeof window === "undefined") {
+        return;
+      }
       if (isTauri()) {
         void openUrl(url);
       } else {
