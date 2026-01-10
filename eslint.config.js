@@ -47,6 +47,7 @@ export default tseslint.config(
         "warn",
         { allowConstantExport: true },
       ],
+
       // All of these overrides ease getting into
       // TypeScript, and can be removed for stricter
       // linting down the line.
@@ -107,6 +108,11 @@ export default tseslint.config(
       },
     },
   },
+  ...convexPlugin.configs.recommended,
   eslintPluginPrettierRecommended,
-  ...convexPlugin.configs.recommended
+  {
+    rules: {
+      curly: "error",
+    },
+  }
 );
