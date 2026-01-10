@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "./Button";
+import { Input } from "./Input";
 import { ArrowLeft, Loader2, Sparkles, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
@@ -195,9 +196,8 @@ export default function BatchCardCreationPage() {
           >
             {t("cardForm.contextLabel")}
           </label>
-          <input
+          <Input
             id="batch-context"
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
             placeholder={t("cardForm.contextPlaceholder")}
             value={context}
             onChange={(e) => setContext(e.target.value)}
@@ -215,9 +215,8 @@ export default function BatchCardCreationPage() {
           >
             {t("batchCreate.intentLabel")}
           </label>
-          <input
+          <Input
             id="korean-input"
-            className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
             placeholder={t("batchCreate.intentPlaceholder")}
             value={koreanInput}
             onChange={(e) => setKoreanInput(e.target.value)}
@@ -273,9 +272,8 @@ export default function BatchCardCreationPage() {
               >
                 {t("batchCreate.customLabel")}
               </label>
-              <input
+              <Input
                 id="custom-expression"
-                className="focus:border-primary-500 focus:ring-primary-500 w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:ring-1"
                 placeholder={t("batchCreate.customPlaceholder")}
                 value={customExpression}
                 onChange={(e) => setCustomExpression(e.target.value)}
