@@ -6,6 +6,7 @@ import { Loader2, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { Link } from "@tanstack/react-router";
 
 const buildQuickActionPrompt = (value: string) => `What does "${value}" mean?`;
 
@@ -166,6 +167,10 @@ function StudyCardContent({
 
     openSelectionPopover(text, rect);
   }, [closeSelectionPopover, openSelectionPopover]);
+
+  const chatGptUrl = `https://chat.openai.com/?q=${encodeURIComponent(
+    buildQuickActionPrompt(selectionText)
+  )}`;
 
   const handleQuickActionOpen = useCallback(
     (provider: "chatgpt" | "gemini") => {
@@ -381,21 +386,21 @@ function StudyCardContent({
           onOpenAutoFocus={(event) => event.preventDefault()}
           onCloseAutoFocus={(event) => event.preventDefault()}
         >
-          <div className="mb-3 text-xs font-semibold tracking-wide text-gray-400 uppercase">
-            Selected text
-          </div>
           <div className="mb-4 text-sm font-semibold text-gray-900">
-            {selectionText}
+            {buildQuickActionPrompt(selectionText)}
           </div>
           <div className="grid gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => handleQuickActionOpen("chatgpt")}
-              fullWidth
-            >
-              Open ChatGPT
+            <Button asChild size="sm" variant="secondary" fullWidth>
+              <Link
+                to={chatGptUrl}
+                onClick={() => handleQuickActionOpen("chatgpt")}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open ChatGPT
+              </Link>
             </Button>
+
             <Button
               size="sm"
               variant="secondary"
