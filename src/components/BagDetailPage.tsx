@@ -3,6 +3,7 @@ import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { Input } from "./Input";
 import {
   Plus,
@@ -27,6 +28,7 @@ import {
 } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
 import { getLocaleForLanguage } from "@/i18n";
+import { toast } from "sonner";
 
 type Card = {
   _id: Id<"cards">;
@@ -96,6 +98,7 @@ export default function BagDetailPage() {
   });
 
   const deleteCard = useMutation(api.learning.deleteCard);
+  const [pendingDeleteCard, setPendingDeleteCard] = useState<Card | null>(null);
 
   const mockCards = useMemo(() => {
     if (!isMock) {
@@ -187,9 +190,7 @@ export default function BagDetailPage() {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() =>
-                  void deleteCard({ cardId: card._id, bagId: bag!._id })
-                }
+                onClick={() => setPendingDeleteCard(card)}
                 disabled={isMock || !bag}
                 aria-label={t("bagDetail.deleteAria", { id: card._id })}
               >
@@ -201,7 +202,7 @@ export default function BagDetailPage() {
         size: 120,
       }),
     ],
-    [bag, columnHelper, deleteCard, isMock, locale, navigate, t]
+    [bag, columnHelper, isMock, locale, navigate, setPendingDeleteCard, t]
   );
 
   const table = useReactTable({
@@ -219,6 +220,15 @@ export default function BagDetailPage() {
 
   const handleBack = () => {
     void navigate({ to: "/plans" });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteCard || !bag) {
+      return;
+    }
+    await deleteCard({ cardId: pendingDeleteCard._id, bagId: bag._id });
+    setPendingDeleteCard(null);
+    toast.success(t("bagDetail.toasts.deleted"));
   };
 
   if (!bag) {
@@ -400,6 +410,15 @@ export default function BagDetailPage() {
           )}
         </div>
       )}
+      <ConfirmDialog
+        isOpen={pendingDeleteCard !== null}
+        title={t("bagDetail.deleteConfirmTitle")}
+        description={t("bagDetail.deleteConfirmDescription")}
+        confirmLabel={t("common.actions.delete")}
+        cancelLabel={t("common.actions.cancel")}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDeleteCard(null)}
+      />
     </div>
   );
 }

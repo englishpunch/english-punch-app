@@ -36,6 +36,7 @@ const enTranslation = {
       signOut: "Sign out",
       done: "Done",
       save: "Save",
+      cancel: "Cancel",
       previous: "Previous",
       next: "Next",
     },
@@ -169,6 +170,12 @@ const enTranslation = {
     manageButton: "Manage",
     manageAria: "Manage {{name}}",
     deleteAria: "Delete {{name}}",
+    deleteConfirmTitle: "Delete {{name}}?",
+    deleteConfirmDescription:
+      "This will remove the bag and all its cards from your list.",
+    toasts: {
+      deleted: "Deleted {{name}}.",
+    },
     loading: "Loading bags...",
     empty: "No bags yet. Add one to get started.",
     pagination: "Page {{current}} / {{total}} · {{count}} total",
@@ -200,6 +207,11 @@ const enTranslation = {
     addCardAria: "Add card",
     editAria: "Edit {{id}}",
     deleteAria: "Delete {{id}}",
+    deleteConfirmTitle: "Delete this card?",
+    deleteConfirmDescription: "This action cannot be undone.",
+    toasts: {
+      deleted: "Card deleted.",
+    },
   },
   cardForm: {
     answerLabel: "Answer (English expression)",
@@ -369,6 +381,7 @@ const koTranslation = {
       signOut: "로그아웃",
       done: "완료",
       save: "저장",
+      cancel: "취소",
       previous: "이전",
       next: "다음",
     },
@@ -503,6 +516,11 @@ const koTranslation = {
     manageButton: "관리",
     manageAria: "관리 {{name}}",
     deleteAria: "삭제 {{name}}",
+    deleteConfirmTitle: "{{name}}을 삭제할까요?",
+    deleteConfirmDescription: "샌드백과 모든 카드가 목록에서 제거됩니다.",
+    toasts: {
+      deleted: '"{{name}}"을 삭제했습니다.',
+    },
     loading: "샌드백을 불러오는 중...",
     empty: "샌드백이 없습니다. 새로 추가해보세요.",
     pagination: "페이지 {{current}} / {{total}} · 총 {{count}}개",
@@ -534,6 +552,11 @@ const koTranslation = {
     addCardAria: "카드 추가",
     editAria: "수정 {{id}}",
     deleteAria: "삭제 {{id}}",
+    deleteConfirmTitle: "카드를 삭제할까요?",
+    deleteConfirmDescription: "이 작업은 되돌릴 수 없습니다.",
+    toasts: {
+      deleted: "카드를 삭제했습니다.",
+    },
   },
   cardForm: {
     answerLabel: "정답 (영어 표현)",
@@ -700,6 +723,7 @@ const jaTranslation = {
       signOut: "ログアウト",
       done: "完了",
       save: "保存",
+      cancel: "キャンセル",
       previous: "前へ",
       next: "次へ",
     },
@@ -834,6 +858,12 @@ const jaTranslation = {
     manageButton: "管理",
     manageAria: "{{name}} を管理",
     deleteAria: "{{name}} を削除",
+    deleteConfirmTitle: "「{{name}}」を削除しますか？",
+    deleteConfirmDescription:
+      "サンドバッグとすべてのカードが一覧から削除されます。",
+    toasts: {
+      deleted: "「{{name}}」を削除しました。",
+    },
     loading: "サンドバッグを読み込み中...",
     empty: "サンドバッグがありません。新しく追加してください。",
     pagination: "ページ {{current}} / {{total}} · 合計 {{count}}件",
@@ -865,6 +895,11 @@ const jaTranslation = {
     addCardAria: "カード追加",
     editAria: "{{id}} を編集",
     deleteAria: "{{id}} を削除",
+    deleteConfirmTitle: "このカードを削除しますか？",
+    deleteConfirmDescription: "この操作は取り消せません。",
+    toasts: {
+      deleted: "カードを削除しました。",
+    },
   },
   cardForm: {
     answerLabel: "答え (英語表現)",

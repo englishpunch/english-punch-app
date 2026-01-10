@@ -40,7 +40,7 @@ export const reviewCardHandler = async (
   });
 
   const card = await ctx.db.get("cards", args.cardId);
-  if (!card || card.userId !== args.userId) {
+  if (!card || card.userId !== args.userId || card.deletedAt !== undefined) {
     const error = "Card not found";
     logger.error(runId, { m: "❌ ReviewCard error:", error });
     throw new Error(error);
@@ -274,7 +274,8 @@ export const getRecentReviewLogs = query({
           state: log.state,
           review: log.review,
           duration: log.duration,
-          question: card?.question,
+          question:
+            card && card.deletedAt === undefined ? card.question : undefined,
         };
       })
     );

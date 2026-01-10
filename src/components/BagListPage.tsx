@@ -3,11 +3,13 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
+import { ConfirmDialog } from "./ConfirmDialog";
 import { Input } from "./Input";
 import { Plus, Trash2 } from "lucide-react";
 import useIsMock from "@/hooks/useIsMock";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export default function BagListPage() {
   const { t } = useTranslation();
@@ -29,6 +31,10 @@ export default function BagListPage() {
   const deleteBag = useMutation(api.learning.deleteBag);
 
   const [newBagName, setNewBagName] = useState("");
+  const [pendingDeleteBag, setPendingDeleteBag] = useState<{
+    id: Id<"bags">;
+    name: string;
+  } | null>(null);
 
   const handleAddBag = async () => {
     const name = newBagName.trim();
@@ -87,6 +93,16 @@ export default function BagListPage() {
     void navigate({ to: "/plans/$bagId", params: { bagId } });
   };
 
+  const handleConfirmDelete = async () => {
+    if (!pendingDeleteBag) {
+      return;
+    }
+    const bagName = pendingDeleteBag.name;
+    await deleteBag({ bagId: pendingDeleteBag.id });
+    setPendingDeleteBag(null);
+    toast.success(t("bagList.toasts.deleted", { name: bagName }));
+  };
+
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
@@ -137,7 +153,9 @@ export default function BagListPage() {
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => void deleteBag({ bagId: bag._id })}
+                onClick={() =>
+                  setPendingDeleteBag({ id: bag._id, name: bag.name })
+                }
                 aria-label={t("bagList.deleteAria", { name: bag.name })}
               >
                 <Trash2 className="h-4 w-4 text-red-600" aria-hidden />
@@ -183,6 +201,17 @@ export default function BagListPage() {
           </div>
         )}
       </div>
+      <ConfirmDialog
+        isOpen={pendingDeleteBag !== null}
+        title={t("bagList.deleteConfirmTitle", {
+          name: pendingDeleteBag?.name ?? "",
+        })}
+        description={t("bagList.deleteConfirmDescription")}
+        confirmLabel={t("common.actions.delete")}
+        cancelLabel={t("common.actions.cancel")}
+        onConfirm={handleConfirmDelete}
+        onCancel={() => setPendingDeleteBag(null)}
+      />
     </div>
   );
 }
