@@ -4,7 +4,9 @@
 
 // Tauri 환경인지 확인
 export const isTauri = (): boolean => {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined") {
+    return false;
+  }
 
   return (
     "__TAURI__" in window ||
@@ -40,7 +42,9 @@ export const isBrowser = (): boolean => {
 
 // Tauri v2 API가 사용 가능한지 확인
 export const hasTauriAPI = (): boolean => {
-  if (!isTauri()) return false;
+  if (!isTauri()) {
+    return false;
+  }
 
   try {
     return typeof window.__TAURI_INTERNALS__ !== "undefined";
@@ -51,7 +55,9 @@ export const hasTauriAPI = (): boolean => {
 
 // Tauri 플러그인이 사용 가능한지 확인
 export const hasPlugin = (_pluginName: string): boolean => {
-  if (!isTauri()) return false;
+  if (!isTauri()) {
+    return false;
+  }
 
   try {
     // 동적 import를 통해 플러그인 존재 여부 확인

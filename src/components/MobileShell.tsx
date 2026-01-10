@@ -172,7 +172,9 @@ function ProfileDrawer({
   const user = useQuery(api.auth.loggedInUser);
   const selectedLanguage = i18n.resolvedLanguage ?? i18n.language;
 
-  if (!open) return null;
+  if (!open) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 z-40">
@@ -284,11 +286,23 @@ function ProfileDrawer({
 }
 
 function deriveTabFromPath(pathname: string): TabKey {
-  if (pathname.startsWith("/plans")) return "plans";
-  if (pathname.startsWith("/activity")) return "activity";
-  if (pathname.startsWith("/profile")) return "home";
-  if (pathname.startsWith("/run")) return "run";
-  if (pathname.startsWith("/club")) return "club";
-  if (pathname.startsWith("/home")) return "home";
+  if (pathname.startsWith("/plans")) {
+    return "plans";
+  }
+  if (pathname.startsWith("/activity")) {
+    return "activity";
+  }
+  if (pathname.startsWith("/profile")) {
+    return "home";
+  }
+  if (pathname.startsWith("/run")) {
+    return "run";
+  }
+  if (pathname.startsWith("/club")) {
+    return "club";
+  }
+  if (pathname.startsWith("/home")) {
+    return "home";
+  }
   return "run";
 }

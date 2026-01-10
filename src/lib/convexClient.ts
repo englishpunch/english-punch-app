@@ -17,7 +17,9 @@ const resolveConvexUrl = (): string => {
 };
 
 export const getConvexClient = (): ConvexReactClient => {
-  if (globalCache.__convexClient) return globalCache.__convexClient;
+  if (globalCache.__convexClient) {
+    return globalCache.__convexClient;
+  }
 
   const url = resolveConvexUrl();
   const client = new ConvexReactClient(url);
