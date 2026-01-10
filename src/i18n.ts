@@ -11,13 +11,17 @@ import {
 const DEFAULT_LANGUAGE: SupportedLanguage = "en";
 
 const normalizeLanguage = (language?: string | null): SupportedLanguage => {
-  if (!language) return DEFAULT_LANGUAGE;
+  if (!language) {
+    return DEFAULT_LANGUAGE;
+  }
   const base = language.split("-")[0] as SupportedLanguage;
   return supportedLanguages.includes(base) ? base : DEFAULT_LANGUAGE;
 };
 
 const getInitialLanguage = (): SupportedLanguage => {
-  if (typeof window === "undefined") return DEFAULT_LANGUAGE;
+  if (typeof window === "undefined") {
+    return DEFAULT_LANGUAGE;
+  }
   const stored = window.localStorage.getItem("appLanguage");
   const browser = window.navigator.language;
   return normalizeLanguage(stored ?? browser);

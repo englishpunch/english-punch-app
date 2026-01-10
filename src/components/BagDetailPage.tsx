@@ -61,7 +61,9 @@ export default function BagDetailPage() {
   const bags = useQuery(api.learning.getUserBags, bagsArgs);
 
   const mockBags = useMemo(() => {
-    if (!isMock) return [];
+    if (!isMock) {
+      return [];
+    }
     return Array.from({ length: 500 }, (_, i) => ({
       _id: `mock-${i + 1}` as Id<"bags">,
       name: t("mock.bagName", { number: i + 1 }),
@@ -95,7 +97,9 @@ export default function BagDetailPage() {
   const deleteCard = useMutation(api.learning.deleteCard);
 
   const mockCards = useMemo(() => {
-    if (!isMock) return [];
+    if (!isMock) {
+      return [];
+    }
     return Array.from({ length: 500 }, (_, i) => ({
       _id: `mock-card-${i + 1}` as Id<"cards">,
       _creationTime: Date.now() - i * 1000,
@@ -115,7 +119,9 @@ export default function BagDetailPage() {
     { id: "_creationTime", desc: true },
   ]);
   const columnFilters = useMemo<ColumnFiltersState>(() => {
-    if (!searchQuery) return [];
+    if (!searchQuery) {
+      return [];
+    }
     return [{ id: "answer", value: searchQuery }];
   }, [searchQuery]);
 
