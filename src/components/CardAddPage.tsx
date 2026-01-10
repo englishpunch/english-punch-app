@@ -38,7 +38,9 @@ export default function CardAddPage() {
       handleBack();
       return;
     }
-    if (!userId || !bag) return;
+    if (!userId || !bag) {
+      return;
+    }
 
     await createCard({
       bagId: bag._id,

@@ -3,6 +3,7 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { fsrs, State, Grade, Steps } from "ts-fsrs";
 import { getGlobalLogger } from "../src/lib/globalLogger";
+import { shuffle } from "es-toolkit";
 
 type ReviewCardArgs = {
   userId: Id<"users">;
@@ -316,7 +317,9 @@ export const getUserSettings = query({
       .withIndex("by_user", (q) => q.eq("userId", args.userId))
       .unique();
 
-    if (!settings) return null;
+    if (!settings) {
+      return null;
+    }
 
     return {
       fsrsParameters: settings.fsrsParameters,
@@ -327,122 +330,5 @@ export const getUserSettings = query({
       currentStreak: settings.currentStreak,
       longestStreak: settings.longestStreak,
     };
-  },
-});
-
-/**
- * 학습 세션 시작
- */
-export const startSession = mutation({
-  args: {
-    userId: v.id("users"),
-    sessionType: v.union(
-      v.literal("daily"),
-      v.literal("custom"),
-      v.literal("cramming")
-    ),
-  },
-  returns: v.string(), // sessionId
-  handler: async (ctx, args) => {
-    const runId = `${args.userId}-start-${Date.now()}`;
-
-    logger.info(runId, { m: "🚀 StartSession called:", args });
-
-    const sessionId = `session_${args.userId}_${Date.now()}`;
-
-    const sessionResult = await ctx.db.insert("sessions", {
-      userId: args.userId,
-      startTime: new Date().toISOString(),
-      cardsReviewed: 0,
-      cardsNew: 0,
-      cardsLearning: 0,
-      cardsRelearning: 0,
-      manualCount: 0,
-      againCount: 0,
-      hardCount: 0,
-      goodCount: 0,
-      easyCount: 0,
-      averageDuration: 0,
-      averageDifficulty: 0,
-      sessionType: args.sessionType,
-    });
-
-    logger.info(runId, { m: "✅ Session created:", sessionId, sessionResult });
-    return sessionId;
-  },
-});
-
-/**
- * 학습 세션 종료
- */
-export const endSession = mutation({
-  args: {
-    sessionId: v.string(),
-  },
-  returns: v.null(),
-  handler: async (ctx, args) => {
-    const runId = `${args.sessionId}-end-${Date.now()}`;
-
-    logger.info(runId, { m: "🏁 EndSession called:", args });
-
-    const session = await ctx.db
-      .query("sessions")
-      .filter((q) => q.eq(q.field("startTime"), args.sessionId.split("_")[2]))
-      .first();
-
-    if (!session) {
-      logger.warn(runId, {
-        m: "⚠️ Session not found for sessionId:",
-        sessionId: args.sessionId,
-      });
-      return null;
-    }
-
-    logger.info(runId, { m: "📋 Session found:", session });
-
-    // 세션 통계 계산
-    const logs = await ctx.db
-      .query("reviewLogs")
-      .withIndex("by_session", (q) => q.eq("sessionId", args.sessionId))
-      .collect();
-
-    logger.info(runId, { m: "📊 Found review logs:", count: logs.length });
-
-    let totalDuration = 0;
-    let totalDifficulty = 0;
-    const counts = [0, 0, 0, 0, 0]; // [Manual, Again, Hard, Good, Easy]
-
-    for (const log of logs) {
-      totalDuration += log.duration;
-      totalDifficulty += log.difficulty;
-      counts[log.rating]++;
-    }
-
-    const averageDuration = logs.length > 0 ? totalDuration / logs.length : 0;
-    const averageDifficulty =
-      logs.length > 0 ? totalDifficulty / logs.length : 0;
-
-    const sessionStats = {
-      endTime: new Date().toISOString(),
-      cardsReviewed: logs.length,
-      manualCount: counts[0],
-      againCount: counts[1],
-      hardCount: counts[2],
-      goodCount: counts[3],
-      easyCount: counts[4],
-      averageDuration,
-      averageDifficulty,
-    };
-
-    logger.info(runId, { m: "📈 Session statistics:", sessionStats });
-
-    await ctx.db.patch("sessions", session._id, sessionStats);
-
-    logger.info(runId, {
-      m: "✅ Session ended successfully:",
-      sessionId: args.sessionId,
-      stats: sessionStats,
-    });
-    return null;
   },
 });

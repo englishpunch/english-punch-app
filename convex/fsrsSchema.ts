@@ -170,10 +170,14 @@ export const learningTables = {
    */
   sessions: defineTable({
     userId: v.id("users"),
+    bagId: v.optional(v.id("bags")), // Which bag this session is for
 
     // 세션 정보
     startTime: v.string(), // 시작 시간
     endTime: v.optional(v.string()), // 종료 시간
+
+    // Ordered card IDs for this session (shuffled once at session start)
+    cardIds: v.optional(v.array(v.id("cards"))),
 
     // 세션 통계
     cardsReviewed: v.number(),
