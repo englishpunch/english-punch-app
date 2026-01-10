@@ -9,6 +9,7 @@ import { Plus, Trash2 } from "lucide-react";
 import useIsMock from "@/hooks/useIsMock";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 export default function BagListPage() {
   const { t } = useTranslation();
@@ -96,8 +97,10 @@ export default function BagListPage() {
     if (!pendingDeleteBag) {
       return;
     }
+    const bagName = pendingDeleteBag.name;
     await deleteBag({ bagId: pendingDeleteBag.id });
     setPendingDeleteBag(null);
+    toast.success(t("bagList.toasts.deleted", { name: bagName }));
   };
 
   return (

@@ -28,6 +28,7 @@ import {
 } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
 import { getLocaleForLanguage } from "@/i18n";
+import { toast } from "sonner";
 
 type Card = {
   _id: Id<"cards">;
@@ -227,6 +228,7 @@ export default function BagDetailPage() {
     }
     await deleteCard({ cardId: pendingDeleteCard._id, bagId: bag._id });
     setPendingDeleteCard(null);
+    toast.success(t("bagDetail.toasts.deleted"));
   };
 
   if (!bag) {

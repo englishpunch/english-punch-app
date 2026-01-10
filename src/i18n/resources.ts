@@ -173,6 +173,9 @@ const enTranslation = {
     deleteConfirmTitle: "Delete {{name}}?",
     deleteConfirmDescription:
       "This will remove the bag and all its cards from your list.",
+    toasts: {
+      deleted: "Deleted {{name}}.",
+    },
     loading: "Loading bags...",
     empty: "No bags yet. Add one to get started.",
     pagination: "Page {{current}} / {{total}} · {{count}} total",
@@ -206,6 +209,9 @@ const enTranslation = {
     deleteAria: "Delete {{id}}",
     deleteConfirmTitle: "Delete this card?",
     deleteConfirmDescription: "This action cannot be undone.",
+    toasts: {
+      deleted: "Card deleted.",
+    },
   },
   cardForm: {
     answerLabel: "Answer (English expression)",
@@ -512,6 +518,9 @@ const koTranslation = {
     deleteAria: "삭제 {{name}}",
     deleteConfirmTitle: "{{name}}을 삭제할까요?",
     deleteConfirmDescription: "샌드백과 모든 카드가 목록에서 제거됩니다.",
+    toasts: {
+      deleted: '"{{name}}"을 삭제했습니다.',
+    },
     loading: "샌드백을 불러오는 중...",
     empty: "샌드백이 없습니다. 새로 추가해보세요.",
     pagination: "페이지 {{current}} / {{total}} · 총 {{count}}개",
@@ -545,6 +554,9 @@ const koTranslation = {
     deleteAria: "삭제 {{id}}",
     deleteConfirmTitle: "카드를 삭제할까요?",
     deleteConfirmDescription: "이 작업은 되돌릴 수 없습니다.",
+    toasts: {
+      deleted: "카드를 삭제했습니다.",
+    },
   },
   cardForm: {
     answerLabel: "정답 (영어 표현)",
@@ -849,6 +861,9 @@ const jaTranslation = {
     deleteConfirmTitle: "「{{name}}」を削除しますか？",
     deleteConfirmDescription:
       "サンドバッグとすべてのカードが一覧から削除されます。",
+    toasts: {
+      deleted: "「{{name}}」を削除しました。",
+    },
     loading: "サンドバッグを読み込み中...",
     empty: "サンドバッグがありません。新しく追加してください。",
     pagination: "ページ {{current}} / {{total}} · 合計 {{count}}件",
@@ -882,6 +897,9 @@ const jaTranslation = {
     deleteAria: "{{id}} を削除",
     deleteConfirmTitle: "このカードを削除しますか？",
     deleteConfirmDescription: "この操作は取り消せません。",
+    toasts: {
+      deleted: "カードを削除しました。",
+    },
   },
   cardForm: {
     answerLabel: "答え (英語表現)",
