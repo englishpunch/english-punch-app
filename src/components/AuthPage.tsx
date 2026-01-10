@@ -123,7 +123,9 @@ export default function AuthPage() {
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);
-                  if (error) setError(null);
+                  if (error) {
+                    setError(null);
+                  }
                 }}
                 required
                 disabled={isSubmitting}
@@ -147,7 +149,9 @@ export default function AuthPage() {
                 value={password}
                 onChange={(event) => {
                   setPassword(event.target.value);
-                  if (error) setError(null);
+                  if (error) {
+                    setError(null);
+                  }
                 }}
                 required
                 disabled={isSubmitting}
@@ -173,7 +177,9 @@ export default function AuthPage() {
                   value={passwordConfirm}
                   onChange={(event) => {
                     setPasswordConfirm(event.target.value);
-                    if (error) setError(null);
+                    if (error) {
+                      setError(null);
+                    }
                   }}
                   required
                   disabled={isSubmitting}

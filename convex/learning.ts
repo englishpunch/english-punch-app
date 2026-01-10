@@ -1,7 +1,8 @@
 import { paginationOptsValidator } from "convex/server";
 import { mutation, query } from "./_generated/server";
-import { v } from "convex/values";
+import { ConvexError, v } from "convex/values";
 import { shuffle } from "es-toolkit";
+import { getAuthUserId } from "@convex-dev/auth/server";
 
 /**
  * 샘플 백 생성 - 영어 학습용 기본 카드들
@@ -231,11 +232,42 @@ export const getUserBags = query({
 });
 
 /**
+ * 학습 가능한 카드 하나 조회 (due date 기준)
+ */
+export const getOneDueCard = query({
+  args: {
+    bagId: v.id("bags"),
+  },
+  handler: async (ctx, args) => {
+    const nowTimestamp = Date.now();
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
+    const cards = await ctx.db
+      .query("cards")
+      .withIndex("by_user_and_due", (q) =>
+        q.eq("userId", userId).lte("due", nowTimestamp)
+      )
+      .filter((q) => q.eq(q.field("bagId"), args.bagId))
+      .filter((q) => q.eq(q.field("suspended"), false))
+      .order("asc")
+      .take(1);
+    const card = cards[0];
+
+    if (!card) {
+      return "NO_CARD_AVAILABLE";
+    }
+
+    return card;
+  },
+});
+
+/**
  * 백의 학습 가능한 카드들 조회 (due date 기준)
  */
 export const getDueCards = query({
   args: {
-    userId: v.id("users"),
     bagId: v.id("bags"),
     limit: v.optional(v.number()),
   },
@@ -254,11 +286,15 @@ export const getDueCards = query({
   handler: async (ctx, args) => {
     const nowTimestamp = Date.now();
     const limit = args.limit || 10;
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
 
     const cards = await ctx.db
       .query("cards")
       .withIndex("by_user_and_due", (q) =>
-        q.eq("userId", args.userId).lte("due", nowTimestamp)
+        q.eq("userId", userId).lte("due", nowTimestamp)
       )
       .filter((q) => q.eq(q.field("bagId"), args.bagId))
       .filter((q) => q.eq(q.field("suspended"), false))
@@ -553,7 +589,9 @@ export const deleteBag = mutation({
   },
   handler: async (ctx, args) => {
     const bag = await ctx.db.get("bags", args.bagId);
-    if (!bag) return null;
+    if (!bag) {
+      return null;
+    }
 
     const cards = await ctx.db
       .query("cards")
@@ -676,7 +714,9 @@ export const updateCard = mutation({
   },
   handler: async (ctx, args) => {
     const card = await ctx.db.get("cards", args.cardId);
-    if (!card || card.bagId !== args.bagId) return null;
+    if (!card || card.bagId !== args.bagId) {
+      return null;
+    }
 
     const now = Date.now();
     await ctx.db.patch("cards", args.cardId, {
@@ -716,7 +756,9 @@ export const deleteCard = mutation({
   handler: async (ctx, args) => {
     const card = await ctx.db.get("cards", args.cardId);
     const bag = await ctx.db.get("bags", args.bagId);
-    if (!card || !bag) return null;
+    if (!card || !bag) {
+      return null;
+    }
     await ctx.db.delete("cards", args.cardId);
 
     const counts = {

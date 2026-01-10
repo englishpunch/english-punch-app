@@ -31,14 +31,20 @@ export default function BagListPage() {
 
   const handleAddBag = async () => {
     const name = newBagName.trim();
-    if (!name) return;
-    if (!userId) return;
+    if (!name) {
+      return;
+    }
+    if (!userId) {
+      return;
+    }
     await createBag({ userId, name });
     setNewBagName("");
   };
 
   const mockBags = useMemo(() => {
-    if (!isMock) return [];
+    if (!isMock) {
+      return [];
+    }
     return Array.from({ length: 500 }, (_, i) => ({
       _id: `mock-${i + 1}` as Id<"bags">,
       name: t("mock.bagName", { number: i + 1 }),
@@ -50,7 +56,9 @@ export default function BagListPage() {
 
   const PAGE_SIZE = 20;
   const totalPages = useMemo(() => {
-    if (!bags?.length) return 1;
+    if (!bags?.length) {
+      return 1;
+    }
     return Math.ceil(bags.length / PAGE_SIZE);
   }, [bags]);
 
@@ -67,7 +75,9 @@ export default function BagListPage() {
   };
 
   const visibleBags = useMemo(() => {
-    if (!bags) return [];
+    if (!bags) {
+      return [];
+    }
     const start = (safeCurrentPage - 1) * PAGE_SIZE;
     return bags.slice(start, start + PAGE_SIZE);
   }, [bags, safeCurrentPage]);

@@ -29,7 +29,9 @@ export default function BagManager({ onBack }: BagManagerProps) {
   const updateBagStats = useMutation(api.learning.updateBagStats);
 
   const handleCreateSampleBag = async () => {
-    if (!userId) return;
+    if (!userId) {
+      return;
+    }
     setIsCreatingSample(true);
     try {
       const bagId = await createSampleBag({ userId });

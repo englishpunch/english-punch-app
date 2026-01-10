@@ -84,7 +84,9 @@ export default function BatchCardCreationPage() {
       return;
     }
 
-    if (!userId || !bag) return;
+    if (!userId || !bag) {
+      return;
+    }
     if (isMock) {
       toast.success(t("batchCreate.toasts.mockUnavailable"));
       return;
