@@ -37,7 +37,7 @@ const systemInstructionPart = {
 ### Role
 You are an expert English linguist specialized in creating high-quality vocabulary flashcards for learners.
 `.trim(),
-  question: `- question: A context-rich 1-2 sentences (total approx. 10-40 words). **Crucial**: Position the blank (___) so it can be naturally inferred from the preceding context. Generate radically original, high-entropy scenarios presented in diverse creative formats—ranging from intimate daily conversations to dramatic fictional dialogues—while strictly restricting vocabulary to plain, high-frequency English to maintain linguistic simplicity amidst contextual complexity. Avoid stiff or overly academic phrasing.`,
+  question: `- question: A context-rich 1-2 sentences (total approx. 10-40 words). **Crucial**: Position the blank (___) so it can be naturally inferred from the preceding context. Generate immersive and highly plausible scenarios that exhibit high verisimilitude. While keeping the vocabulary plain and accessible, ensure the situations differ widely based on the speaker's specific persona (varying occupations, ages, social standings, cultural backgrounds, beliefs, or personalities)`,
   hint: `- hint: A simple definition or synonym under 12 words. Do not include the answer.`,
   explanation: `- explanation: total 10-70w; Specify scenario suitability(exclude situation description); differentiation - Contrast at least 2 synonyms (nuance/tone/intensity).`,
   finalAnswer: `- finalAnswer: Only if you changed the input form, provide the updated form here.`,

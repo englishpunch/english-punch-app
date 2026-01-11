@@ -5,7 +5,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import FSRSStudySession from "./FSRSStudySession";
 import BagStats from "./BagStats";
 import { Button } from "./Button";
-import { ArrowLeft, BarChart3, Eye, Loader2, Plus } from "lucide-react";
+import { ArrowLeft, BarChart3, Eye, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface BagManagerProps {
@@ -118,20 +118,12 @@ export default function BagManager({ onBack }: BagManagerProps) {
             </div>
             <Button
               onClick={() => void handleCreateSampleBag()}
-              disabled={isCreatingSample || !userId}
+              loading={isCreatingSample}
+              disabled={!userId}
               className="mx-auto px-6"
             >
-              {isCreatingSample ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  <span>{t("bagManager.sample.creating")}</span>
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" aria-hidden />
-                  <span>{t("bagManager.sample.create")}</span>
-                </>
-              )}
+              <Plus className="h-4 w-4" aria-hidden />
+              <span>{t("bagManager.sample.create")}</span>
             </Button>
           </div>
         </div>

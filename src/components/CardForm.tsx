@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "./Button";
 import { Input, Textarea } from "./Input";
-import { Loader2, Sparkles, RefreshCcw } from "lucide-react";
+import { Sparkles, RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
 import { useAction } from "convex/react";
@@ -178,20 +178,12 @@ export function CardForm({
         variant="primary"
         className="w-full gap-2"
         onClick={() => void handleGenerate()}
-        disabled={isGenerating || isMock}
+        loading={isGenerating}
+        disabled={isMock}
         aria-label={t("cardForm.generateAria")}
       >
-        {isGenerating ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-            {t("cardForm.generating")}
-          </>
-        ) : (
-          <>
-            <Sparkles className="h-4 w-4" aria-hidden />
-            {t("cardForm.generateButton")}
-          </>
-        )}
+        <Sparkles className="h-4 w-4" aria-hidden />
+        {t("cardForm.generateButton")}
       </Button>
 
       <div className="border-t border-gray-200 pt-4">
@@ -249,20 +241,12 @@ export function CardForm({
             size="sm"
             className="text-xs whitespace-nowrap"
             onClick={() => void handleRegenerateHelpers()}
-            disabled={isRegeneratingHelpers || isMock}
+            loading={isRegeneratingHelpers}
+            disabled={isMock}
             aria-label={t("cardForm.regenerateButton")}
           >
-            {isRegeneratingHelpers ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                {t("cardForm.regenerating")}
-              </>
-            ) : (
-              <>
-                <RefreshCcw className="h-4 w-4" aria-hidden />
-                {t("cardForm.regenerateButton")}
-              </>
-            )}
+            <RefreshCcw className="h-4 w-4" aria-hidden />
+            {t("cardForm.regenerateButton")}
           </Button>
         </div>
         <Input

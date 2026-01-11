@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
-import { Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Button } from "./Button";
@@ -201,20 +200,12 @@ export default function AuthPage() {
               type="submit"
               fullWidth
               className="h-11"
+              loading={isSubmitting}
               disabled={!canSubmit}
             >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  {t("auth.submitting")}
-                </>
-              ) : (
-                <>
-                  {isSignUp
-                    ? t("common.actions.signUp")
-                    : t("common.actions.signIn")}
-                </>
-              )}
+              {isSignUp
+                ? t("common.actions.signUp")
+                : t("common.actions.signIn")}
             </Button>
           </form>
         </div>

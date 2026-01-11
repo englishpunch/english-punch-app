@@ -3,7 +3,7 @@ import { useAction, useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Button } from "./Button";
 import { Input } from "./Input";
-import { ArrowLeft, Loader2, Sparkles, Plus } from "lucide-react";
+import { ArrowLeft, Sparkles, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
 import { useNavigate, useParams } from "@tanstack/react-router";
@@ -227,19 +227,11 @@ export default function BatchCardCreationPage() {
           variant="secondary"
           className="w-full gap-2"
           onClick={() => void handleGenerateExpressions()}
-          disabled={isGeneratingExpressions || isMock}
+          loading={isGeneratingExpressions}
+          disabled={isMock}
         >
-          {isGeneratingExpressions ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-              {t("batchCreate.generating")}
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" aria-hidden />
-              {t("batchCreate.generateButton")}
-            </>
-          )}
+          <Sparkles className="h-4 w-4" aria-hidden />
+          {t("batchCreate.generateButton")}
         </Button>
 
         {/* Expression Candidates */}
@@ -285,27 +277,17 @@ export default function BatchCardCreationPage() {
               variant="primary"
               className="w-full gap-2"
               onClick={() => void handleCreateBatchCards()}
+              loading={isCreatingBatch}
               disabled={
-                isCreatingBatch ||
                 isMock ||
                 (selectedExpressions.size === 0 && !customExpression.trim())
               }
             >
-              {isCreatingBatch ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("batchCreate.creating")}
-                </>
-              ) : (
-                <>
-                  <Plus className="h-4 w-4" />
-                  {t("batchCreate.createButton", {
-                    count:
-                      selectedExpressions.size +
-                      (customExpression.trim() ? 1 : 0),
-                  })}
-                </>
-              )}
+              <Plus className="h-4 w-4" />
+              {t("batchCreate.createButton", {
+                count:
+                  selectedExpressions.size + (customExpression.trim() ? 1 : 0),
+              })}
             </Button>
           </div>
         )}
