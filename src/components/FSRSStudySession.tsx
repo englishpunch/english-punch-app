@@ -30,6 +30,10 @@ export default function FSRSStudySession({
   const dueCardCount = useQuery(api.learning.getDueCardCount, {
     bagId,
   });
+  const dueCardCountDisplay =
+    typeof dueCardCount === "number" && dueCardCount > 100
+      ? "100+"
+      : `${dueCardCount}`;
 
   const reviewCard = useMutation(api.fsrs.reviewCard);
 
@@ -101,12 +105,14 @@ export default function FSRSStudySession({
           </h1>
           <div className="text-sm text-gray-600">
             {dueCardCount !== undefined
-              ? t("studySession.cardsDue", { count: dueCardCount })
+              ? t("studySession.cardsDue", {
+                  countDisplay: dueCardCountDisplay,
+                })
               : ""}
           </div>
         </div>
       </div>
-      {/* 학습 카드 */}
+      {/* Study card */}
       {dueCard && (
         <StudyCard
           card={dueCard}

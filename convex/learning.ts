@@ -275,7 +275,7 @@ export const getDueCardCount = query({
     if (!userId) {
       throw new ConvexError("Unauthorized");
     }
-    const collected = await ctx.db
+    const dueCardsList = await ctx.db
       .query("cards")
       .withIndex("by_user_and_due", (q) =>
         q.eq("userId", userId).lte("due", nowTimestamp)
@@ -283,9 +283,9 @@ export const getDueCardCount = query({
       .filter((q) => q.eq(q.field("bagId"), args.bagId))
       .filter((q) => q.eq(q.field("deletedAt"), undefined))
       .filter((q) => q.eq(q.field("suspended"), false))
-      .collect();
+      .take(101);
 
-    return collected.length;
+    return dueCardsList.length;
   },
 });
 
