@@ -15,7 +15,6 @@ export function Button({
   variant,
   size,
   fullWidth,
-  type,
   asChild = false,
   loading = false,
   disabled,
@@ -23,20 +22,18 @@ export function Button({
   ref,
   ...props
 }: ButtonProps) {
-  const slottedChild =
-    asChild && React.isValidElement(children) ? children : null;
-  const Comp = slottedChild ? Slot : "button";
+  const Comp = asChild ? Slot : "button";
   const isDisabled = disabled || loading;
-  const contentChildren = slottedChild ? slottedChild.props.children : children;
+
   const buttonContent = (
     <>
       <span
         className={cn(
           "inline-flex items-center justify-center gap-2 transition-opacity duration-200 ease-out",
-          loading && "opacity-0"
+          loading && "opacity-10"
         )}
       >
-        {contentChildren}
+        {children}
       </span>
       <span
         className={cn(
@@ -60,13 +57,10 @@ export function Button({
         "relative",
         className
       )}
-      {...(slottedChild
-        ? props
-        : { type: type ?? "button", disabled: isDisabled, ...props })}
+      disabled={isDisabled}
+      {...props}
     >
-      {slottedChild
-        ? React.cloneElement(slottedChild, undefined, buttonContent)
-        : buttonContent}
+      {buttonContent}
     </Comp>
   );
 }
