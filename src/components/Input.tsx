@@ -45,25 +45,87 @@ export function Input({
   );
 }
 
-type TextareaProps = React.ComponentProps<"textarea"> & InputVariantProps;
+type TextareaProps = React.ComponentProps<"textarea"> &
+  InputVariantProps & {
+    autoResize?: boolean;
+    minRows?: number;
+    maxRows?: number;
+  };
 
 export function Textarea({
   className,
   variant,
   padding,
   fullWidth,
-  ref,
+  autoResize = false,
+  minRows = 3,
+  maxRows,
+  value,
+  onChange,
+  ref: externalRef,
   ...props
 }: TextareaProps) {
+  const internalRef = React.useRef<HTMLTextAreaElement>(null);
+  const textareaRef = externalRef || internalRef;
+
+  const adjustHeight = React.useCallback(() => {
+    if (!autoResize) {
+      return;
+    }
+
+    const textarea =
+      textareaRef && "current" in textareaRef ? textareaRef.current : null;
+    if (!textarea) {
+      return;
+    }
+
+    // Reset height to auto to get the correct scrollHeight
+    // eslint-disable-next-line react-hooks/immutability
+    textarea.style.height = "auto";
+
+    // Calculate the line height
+    const computedStyle = window.getComputedStyle(textarea);
+    const lineHeight = parseInt(computedStyle.lineHeight);
+
+    // Calculate min and max heights based on rows
+    const minHeight = lineHeight * minRows;
+    const maxHeight = maxRows ? lineHeight * maxRows : Infinity;
+
+    // Set the height based on content, respecting min and max
+    const newHeight = Math.min(
+      Math.max(textarea.scrollHeight, minHeight),
+      maxHeight
+    );
+    textarea.style.height = `${newHeight}px`;
+
+    // Add overflow if content exceeds maxRows
+    textarea.style.overflowY =
+      textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+  }, [autoResize, textareaRef, minRows, maxRows]);
+
+  React.useEffect(() => {
+    adjustHeight();
+  }, [value, adjustHeight]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (onChange) {
+      onChange(e);
+    }
+    adjustHeight();
+  };
+
   return (
     <textarea
-      ref={ref}
+      ref={textareaRef}
       className={resolveInputClassName({
         className,
         variant,
         padding,
         fullWidth,
       })}
+      value={value}
+      onChange={handleChange}
+      style={autoResize ? { resize: "none", overflow: "hidden" } : undefined}
       {...props}
     />
   );

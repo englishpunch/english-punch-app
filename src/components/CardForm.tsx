@@ -219,9 +219,12 @@ export function CardForm({
           </Button>
         </div>
         {showQuestionInput && (
-          <Input
+          <Textarea
             id="card-question"
             placeholder={t("cardForm.questionPlaceholder")}
+            autoResize
+            minRows={1}
+            maxRows={5}
             value={form.question}
             onChange={(e) =>
               setForm((f) => ({ ...f, question: e.target.value }))
@@ -281,7 +284,8 @@ export function CardForm({
         <Textarea
           id="card-explanation"
           placeholder={t("cardForm.explanationPlaceholder")}
-          rows={3}
+          autoResize
+          minRows={3}
           value={form.explanation}
           onChange={(e) =>
             setForm((f) => ({ ...f, explanation: e.target.value }))
