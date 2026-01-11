@@ -205,7 +205,7 @@ export function CardForm({
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-700">
             {t("cardForm.questionLabel")}{" "}
-            {!showQuestionInput && t("cardForm.questionManualSuffix")}
+            {showQuestionInput && t("cardForm.questionManualSuffix")}
           </label>
           <Button
             variant="ghost"
@@ -224,7 +224,6 @@ export function CardForm({
             placeholder={t("cardForm.questionPlaceholder")}
             autoResize
             minRows={1}
-            maxRows={5}
             value={form.question}
             onChange={(e) =>
               setForm((f) => ({ ...f, question: e.target.value }))
