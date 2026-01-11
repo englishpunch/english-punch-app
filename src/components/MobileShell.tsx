@@ -143,16 +143,14 @@ function BottomNav({ activeTab }: { activeTab: TabKey }) {
               aria-current={isActive ? "page" : undefined}
               aria-label={label}
             >
-              <span className="flex flex-col items-center justify-center">
-                <Icon
-                  className={cn(
-                    "h-5 w-5",
-                    isActive ? "text-primary-700 stroke-[2.5]" : "text-gray-500"
-                  )}
-                  aria-hidden
-                />
-                <span className="mt-1 capitalize">{label}</span>
-              </span>
+              <Icon
+                className={cn(
+                  "h-5 w-5",
+                  isActive ? "text-primary-700 stroke-[2.5]" : "text-gray-500"
+                )}
+                aria-hidden
+              />
+              <span className="mt-1 capitalize">{label}</span>
             </Button>
           );
         })}
