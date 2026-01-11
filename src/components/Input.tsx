@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 import { inputVariants, type InputVariantProps } from "./inputVariants";
-import { ComponentProps, useRef } from "react";
+import { ComponentProps } from "react";
 
 type InputProps = ComponentProps<"input"> & InputVariantProps;
 
