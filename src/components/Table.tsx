@@ -1,17 +1,24 @@
 import { cn } from "@/lib/utils";
+import { cva, type VariantProps } from "class-variance-authority";
 import { ComponentProps } from "react";
 
-type TableWrapperProps = ComponentProps<"div">;
+const tableWrapperVariants = cva(
+  "overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm",
+  {
+    variants: {
+      edgeToEdge: {
+        true: "rounded-none border-x-0",
+      },
+    },
+  }
+);
+
+type TableWrapperProps = ComponentProps<"div"> &
+  VariantProps<typeof tableWrapperVariants>;
 
 export function TableWrapper({ className, ...props }: TableWrapperProps) {
   return (
-    <div
-      className={cn(
-        "overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm",
-        className
-      )}
-      {...props}
-    />
+    <div className={cn(tableWrapperVariants(props), className)} {...props} />
   );
 }
 

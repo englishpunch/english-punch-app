@@ -76,7 +76,6 @@ export default function MobileShell({ children }: MobileShellProps) {
 
   const { location } = useRouterState();
   pathname = location.pathname;
-  const isRunRoute = pathname.startsWith("/run");
 
   const activeTab = deriveTabFromPath(pathname);
   const [showProfile, setShowProfile] = useState(false);
@@ -100,14 +99,7 @@ export default function MobileShell({ children }: MobileShellProps) {
         </span>
       </header>
 
-      <main
-        className={cn(
-          "mx-auto",
-          isRunRoute ? "w-full max-w-none px-0" : "max-w-5xl px-4"
-        )}
-      >
-        {children}
-      </main>
+      <main className={cn("mx-auto")}>{children}</main>
 
       <BottomNav activeTab={activeTab} />
       <ProfileDrawer open={showProfile} onClose={() => setShowProfile(false)} />
