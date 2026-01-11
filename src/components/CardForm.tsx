@@ -205,7 +205,7 @@ export function CardForm({
         <div className="flex items-center justify-between">
           <label className="text-sm font-medium text-gray-700">
             {t("cardForm.questionLabel")}{" "}
-            {!showQuestionInput && t("cardForm.questionManualSuffix")}
+            {showQuestionInput && t("cardForm.questionManualSuffix")}
           </label>
           <Button
             variant="ghost"
@@ -219,9 +219,11 @@ export function CardForm({
           </Button>
         </div>
         {showQuestionInput && (
-          <Input
+          <Textarea
             id="card-question"
             placeholder={t("cardForm.questionPlaceholder")}
+            autoResize
+            minRows={1}
             value={form.question}
             onChange={(e) =>
               setForm((f) => ({ ...f, question: e.target.value }))
@@ -281,7 +283,8 @@ export function CardForm({
         <Textarea
           id="card-explanation"
           placeholder={t("cardForm.explanationPlaceholder")}
-          rows={3}
+          autoResize
+          minRows={3}
           value={form.explanation}
           onChange={(e) =>
             setForm((f) => ({ ...f, explanation: e.target.value }))

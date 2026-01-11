@@ -15,10 +15,15 @@ export const inputVariants = cva("", {
       true: "w-full",
       false: "",
     },
+    autoResize: {
+      true: "resize-none overflow-hidden field-sizing-content",
+      false: "",
+    },
   },
   defaultVariants: {
     variant: "default",
     padding: "default",
+    autoResize: true,
     fullWidth: true,
   },
 });
