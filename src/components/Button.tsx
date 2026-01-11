@@ -19,7 +19,6 @@ export function Button({
   loading = false,
   disabled,
   children,
-  ref,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : "button";
@@ -48,7 +47,6 @@ export function Button({
 
   return (
     <Comp
-      ref={ref}
       aria-busy={loading || undefined}
       aria-disabled={isDisabled || undefined}
       data-loading={loading ? "" : undefined}

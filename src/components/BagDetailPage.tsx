@@ -5,6 +5,7 @@ import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { Input } from "./Input";
+import { TableWrapper, Table, THead, TBody, Tr, Th, Td } from "./Table";
 import {
   Plus,
   Trash2,
@@ -13,6 +14,9 @@ import {
   Search,
   Sparkles,
   Loader2,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
 } from "lucide-react";
 import useIsMock from "@/hooks/useIsMock";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
@@ -29,6 +33,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { getLocaleForLanguage } from "@/i18n";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 type Card = {
   _id: Id<"cards">;
@@ -169,10 +174,11 @@ export default function BagDetailPage() {
       columnHelper.display({
         id: "actions",
         header: t("bagDetail.tableHeaders.actions"),
+        enableSorting: false,
         cell: (info) => {
           const card = info.row.original;
           return (
-            <div className="flex gap-2">
+            <div className="flex justify-end gap-2">
               <Button
                 size="sm"
                 variant="secondary"
@@ -217,6 +223,14 @@ export default function BagDetailPage() {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
+
+  const rows = table.getRowModel().rows;
+  const emptyStateMessage =
+    !isMock && status === "LoadingFirstPage"
+      ? t("bagDetail.emptyLoading")
+      : searchQuery
+        ? t("bagDetail.emptyNoResults")
+        : t("bagDetail.emptyNoCards");
 
   const handleBack = () => {
     void navigate({ to: "/plans" });
@@ -323,69 +337,105 @@ export default function BagDetailPage() {
         )}
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-        <table className="w-full">
-          <thead className="border-b border-gray-200 bg-gray-50">
+      <TableWrapper>
+        <Table>
+          <THead>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <Tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
-                  <th
+                  <Th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-700"
+                    className={cn(
+                      header.column.id === "actions" && "text-right"
+                    )}
                     style={{ width: header.getSize() }}
+                    aria-sort={
+                      header.column.getCanSort()
+                        ? header.column.getIsSorted() === "asc"
+                          ? "ascending"
+                          : header.column.getIsSorted() === "desc"
+                            ? "descending"
+                            : "none"
+                        : undefined
+                    }
                   >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
+                    {header.isPlaceholder ? null : header.column.getCanSort() ? (
+                      <button
+                        type="button"
+                        onClick={header.column.getToggleSortingHandler()}
+                        className={cn(
+                          "group inline-flex items-center gap-1 text-left transition",
+                          header.column.getIsSorted()
+                            ? "text-gray-900"
+                            : "text-gray-600 hover:text-gray-900",
+                          header.column.id === "actions" && "justify-end"
+                        )}
+                      >
+                        {flexRender(
                           header.column.columnDef.header,
                           header.getContext()
                         )}
-                  </th>
+                        {header.column.getIsSorted() === "asc" ? (
+                          <ChevronUp className="h-3.5 w-3.5" aria-hidden />
+                        ) : header.column.getIsSorted() === "desc" ? (
+                          <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+                        ) : (
+                          <ChevronsUpDown
+                            className="h-3.5 w-3.5 text-gray-400 opacity-0 transition group-hover:opacity-100"
+                            aria-hidden
+                          />
+                        )}
+                      </button>
+                    ) : (
+                      flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )
+                    )}
+                  </Th>
                 ))}
-              </tr>
+              </Tr>
             ))}
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {table.getRowModel().rows.length === 0 ? (
-              <tr>
-                <td
-                  colSpan={columns.length}
-                  className="px-4 py-8 text-center text-sm text-gray-500"
+          </THead>
+          <TBody>
+            {rows.length === 0 ? (
+              <Tr>
+                <Td
+                  colSpan={table.getVisibleLeafColumns().length}
+                  className="py-8 text-center text-gray-500"
                 >
-                  {!isMock && status === "LoadingFirstPage"
-                    ? t("bagDetail.emptyLoading")
-                    : searchQuery
-                      ? t("bagDetail.emptyNoResults")
-                      : t("bagDetail.emptyNoCards")}
-                </td>
-              </tr>
+                  {emptyStateMessage}
+                </Td>
+              </Tr>
             ) : (
-              table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-gray-50">
+              rows.map((row) => (
+                <Tr key={row.id} className="hover:bg-gray-50">
                   {row.getVisibleCells().map((cell) => (
-                    <td
+                    <Td
                       key={cell.id}
-                      className="px-4 py-3"
+                      className={cn(
+                        cell.column.id === "actions" && "text-right"
+                      )}
                       style={{ width: cell.column.getSize() }}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
                       )}
-                    </td>
+                    </Td>
                   ))}
-                </tr>
+                </Tr>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+          </TBody>
+        </Table>
+      </TableWrapper>
 
-      {table.getRowModel().rows.length > 0 && (
+      {rows.length > 0 && (
         <div className="flex items-center justify-between text-xs text-gray-600">
           <span>
             {t("bagDetail.totalCount", {
-              count: table.getRowModel().rows.length,
+              count: rows.length,
             })}
             {searchQuery &&
               ` ${t("bagDetail.filteredCount", {
