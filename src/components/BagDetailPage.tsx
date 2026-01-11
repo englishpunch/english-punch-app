@@ -313,31 +313,29 @@ export default function BagDetailPage() {
         </div>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="relative">
-          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            type="text"
-            placeholder={t("bagDetail.searchPlaceholder")}
-            value={searchQuery}
-            onChange={(e) => {
-              void navigate({
-                to: "/plans/$bagId",
-                params: { bagId },
-                search: { search: e.target.value },
-              });
-            }}
-            padding="icon"
-          />
-        </div>
-        {searchQuery && (
-          <p className="mt-2 text-xs text-gray-500">
-            {t("bagDetail.searchNotice")}
-          </p>
-        )}
+      <div className="relative">
+        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+        <Input
+          type="text"
+          placeholder={t("bagDetail.searchPlaceholder")}
+          value={searchQuery}
+          onChange={(e) => {
+            void navigate({
+              to: "/plans/$bagId",
+              params: { bagId },
+              search: { search: e.target.value },
+            });
+          }}
+          padding="icon"
+        />
       </div>
+      {searchQuery && (
+        <p className="mt-2 text-xs text-gray-500">
+          {t("bagDetail.searchNotice")}
+        </p>
+      )}
 
-      <TableWrapper>
+      <TableWrapper edgeToEdge>
         <Table>
           <THead>
             {table.getHeaderGroups().map((headerGroup) => (
