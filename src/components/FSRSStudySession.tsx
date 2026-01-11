@@ -18,11 +18,16 @@ export default function FSRSStudySession({
 }: FSRSStudySessionProps) {
   const { t } = useTranslation();
   const loggedInUser = useQuery(api.auth.loggedInUser);
+
   const userId = loggedInUser?._id;
   const [isReviewing, setIsReviewing] = useState(false);
 
   // Convex 쿼리 및 뮤테이션
   const dueCard = useQuery(api.learning.getOneDueCard, {
+    bagId,
+  });
+
+  const dueCardCount = useQuery(api.learning.getDueCardCount, {
     bagId,
   });
 
@@ -89,18 +94,26 @@ export default function FSRSStudySession({
 
   return (
     <div className="min-h-screen">
-      {/* 학습 카드 */}
-      <div className="flex items-center justify-center px-0 py-4">
-        <div className="w-full">
-          {dueCard && (
-            <StudyCard
-              card={dueCard}
-              onGrade={(rating, duration) => void handleGrade(rating, duration)}
-              isLoading={isReviewing}
-            />
-          )}
+      <div>
+        <div className="flex items-center justify-between px-4 py-4">
+          <h1 className="text-lg font-medium text-gray-900">
+            {t("studySession.sessionTitle")}
+          </h1>
+          <div className="text-sm text-gray-600">
+            {dueCardCount !== undefined
+              ? t("studySession.cardsDue", { count: dueCardCount })
+              : ""}
+          </div>
         </div>
       </div>
+      {/* 학습 카드 */}
+      {dueCard && (
+        <StudyCard
+          card={dueCard}
+          onGrade={(rating, duration) => void handleGrade(rating, duration)}
+          isLoading={isReviewing}
+        />
+      )}
     </div>
   );
 }

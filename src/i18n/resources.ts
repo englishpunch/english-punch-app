@@ -134,6 +134,8 @@ const enTranslation = {
     noCardsDescription: "You've finished all cards or none are due yet.",
     backToHome: "Back to home",
     progress: "Progress",
+    sessionTitle: "Study Session",
+    cardsDue: "{{count}} cards due",
   },
   bagManager: {
     title: "English Study Bag",
@@ -480,6 +482,8 @@ const koTranslation = {
       "모든 카드를 학습했거나 아직 복습 시간이 되지 않았습니다.",
     backToHome: "홈으로",
     progress: "진행률",
+    sessionTitle: "학습 세션",
+    cardsDue: "복습 예정 카드 {{count}}장",
   },
   bagManager: {
     title: "영어 학습 샌드백",
@@ -822,6 +826,8 @@ const jaTranslation = {
       "すべてのカードを学習済みか、まだ復習時間になっていません。",
     backToHome: "ホームへ",
     progress: "進捗",
+    sessionTitle: "学習セッション",
+    cardsDue: "復習予定のカード {{count}}枚",
   },
   bagManager: {
     title: "英語学習サンドバッグ",

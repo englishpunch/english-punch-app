@@ -265,6 +265,30 @@ export const getOneDueCard = query({
   },
 });
 
+export const getDueCardCount = query({
+  args: {
+    bagId: v.id("bags"),
+  },
+  handler: async (ctx, args) => {
+    const nowTimestamp = Date.now();
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
+    const collected = await ctx.db
+      .query("cards")
+      .withIndex("by_user_and_due", (q) =>
+        q.eq("userId", userId).lte("due", nowTimestamp)
+      )
+      .filter((q) => q.eq(q.field("bagId"), args.bagId))
+      .filter((q) => q.eq(q.field("deletedAt"), undefined))
+      .filter((q) => q.eq(q.field("suspended"), false))
+      .collect();
+
+    return collected.length;
+  },
+});
+
 /**
  * 백 통계 업데이트
  */
