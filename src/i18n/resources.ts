@@ -254,6 +254,7 @@ const enTranslation = {
     bagNotFound: "Bag not found",
     mockUnavailable: "Cards can't be added in mock mode.",
     added: "Card added.",
+    keepCreating: "Keep creating",
   },
   cardEdit: {
     title: "Edit card",
@@ -600,6 +601,7 @@ const koTranslation = {
     bagNotFound: "샌드백을 찾을 수 없습니다",
     mockUnavailable: "Mock 모드에서는 카드를 추가할 수 없습니다.",
     added: "카드를 추가했습니다.",
+    keepCreating: "계속 만들기",
   },
   cardEdit: {
     title: "카드 편집",
@@ -945,6 +947,7 @@ const jaTranslation = {
     bagNotFound: "サンドバッグが見つかりません",
     mockUnavailable: "Mockモードではカードを追加できません。",
     added: "カードを追加しました。",
+    keepCreating: "続けて作成",
   },
   cardEdit: {
     title: "カード編集",
