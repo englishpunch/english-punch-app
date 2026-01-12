@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { inputVariants, type InputVariantProps } from "./inputVariants";
-import { ComponentProps, ComponentPropsWithRef } from "react";
+import { ComponentProps } from "react";
 
-type InputProps = ComponentPropsWithRef<"input"> & InputVariantProps;
+type InputProps = ComponentProps<"input"> & InputVariantProps;
 
 const resolveInputClassName = ({
   className,
@@ -11,7 +11,7 @@ const resolveInputClassName = ({
   return cn(inputVariants(props), className);
 };
 
-export function Input({ ...props }: InputProps) {
+export function Input(props: InputProps) {
   return <input {...props} className={resolveInputClassName(props)} />;
 }
 
