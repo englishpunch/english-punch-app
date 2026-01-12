@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { inputVariants, type InputVariantProps } from "./inputVariants";
-import { ComponentProps, forwardRef } from "react";
+import { ComponentProps, ComponentPropsWithRef } from "react";
 
-type InputProps = ComponentProps<"input"> & InputVariantProps;
+type InputProps = ComponentPropsWithRef<"input"> & InputVariantProps;
 
 const resolveInputClassName = ({
   className,
@@ -11,13 +11,9 @@ const resolveInputClassName = ({
   return cn(inputVariants(props), className);
 };
 
-export const Input = forwardRef<HTMLInputElement, InputProps>(
-  function Input(props, ref) {
-    return (
-      <input ref={ref} {...props} className={resolveInputClassName(props)} />
-    );
-  }
-);
+export function Input({ ...props }: InputProps) {
+  return <input {...props} className={resolveInputClassName(props)} />;
+}
 
 type TextareaProps = ComponentProps<"textarea"> &
   InputVariantProps & {
