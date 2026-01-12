@@ -83,7 +83,7 @@ export default function MobileShell({ children }: MobileShellProps) {
   const screenTitle = t(tabConfig[activeTab].titleKey);
 
   return (
-    <div className="min-h-screen pb-20">
+    <div className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))]">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white/90 px-2 py-1 backdrop-blur">
         <Button
           variant="ghost"
@@ -113,7 +113,7 @@ function BottomNav({ activeTab }: { activeTab: TabKey }) {
   const navigateTo = (path: string) => router.navigate({ to: path });
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-30 w-full -translate-x-1/2 border-t border-gray-200 bg-white shadow-lg sm:w-160">
+    <nav className="fixed bottom-0 left-1/2 z-30 w-full -translate-x-1/2 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-lg sm:w-160">
       <div className="mx-auto flex max-w-5xl justify-around">
         {Object.values(tabConfig).map((tab) => {
           const Icon = tab.icon;
