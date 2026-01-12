@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useImperativeHandle, type Ref } from "react";
 import { Button } from "./Button";
 import { Input, Textarea } from "./Input";
 import { Sparkles, RefreshCcw } from "lucide-react";
@@ -24,6 +24,12 @@ type CardFormProps = {
   onSubmit: (data: CardFormData) => void | Promise<void>;
   submitLabel?: string;
   showQuestionByDefault?: boolean;
+  autoFocus?: boolean;
+  ref?: Ref<CardFormHandle>;
+};
+
+export type CardFormHandle = {
+  reset: () => void;
 };
 
 export function CardForm({
@@ -31,6 +37,8 @@ export function CardForm({
   onSubmit,
   submitLabel,
   showQuestionByDefault = false,
+  autoFocus = false,
+  ref,
 }: CardFormProps) {
   const { t } = useTranslation();
   const isMock = useIsMock();
@@ -38,6 +46,8 @@ export function CardForm({
   const regenerateHintAndExplanation = useAction(
     api.ai.regenerateHintAndExplanation
   );
+
+  const answerInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<CardFormData>({
     question: initialData?.question || "",
@@ -53,6 +63,24 @@ export function CardForm({
     showQuestionByDefault || !!initialData?.question
   );
   const resolvedSubmitLabel = submitLabel ?? t("common.actions.save");
+
+  // Expose reset method to parent
+  useImperativeHandle(ref, () => ({
+    reset: () => {
+      setForm({
+        question: "",
+        answer: "",
+        hint: "",
+        explanation: "",
+        context: "",
+      });
+      setShowQuestionInput(showQuestionByDefault);
+      // Focus on answer input after reset - use queueMicrotask for clarity
+      queueMicrotask(() => {
+        answerInputRef.current?.focus();
+      });
+    },
+  }));
 
   const handleGenerate = async () => {
     if (!form.answer.trim()) {
@@ -149,10 +177,12 @@ export function CardForm({
           {t("cardForm.answerLabel")}
         </label>
         <Input
+          ref={answerInputRef}
           id="card-answer"
           placeholder={t("cardForm.answerPlaceholder")}
           value={form.answer}
           onChange={(e) => setForm((f) => ({ ...f, answer: e.target.value }))}
+          autoFocus={autoFocus}
         />
       </div>
 
