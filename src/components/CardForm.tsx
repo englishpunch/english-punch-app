@@ -77,10 +77,10 @@ export const CardForm = forwardRef<CardFormHandle, CardFormProps>(
           context: "",
         });
         setShowQuestionInput(showQuestionByDefault);
-        // Focus on answer input after reset
-        setTimeout(() => {
+        // Focus on answer input after reset - use queueMicrotask for clarity
+        queueMicrotask(() => {
           answerInputRef.current?.focus();
-        }, 0);
+        });
       },
     }));
 

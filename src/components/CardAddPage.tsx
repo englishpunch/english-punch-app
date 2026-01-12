@@ -28,12 +28,21 @@ export default function CardAddPage() {
 
   // Load and persist "keep creating" preference
   const [keepCreating, setKeepCreating] = useState(() => {
-    const saved = localStorage.getItem(KEEP_CREATING_KEY);
-    return saved === "true";
+    try {
+      const saved = localStorage.getItem(KEEP_CREATING_KEY);
+      return saved === "true";
+    } catch {
+      // Handle cases where localStorage is unavailable (e.g., SSR, private browsing)
+      return false;
+    }
   });
 
   useEffect(() => {
-    localStorage.setItem(KEEP_CREATING_KEY, String(keepCreating));
+    try {
+      localStorage.setItem(KEEP_CREATING_KEY, String(keepCreating));
+    } catch {
+      // Silently fail if localStorage is unavailable
+    }
   }, [keepCreating]);
 
   const handleBack = () => {
