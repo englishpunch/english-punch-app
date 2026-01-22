@@ -731,6 +731,31 @@ export const deleteCard = mutation({
   },
 });
 
+/** 카드 일시정지 토글 */
+export const toggleCardSuspended = mutation({
+  args: {
+    cardId: v.id("cards"),
+    suspended: v.boolean(),
+  },
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    const card = await ctx.db.get("cards", args.cardId);
+    if (!card || card.userId !== userId || card.deletedAt !== undefined) {
+      throw new ConvexError("Card not found");
+    }
+
+    await ctx.db.patch("cards", args.cardId, {
+      suspended: args.suspended,
+    });
+
+    return { suspended: args.suspended };
+  },
+});
+
 /** 카드 일괄 생성 (다중 표현용) */
 export const createCardsBatch = mutation({
   args: {

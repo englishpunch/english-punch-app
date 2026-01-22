@@ -126,6 +126,9 @@ const enTranslation = {
     showAnswerShortcut: "(Space)",
     ratingPrompt: "How well did you remember?",
     ratingShortcut: "({{shortcut}})",
+    suspendCard: "Suspend this card",
+    suspending: "Suspending...",
+    suspended: "Card suspended",
   },
   studySession: {
     completeTitle: "Session complete!",
@@ -474,6 +477,9 @@ const koTranslation = {
     showAnswerShortcut: "(Space)",
     ratingPrompt: "얼마나 잘 기억하셨나요?",
     ratingShortcut: "({{shortcut}})",
+    suspendCard: "이 카드 일시정지",
+    suspending: "일시정지 중...",
+    suspended: "카드가 일시정지되었습니다",
   },
   studySession: {
     completeTitle: "학습 완료!",
@@ -819,6 +825,9 @@ const jaTranslation = {
     showAnswerShortcut: "(Space)",
     ratingPrompt: "どのくらい覚えていますか?",
     ratingShortcut: "({{shortcut}})",
+    suspendCard: "このカードを停止",
+    suspending: "停止中...",
+    suspended: "カードを停止しました",
   },
   studySession: {
     completeTitle: "学習完了!",
