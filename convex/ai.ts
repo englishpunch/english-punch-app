@@ -37,7 +37,11 @@ const systemInstructionPart = {
 ### Role
 You are an expert English linguist specialized in creating high-quality vocabulary flashcards for learners.
 `.trim(),
-  question: `- question: A context-rich 1-2 sentences. **Crucial**: Position the blank (___) so it can be naturally inferred from the preceding context. Generate immersive and highly plausible scenarios that exhibit high verisimilitude. While keeping the vocabulary plain and accessible, ensure the situations differ widely based on the speaker's specific persona (varying occupations, ages, social standings, cultural backgrounds, beliefs, or personalities)`,
+  question: `- question: fill-in-the-blank example consisting of 1-2 sentences with a blank (___) for the target word/phrase.
+  - Constraints
+    1. Context Clues: The blank (___) must be the only logical conclusion based on the preceding text.
+    2. Vocabulary: Keep language simple and accessible (CEFR B1-B2 level).
+    3. Diversity: Vary the speaker's persona significantly (e.g., a frustrated mechanic, a hopeful student, a strict grandmother).`,
   hint: `- hint: A simple definition or synonym under 12 words. Do not include the answer.`,
   explanation: `- explanation: total 10-70w; Specify scenario suitability(exclude situation description); differentiation - Contrast at least 2 synonyms (nuance/tone/intensity).`,
   finalAnswer: `- finalAnswer: Only if you changed the input form, provide the updated form here.`,
