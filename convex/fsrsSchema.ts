@@ -121,7 +121,11 @@ export const learningTables = {
     .index("by_user_and_state", ["userId", "state"])
     .index("by_bag_and_state", ["bagId", "state"])
     .index("by_user_and_learning_steps", ["userId", "learning_steps"])
-    .index("by_due_and_suspended", ["due", "suspended"]), // due 날짜 + 정지 상태
+    .index("by_due_and_suspended", ["due", "suspended"]) // due 날짜 + 정지 상태
+    .searchIndex("search_answer", {
+      searchField: "answer",
+      filterFields: ["bagId", "userId", "deletedAt"],
+    }),
 
   /**
    * 복습 로그 (ts-fsrs ReviewLog 인터페이스 완전 호환)

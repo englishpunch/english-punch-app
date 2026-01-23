@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -92,6 +92,7 @@ export default function BagDetailPage() {
       : {
           bagId: bag._id,
           userId,
+          ...(searchQuery ? { search: searchQuery } : {}),
         };
 
   const {
@@ -128,11 +129,11 @@ export default function BagDetailPage() {
     { id: "_creationTime", desc: true },
   ]);
   const columnFilters = useMemo<ColumnFiltersState>(() => {
-    if (!searchQuery) {
+    if (!isMock || !searchQuery) {
       return [];
     }
     return [{ id: "answer", value: searchQuery }];
-  }, [searchQuery]);
+  }, [isMock, searchQuery]);
 
   const columnHelper = createColumnHelper<Card>();
 
@@ -225,6 +226,7 @@ export default function BagDetailPage() {
   });
 
   const rows = table.getRowModel().rows;
+  const showFilteredCount = isMock && searchQuery;
   const emptyStateMessage =
     !isMock && status === "LoadingFirstPage"
       ? t("bagDetail.emptyLoading")
@@ -234,6 +236,22 @@ export default function BagDetailPage() {
 
   const handleBack = () => {
     void navigate({ to: "/plans" });
+  };
+
+  const handleSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const search = formData.get("search");
+    if (typeof search !== "string") {
+      console.log("Invalid search input:", search);
+      return;
+    }
+    const nextSearch = String(search).trim();
+    void navigate({
+      to: "/plans/$bagId",
+      params: { bagId },
+      search: { search: nextSearch },
+    });
   };
 
   const handleConfirmDelete = async () => {
@@ -313,22 +331,26 @@ export default function BagDetailPage() {
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-        <Input
-          type="text"
-          placeholder={t("bagDetail.searchPlaceholder")}
-          value={searchQuery}
-          onChange={(e) => {
-            void navigate({
-              to: "/plans/$bagId",
-              params: { bagId },
-              search: { search: e.target.value },
-            });
-          }}
-          padding="icon"
-        />
-      </div>
+      <form
+        key={`${bagId}-${searchQuery}`}
+        className="flex flex-col gap-2 sm:flex-row sm:items-center"
+        onSubmit={handleSearchSubmit}
+      >
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+          <Input
+            name="search"
+            type="text"
+            placeholder={t("bagDetail.searchPlaceholder")}
+            defaultValue={searchQuery}
+            padding="icon"
+          />
+        </div>
+        <Button type="submit" variant="secondary" className="gap-2">
+          <Search className="h-4 w-4" aria-hidden />
+          {t("common.actions.search")}
+        </Button>
+      </form>
       {searchQuery && (
         <p className="mt-2 text-xs text-gray-500">
           {t("bagDetail.searchNotice")}
@@ -435,7 +457,7 @@ export default function BagDetailPage() {
             {t("bagDetail.totalCount", {
               count: rows.length,
             })}
-            {searchQuery &&
+            {showFilteredCount &&
               ` ${t("bagDetail.filteredCount", {
                 total: cardsToShow.length,
               })}`}

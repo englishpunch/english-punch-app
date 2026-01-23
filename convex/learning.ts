@@ -556,16 +556,28 @@ export const getBagCardsPaginated = query({
     bagId: v.id("bags"),
     userId: v.id("users"),
     paginationOpts: paginationOptsValidator,
+    search: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
-    const result = await ctx.db
-      .query("cards")
-      .withIndex("by_bag_and_deleted_at", (q) =>
-        q.eq("bagId", args.bagId).eq("deletedAt", undefined)
-      )
-      .filter((q) => q.eq(q.field("userId"), args.userId))
-      .order("desc")
-      .paginate(args.paginationOpts);
+    const searchQuery = args.search?.trim();
+    const query = searchQuery
+      ? ctx.db
+          .query("cards")
+          .withSearchIndex("search_answer", (q) =>
+            q
+              .search("answer", searchQuery)
+              .eq("bagId", args.bagId)
+              .eq("userId", args.userId)
+              .eq("deletedAt", undefined)
+          )
+      : ctx.db
+          .query("cards")
+          .withIndex("by_bag_and_deleted_at", (q) =>
+            q.eq("bagId", args.bagId).eq("deletedAt", undefined)
+          )
+          .filter((q) => q.eq(q.field("userId"), args.userId))
+          .order("desc");
+    const result = await query.paginate(args.paginationOpts);
 
     return {
       ...result,
