@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+corepack enable
+
 if command -v node >/dev/null 2>&1; then
   node_version="$(node -p "process.versions.node" 2>/dev/null || true)"
   if [[ -n "${node_version}" ]]; then
@@ -35,7 +37,7 @@ run_and_capture "lint" npm run lint
 run_and_capture "vibe-rules" bash -c "npm run vibe-rules && git diff --exit-code"
 run_and_capture "knip" npm run knip
 run_and_capture "test" env CI=true npm run test
-run_and_capture "dedupe" bash -c "npm dedupe && git diff --exit-code"
+run_and_capture "dedupe" bash -c "npm dedupe && git diff --exit-code package-lock.json"
 set -e
 
 if [[ "${#failures[@]}" -ne 0 ]]; then
