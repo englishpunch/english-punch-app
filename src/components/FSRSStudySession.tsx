@@ -6,6 +6,7 @@ import StudyCard from "./StudyCard";
 import { Button } from "./Button";
 import { FileText, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 interface FSRSStudySessionProps {
   bagId: Id<"bags">;
@@ -21,11 +22,14 @@ export default function FSRSStudySession({
 
   const userId = loggedInUser?._id;
   const [isReviewing, setIsReviewing] = useState(false);
+  const [isSuspending, setIsSuspending] = useState(false);
 
   // Convex 쿼리 및 뮤테이션
   const dueCard = useQuery(api.learning.getOneDueCard, {
     bagId,
   });
+
+  const toggleSuspended = useMutation(api.learning.toggleCardSuspended);
 
   const dueCardCount = useQuery(api.learning.getDueCardCount, {
     bagId,
@@ -55,6 +59,25 @@ export default function FSRSStudySession({
       console.error("Failed to review card:", error);
     }
     setIsReviewing(false);
+  };
+
+  // 카드 일시정지 핸들러
+  const handleSuspend = async () => {
+    if (!dueCard || dueCard === "NO_CARD_AVAILABLE" || isSuspending) {
+      return;
+    }
+
+    setIsSuspending(true);
+    try {
+      await toggleSuspended({
+        cardId: dueCard._id,
+        suspended: true,
+      });
+      toast.success(t("studyCard.suspended"));
+    } catch (error) {
+      console.error("Failed to suspend card:", error);
+    }
+    setIsSuspending(false);
   };
 
   // 뒤로 가기 핸들러 (카드 목록 초기화 포함)
@@ -117,7 +140,9 @@ export default function FSRSStudySession({
         <StudyCard
           card={dueCard}
           onGrade={(rating, duration) => void handleGrade(rating, duration)}
+          onSuspend={() => void handleSuspend()}
           isLoading={isReviewing}
+          isSuspending={isSuspending}
         />
       )}
     </div>

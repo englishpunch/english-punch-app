@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, PauseCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -21,7 +21,9 @@ interface StudyCardProps {
     reps: number;
   };
   onGrade: (rating: 1 | 2 | 3 | 4, duration: number) => void;
+  onSuspend?: () => void;
   isLoading?: boolean;
+  isSuspending?: boolean;
 }
 
 export default function StudyCard(props: StudyCardProps) {
@@ -31,7 +33,9 @@ export default function StudyCard(props: StudyCardProps) {
 function StudyCardContent({
   card,
   onGrade,
+  onSuspend,
   isLoading = false,
+  isSuspending = false,
 }: StudyCardProps) {
   const { t } = useTranslation();
   const [showAnswer, setShowAnswer] = useState(false);
@@ -368,6 +372,22 @@ function StudyCardContent({
                     <div>{t("ratings.guide.easy")}</div>
                   </div>
                 </div>
+
+                {/* 일시정지 버튼 */}
+                {onSuspend && (
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={onSuspend}
+                      disabled={isLoading || isSuspending}
+                      className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                    >
+                      <PauseCircle className="h-4 w-4" aria-hidden />
+                      {isSuspending
+                        ? t("studyCard.suspending")
+                        : t("studyCard.suspendCard")}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
