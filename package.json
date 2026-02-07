@@ -19,6 +19,7 @@
     "knip": "knip",
     "change-password": "tsx src/scripts/changePassword.ts",
     "check": "./scripts/check-local.sh",
+    "check:all": "./scripts/check-local.sh --all",
     "sync:humanlayer": "./sync-humanlayer-claude-config.sh"
   },
   "dependencies": {

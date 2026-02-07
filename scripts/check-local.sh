@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Parse flags
+run_all=false
+for arg in "$@"; do
+  case "${arg}" in
+    --all) run_all=true ;;
+    *) echo "Unknown option: ${arg}" >&2; exit 1 ;;
+  esac
+done
+
 corepack enable
 
 if command -v node >/dev/null 2>&1; then
@@ -33,10 +42,17 @@ run_and_capture() {
 }
 
 set +e
+
+# --- Pre-commit checks (safe with staged changes) ---
 run_and_capture "lint" npm run lint
 run_and_capture "knip" npm run knip
 run_and_capture "test" env CI=true npm run test
-run_and_capture "dedupe" bash -c "npm dedupe && git diff --exit-code package-lock.json"
+
+# --- Post-commit checks (require clean working tree) ---
+if [[ "${run_all}" == "true" ]]; then
+  run_and_capture "dedupe" bash -c "npm dedupe && git diff --exit-code package-lock.json"
+fi
+
 set -e
 
 if [[ "${#failures[@]}" -ne 0 ]]; then
