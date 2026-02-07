@@ -550,6 +550,35 @@ export const deleteBag = mutation({
   },
 });
 
+/** 단일 카드 조회 */
+export const getCard = query({
+  args: {
+    cardId: v.id("cards"),
+    bagId: v.id("bags"),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const card = await ctx.db.get(args.cardId);
+    if (
+      !card ||
+      card.bagId !== args.bagId ||
+      card.userId !== args.userId ||
+      card.deletedAt !== undefined
+    ) {
+      return null;
+    }
+    return {
+      _id: card._id,
+      _creationTime: card._creationTime,
+      question: card.question,
+      answer: card.answer,
+      hint: card.hint,
+      explanation: card.explanation,
+      context: card.context,
+    };
+  },
+});
+
 /** 백의 카드 페이지네이션 조회 (30개 단위) */
 export const getBagCardsPaginated = query({
   args: {

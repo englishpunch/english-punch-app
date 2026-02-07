@@ -1,7 +1,8 @@
-import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import useIsMock from "@/hooks/useIsMock";
 import { CardForm } from "./CardForm";
@@ -27,17 +28,12 @@ export default function CardEditPage() {
   const bags = useQuery(api.learning.getUserBags, bagsArgs);
   const bag = bags?.find((b) => b._id === bagId);
 
-  // Get cards - use paginated query
-  const paginatedCardsArgs =
-    isMock || !userId || !bag ? "skip" : { bagId: bag._id, userId };
-  const { results: paginatedCards } = usePaginatedQuery(
-    api.learning.getBagCardsPaginated,
-    paginatedCardsArgs,
-    {
-      initialNumItems: 100, // Load more initially to ensure we get the card
-    }
-  );
-  const card = paginatedCards?.find((c) => c._id === cardId);
+  // Get card directly by ID
+  const cardArgs =
+    isMock || !userId || !bag
+      ? "skip"
+      : { cardId: cardId as Id<"cards">, bagId: bag._id, userId };
+  const card = useQuery(api.learning.getCard, cardArgs);
 
   const handleBack = () => {
     void navigate({ to: "/plans/$bagId", params: { bagId } });
@@ -82,6 +78,16 @@ export default function CardEditPage() {
     toast.success(t("cardEdit.updated"));
     handleBack();
   };
+
+  // Loading state: bags or card query still in progress
+  const isLoading = !isMock && (bags === undefined || (bag && card === undefined));
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    );
+  }
 
   if (!bag) {
     return (
