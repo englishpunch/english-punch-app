@@ -80,7 +80,8 @@ export default function CardEditPage() {
   };
 
   // Loading state: bags or card query still in progress
-  const isLoading = !isMock && (bags === undefined || (bag && card === undefined));
+  const isLoading =
+    !isMock && (bags === undefined || (bag && card === undefined));
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">

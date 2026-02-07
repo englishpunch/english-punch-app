@@ -558,7 +558,7 @@ export const getCard = query({
     userId: v.id("users"),
   },
   handler: async (ctx, args) => {
-    const card = await ctx.db.get(args.cardId);
+    const card = await ctx.db.get("cards", args.cardId);
     if (
       !card ||
       card.bagId !== args.bagId ||
