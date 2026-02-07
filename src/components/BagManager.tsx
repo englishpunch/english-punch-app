@@ -6,6 +6,7 @@ import FSRSStudySession from "./FSRSStudySession";
 import BagStats from "./BagStats";
 import { Button } from "./Button";
 import { ArrowLeft, BarChart3, Eye, Plus } from "lucide-react";
+import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 
 interface BagManagerProps {
@@ -144,11 +145,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
       )}
 
       {/* 로딩 상태 */}
-      {!bags && (
-        <div className="flex items-center justify-center py-12">
-          <div className="border-primary-500 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-        </div>
-      )}
+      {!bags && <Spinner wrapper="page" />}
     </div>
   );
 }

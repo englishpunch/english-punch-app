@@ -2,7 +2,8 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { Spinner } from "./Spinner";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import useIsMock from "@/hooks/useIsMock";
 import { CardForm } from "./CardForm";
@@ -83,11 +84,7 @@ export default function CardEditPage() {
   const isLoading =
     !isMock && (bags === undefined || (bag && card === undefined));
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-      </div>
-    );
+    return <Spinner wrapper="page" />;
   }
 
   if (!bag) {

@@ -4,7 +4,8 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import StudyCard from "./StudyCard";
 import { Button } from "./Button";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText } from "lucide-react";
+import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 
 interface FSRSStudySessionProps {
@@ -64,14 +65,7 @@ export default function FSRSStudySession({
 
   // 로딩 상태
   if (!dueCard) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2
-          className="text-primary-600 h-6 w-6 animate-spin"
-          aria-hidden
-        />
-      </div>
-    );
+    return <Spinner wrapper="page" />;
   }
 
   // 카드가 없는 경우

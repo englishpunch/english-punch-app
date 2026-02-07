@@ -3,7 +3,7 @@ import { api } from "../convex/_generated/api";
 import "@/assets/pretendard-variable-gov/pretendardvariable-gov-dynamic-subset.css";
 import "./global.css";
 import { Toaster } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "./components/Spinner";
 import { RouterProvider } from "@tanstack/react-router";
 import { router } from "./router";
 import AuthPage from "./components/AuthPage";
@@ -13,15 +13,7 @@ export default function App() {
 
   if (loggedInUser === undefined) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center bg-white"
-        data-testid="global-loader"
-      >
-        <Loader2
-          className="text-primary-600 h-10 w-10 animate-spin"
-          aria-hidden
-        />
-      </div>
+      <Spinner size="lg" wrapper="fullscreen" data-testid="global-loader" />
     );
   }
 

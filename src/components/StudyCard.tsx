@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 import { isTauri } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -374,11 +374,7 @@ function StudyCardContent({
         </div>
 
         {/* 로딩 오버레이 */}
-        {isLoading && (
-          <div className="bg-opacity-75 absolute inset-0 flex items-center justify-center bg-white">
-            <Loader2 className="text-primary-600 h-10 w-10 animate-spin" />
-          </div>
-        )}
+        {isLoading && <Spinner size="lg" wrapper="overlay" />}
       </div>
 
       <Popover.Portal>

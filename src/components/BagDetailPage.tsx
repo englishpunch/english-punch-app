@@ -13,11 +13,11 @@ import {
   ArrowLeft,
   Search,
   Sparkles,
-  Loader2,
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
 } from "lucide-react";
+import { Spinner } from "./Spinner";
 import useIsMock from "@/hooks/useIsMock";
 import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
@@ -474,7 +474,7 @@ export default function BagDetailPage() {
           )}
           {!isMock && status === "LoadingMore" && (
             <span className="flex items-center gap-2 text-gray-500">
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Spinner size="sm" />
               {t("bagDetail.loadingMore")}
             </span>
           )}

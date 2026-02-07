@@ -1,6 +1,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Loader2, Clock3 } from "lucide-react";
+import { Clock3 } from "lucide-react";
+import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 import { getLocaleForLanguage } from "@/i18n";
 
@@ -15,14 +16,7 @@ export default function ActivityPage() {
   );
 
   if (logs === undefined) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2
-          className="text-primary-600 h-6 w-6 animate-spin"
-          aria-hidden
-        />
-      </div>
-    );
+    return <Spinner wrapper="page" />;
   }
 
   if (!logs || logs.length === 0) {

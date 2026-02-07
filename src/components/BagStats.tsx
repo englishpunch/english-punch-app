@@ -13,6 +13,7 @@ import {
   SquareStack,
   Target,
 } from "lucide-react";
+import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 import { getLocaleForLanguage } from "@/i18n";
 
@@ -116,11 +117,7 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
   );
 
   if (stats === undefined) {
-    return (
-      <div className="flex min-h-[400px] items-center justify-center">
-        <div className="border-primary-500 h-8 w-8 animate-spin rounded-full border-b-2"></div>
-      </div>
-    );
+    return <Spinner wrapper="page" />;
   }
 
   if (stats === null) {
