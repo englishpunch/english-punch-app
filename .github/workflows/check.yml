@@ -25,15 +25,6 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
-      - name: Vibe rules (must leave no diff)
-        id: vibe_rules
-        env:
-          npm_config_yes: "true" # auto-confirm npx install prompts
-        run: |
-          npm run vibe-rules
-          git diff --exit-code
-        continue-on-error: true
-
       - name: package dedupe
         id: dedupe
         run: |
@@ -71,7 +62,6 @@ jobs:
           }
 
           check_step "lint" "${{ steps.lint.outcome }}" "npm run lint"
-          check_step "vibe_rules" "${{ steps.vibe_rules.outcome }}" "npm run vibe-rules && git diff --exit-code"
           check_step "knip" "${{ steps.knip.outcome }}" "npm run knip"
           check_step "test" "${{ steps.test.outcome }}" "CI=true npm run test"
           check_step "dedupe" "${{ steps.dedupe.outcome }}" "npm dedupe && git diff --exit-code"

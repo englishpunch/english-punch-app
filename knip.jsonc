@@ -38,8 +38,5 @@
     "@testing-library/*",
   ],
 
-  // Binaries referenced in scripts but intentionally unmanaged by knip
-  "ignoreBinaries": ["vibe-rules"],
-
   "includeEntryExports": false,
 }

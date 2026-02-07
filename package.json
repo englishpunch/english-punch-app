@@ -18,7 +18,6 @@
     "format": "prettier --check \"src/**/*.{ts,tsx,js,jsx,css}\" \"convex/**/*.{ts,tsx}\"",
     "knip": "knip",
     "change-password": "tsx src/scripts/changePassword.ts",
-    "vibe-rules": "npx vibe-rules install codex && prettier --write AGENTS.md",
     "check": "./scripts/check-local.sh",
     "sync:humanlayer": "./sync-humanlayer-claude-config.sh"
   },
