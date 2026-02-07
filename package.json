@@ -19,7 +19,8 @@
     "knip": "knip",
     "change-password": "tsx src/scripts/changePassword.ts",
     "vibe-rules": "npx vibe-rules install codex && prettier --write AGENTS.md",
-    "check": "./scripts/check-local.sh"
+    "check": "./scripts/check-local.sh",
+    "sync:humanlayer": "./sync-humanlayer-claude-config.sh"
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.90",
