@@ -20,8 +20,8 @@ sync_dir() {
   done
 }
 
-# 루트 파일 동기화
-for item in $(gh api "repos/$REPO/contents/$BASE" --jq '.[] | select(.type=="file") | .name'); do
+# 루트 파일 동기화 (settings.json 제외)
+for item in $(gh api "repos/$REPO/contents/$BASE" --jq '.[] | select(.type=="file") | select(.name!="settings.json") | .name'); do
   sync_file "$BASE/$item" "$BASE/$item"
 done
 
