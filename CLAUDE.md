@@ -20,3 +20,8 @@
 - `pnpm run lint` — ESLint
 - `pnpm run knip` — 미사용 코드/의존성 감지
 - `pnpm run test` — Vitest 단위 테스트
+
+### TypeScript 타입 체크
+
+- 개별 파일 수정 시: `getDiagnostics`(IDE LSP 플러그인)를 사용하여 즉시 타입 에러를 확인할 것. `tsc --noEmit` 불필요.
+- 프로젝트 전체 체크가 필요한 경우(커밋 전 등): `tsc --noEmit`을 최후 수단으로 실행할 것.
