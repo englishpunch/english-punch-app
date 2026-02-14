@@ -86,32 +86,14 @@ npx convex dev
 
 이 명령어를 실행하면 자동으로 Convex 계정을 생성하거나 로그인하고, 새 프로젝트를 설정합니다.
 
-### 2. Google OAuth 설정 (Convex Auth 사용)
-
-Convex는 내장 인증 시스템인 Convex Auth를 제공합니다. Google OAuth를 설정하려면:
-
-1. [Google Cloud Console](https://console.cloud.google.com)에서 새 프로젝트를 생성하거나 기존 프로젝트를 선택합니다.
-2. `APIs & Services > Credentials`로 이동합니다.
-3. `Create Credentials > OAuth 2.0 Client IDs`를 선택합니다.
-4. Application type을 `Web application`으로 설정합니다.
-5. Authorized redirect URIs에 다음을 추가합니다:
-   - `https://your-project.convex.site/api/auth/callback/google` (프로덕션)
-   - `http://localhost:5173/api/auth/callback/google` (개발용)
-
-### 3. 환경 변수 설정
+### 2. 환경 변수 설정
 
 `.env.local` 파일을 생성하고 다음 환경 변수를 설정하세요:
 
 ```env
 # Convex 설정 (npx convex dev 실행 시 자동 생성됨)
 VITE_CONVEX_URL=https://your-project.convex.cloud
-
-# Google OAuth 설정
-AUTH_GOOGLE_ID=your_google_client_id
-AUTH_GOOGLE_SECRET=your_google_client_secret
 ```
-
-Convex Auth 설정 파일 (`convex/auth.config.ts`)이 자동으로 이 환경 변수를 사용합니다.
 
 ## 기여하기
 
