@@ -15,6 +15,12 @@ dist-ssr
 .mcp.json
 *.local
 
+# Turborepo
+.turbo
+
+# MCP Server
+mcp-server/dist
+
 # Editor directories and files
 .idea
 .DS_Store

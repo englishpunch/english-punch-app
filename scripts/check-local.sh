@@ -23,7 +23,7 @@ if command -v node >/dev/null 2>&1; then
 fi
 
 echo "==> Install dependencies"
-npm ci
+pnpm install --frozen-lockfile
 
 failures=()
 
@@ -44,13 +44,13 @@ run_and_capture() {
 set +e
 
 # --- Pre-commit checks (safe with staged changes) ---
-run_and_capture "lint" npm run lint
-run_and_capture "knip" npm run knip
-run_and_capture "test" env CI=true npm run test
+run_and_capture "lint" pnpm run lint
+run_and_capture "knip" pnpm run knip
+run_and_capture "test" env CI=true pnpm run test
 
 # --- Post-commit checks (require clean working tree) ---
 if [[ "${run_all}" == "true" ]]; then
-  run_and_capture "dedupe" bash -c "npm dedupe && git diff --exit-code package-lock.json"
+  run_and_capture "dedupe" bash -c "pnpm dedupe && git diff --exit-code pnpm-lock.yaml"
 fi
 
 set -e

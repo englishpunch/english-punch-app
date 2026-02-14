@@ -1,42 +1,38 @@
 {
   "$schema": "https://unpkg.com/knip@5/schema.json",
 
-  // Application and tooling entry points the runtime touches
-  "entry": [
-    "src/main.tsx",
-    "src/scripts/changePassword.ts",
-    "convex/http.ts",
-    "convex/auth.ts",
-    "setup.mjs",
-    "src/lib/deeplink.ts",
-    "src/lib/tauri.ts",
-    "src/routes/__root.tsx",
-  ],
-
-  // Files to analyze across frontend and Convex backend
-  "project": ["src/**/*.{ts,tsx}", "convex/**/*.{ts,tsx}"],
-
-  // Respect the Vite alias used throughout the app
-  "paths": {
-    "@/*": ["src/*"],
+  "workspaces": {
+    ".": {
+      "entry": [
+        "convex/http.ts",
+        "convex/auth.ts",
+        "setup.mjs",
+        "src/lib/deeplink.ts",
+        "src/lib/tauri.ts",
+        "src/routes/__root.tsx",
+      ],
+      "project": ["src/**/*.{ts,tsx}", "convex/**/*.{ts,tsx}"],
+      "paths": { "@/*": ["src/*"] },
+      "ignore": [
+        "convex/_generated/**",
+        "src-tauri/target/**",
+        "dist/**",
+        "coverage/**",
+        "src/routeTree.gen.ts",
+      ],
+      "ignoreDependencies": [
+        "@fabianlars/tauri-plugin-oauth",
+        "es-toolkit",
+        "tailwindcss",
+        "@testing-library/*",
+        "turbo",
+      ],
+    },
+    "mcp-server": {
+      "entry": ["src/index.ts"],
+      "project": ["src/**/*.ts"],
+    },
   },
-
-  // Exclude generated/build artifacts and platform outputs
-  "ignore": [
-    "convex/_generated/**",
-    "src-tauri/target/**",
-    "dist/**",
-    "coverage/**",
-    "src/routeTree.gen.ts",
-  ],
-
-  // Dependencies driven outside the TS analyzer (Rust plugins, Tailwind CSS import)
-  "ignoreDependencies": [
-    "@fabianlars/tauri-plugin-oauth",
-    "es-toolkit",
-    "tailwindcss",
-    "@testing-library/*",
-  ],
 
   "includeEntryExports": false,
 }

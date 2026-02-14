@@ -11,38 +11,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 24
-          cache: npm
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       # --- Pre-commit checks (safe with staged changes) ---
       - name: Lint
         id: lint
-        run: npm run lint
+        run: pnpm run lint
         continue-on-error: true
 
       - name: Knip (dead code/deps)
         id: knip
-        run: npm run knip
+        run: pnpm run knip
         continue-on-error: true
 
       - name: Test
         id: test
         env:
           CI: true
-        run: npm run test
+        run: pnpm run test
         continue-on-error: true
 
       # --- Post-commit checks (require clean working tree) ---
       - name: package dedupe
         id: dedupe
         run: |
-          npm dedupe
+          pnpm dedupe
           git diff --exit-code
         continue-on-error: true
 
@@ -63,10 +66,10 @@ jobs:
             fi
           }
 
-          check_step "lint" "${{ steps.lint.outcome }}" "npm run lint"
-          check_step "knip" "${{ steps.knip.outcome }}" "npm run knip"
-          check_step "test" "${{ steps.test.outcome }}" "CI=true npm run test"
-          check_step "dedupe" "${{ steps.dedupe.outcome }}" "npm dedupe && git diff --exit-code"
+          check_step "lint" "${{ steps.lint.outcome }}" "pnpm run lint"
+          check_step "knip" "${{ steps.knip.outcome }}" "pnpm run knip"
+          check_step "test" "${{ steps.test.outcome }}" "CI=true pnpm run test"
+          check_step "dedupe" "${{ steps.dedupe.outcome }}" "pnpm dedupe && git diff --exit-code"
 
           if [ "$failed" -eq 1 ]; then
             run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"

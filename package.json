@@ -10,8 +10,8 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "lint": "eslint src convex",
-    "lint:fix": "eslint src convex --fix",
+    "lint": "eslint src convex mcp-server/src",
+    "lint:fix": "eslint src convex mcp-server/src --fix",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
@@ -78,10 +78,11 @@
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "tsx": "^4.20.6",
+    "turbo": "^2.8.8",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.2.4",
     "vitest": "^4.0.14"
   },
-  "packageManager": "npm@11.6.2"
+  "packageManager": "pnpm@10.29.3+sha512.498e1fb4cca5aa06c1dcf2611e6fafc50972ffe7189998c409e90de74566444298ffe43e6cd2acdc775ba1aa7cc5e092a8b7054c811ba8c5770f84693d33d2dc"
 }
