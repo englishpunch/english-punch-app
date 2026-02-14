@@ -1,10 +1,21 @@
 {
   "name": "@english-punch/mcp-server",
   "version": "0.1.0",
+  "description": "MCP server for English Punch — vocabulary learning tools",
   "type": "module",
-  "private": true,
+  "bin": {
+    "english-punch-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "start": "tsx src/index.ts"
+    "precopy": "rm -rf src/convex-generated",
+    "copy": "cp -r ../convex/_generated src/convex-generated",
+    "prebuild": "rm -rf dist && pnpm run copy",
+    "build": "tsc && cp -r src/convex-generated dist/convex-generated",
+    "postbuild": "chmod +x dist/index.js",
+    "start": "pnpm run copy && tsx src/index.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.0",

@@ -1,6 +1,7 @@
+#!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { api } from "../../convex/_generated/api.js";
+import { api } from "./convex-generated/api.js";
 import { getConvexClient } from "./convex-client.js";
 
 const server = new McpServer({
