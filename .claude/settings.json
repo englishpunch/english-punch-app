@@ -1,5 +1,19 @@
 {
   "env": {
     "MAX_THINKING_TOKENS": "32000"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/eslint-fix.sh",
+            "timeout": 30
+          }
+        ]
+      }
+    ]
   }
 }
