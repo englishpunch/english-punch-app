@@ -3,6 +3,10 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { api } from "./convex-generated/api.js";
 import { getConvexClient } from "./convex-client.js";
+import { registerBagTools } from "./tools/bags.js";
+import { registerCardTools } from "./tools/cards.js";
+import { registerLearningTools } from "./tools/learning.js";
+import { registerStatsTools } from "./tools/stats.js";
 
 const server = new McpServer({
   name: "english-punch",
@@ -27,11 +31,12 @@ server.registerTool(
   }
 );
 
-// Tools, prompts, and resources will be registered here in Phases 4-5:
-// registerBagTools(server, client);
-// registerCardTools(server, client);
-// registerLearningTools(server, client);
-// registerStatsTools(server, client);
+registerBagTools(server, client);
+registerCardTools(server, client);
+registerLearningTools(server, client);
+registerStatsTools(server, client);
+
+// Prompts and resources will be registered here in Phase 5:
 // registerCardGenerationPrompts(server);
 // registerSchemaResources(server);
 

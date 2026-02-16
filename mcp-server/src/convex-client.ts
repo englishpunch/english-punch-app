@@ -1,10 +1,19 @@
 import { ConvexHttpClient } from "convex/browser";
 import { api } from "./convex-generated/api.js";
+import type { Id } from "./convex-generated/dataModel.js";
 
 const CONVEX_URL =
   process.env.CONVEX_URL ?? "https://strong-otter-914.convex.cloud";
 
 let cachedClient: ConvexHttpClient | null = null;
+let cachedUserId: Id<"users"> | null = null;
+
+export function getUserId(): Id<"users"> {
+  if (!cachedUserId) {
+    throw new Error("getUserId() called before authentication.");
+  }
+  return cachedUserId;
+}
 
 export async function getConvexClient(): Promise<ConvexHttpClient> {
   if (cachedClient) {
@@ -37,6 +46,12 @@ export async function getConvexClient(): Promise<ConvexHttpClient> {
     throw new Error("Authentication failed: no token received.");
   }
   client.setAuth(token);
+
+  const user = await client.query(api.auth.loggedInUser);
+  if (!user) {
+    throw new Error("Authentication succeeded but user not found.");
+  }
+  cachedUserId = user._id;
 
   cachedClient = client;
   return client;
