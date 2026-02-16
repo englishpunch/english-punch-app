@@ -2,8 +2,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ConvexHttpClient } from "convex/browser";
 import { z } from "zod";
 import { api } from "../convex-generated/api.js";
-import type { Id } from "../convex-generated/dataModel.js";
 import { getUserId } from "../convex-client.js";
+import { bagId, cardId } from "./schema.js";
 
 export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
   server.registerTool(
@@ -12,7 +12,7 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
       description:
         "Create a flashcard in a bag. Question should have ___ blank, answer fills it.",
       inputSchema: {
-        bagId: z.string().describe("ID of the bag"),
+        bagId,
         question: z
           .string()
           .describe(
@@ -45,7 +45,7 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
       expression,
     }) => {
       await client.mutation(api.learning.createCard, {
-        bagId: bagId as Id<"bags">,
+        bagId,
         userId: getUserId(),
         question,
         answer,
@@ -66,7 +66,7 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
     {
       description: "Create multiple flashcards in a bag at once",
       inputSchema: {
-        bagId: z.string().describe("ID of the bag"),
+        bagId,
         cards: z
           .array(
             z.object({
@@ -87,7 +87,7 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
     },
     async ({ bagId, cards }) => {
       const result = await client.mutation(api.learning.createCardsBatch, {
-        bagId: bagId as Id<"bags">,
+        bagId,
         userId: getUserId(),
         cards,
       });
@@ -101,15 +101,12 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
     "get-card",
     {
       description: "Get full details of a specific card",
-      inputSchema: {
-        cardId: z.string().describe("ID of the card"),
-        bagId: z.string().describe("ID of the bag containing the card"),
-      },
+      inputSchema: { cardId, bagId },
     },
     async ({ cardId, bagId }) => {
       const result = await client.query(api.learning.getCard, {
-        cardId: cardId as Id<"cards">,
-        bagId: bagId as Id<"bags">,
+        cardId,
+        bagId,
         userId: getUserId(),
       });
       return {
@@ -124,7 +121,7 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
       description:
         "List cards in a bag with pagination (30 per page) and optional search",
       inputSchema: {
-        bagId: z.string().describe("ID of the bag"),
+        bagId,
         search: z
           .string()
           .optional()
@@ -137,7 +134,7 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
     },
     async ({ bagId, search, cursor }) => {
       const result = await client.query(api.learning.getBagCardsPaginated, {
-        bagId: bagId as Id<"bags">,
+        bagId,
         userId: getUserId(),
         paginationOpts: { numItems: 30, cursor: cursor ?? null },
         ...(search ? { search } : {}),
@@ -154,8 +151,8 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
       description:
         "Update a card's content (resets FSRS schedule to initial state)",
       inputSchema: {
-        cardId: z.string().describe("ID of the card"),
-        bagId: z.string().describe("ID of the bag containing the card"),
+        cardId,
+        bagId,
         question: z.string().describe("Updated sentence with ___ blank"),
         answer: z.string().describe("Updated answer word"),
         hint: z.string().optional().describe("Updated hint"),
@@ -177,8 +174,8 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
       expression,
     }) => {
       await client.mutation(api.learning.updateCard, {
-        cardId: cardId as Id<"cards">,
-        bagId: bagId as Id<"bags">,
+        cardId,
+        bagId,
         question,
         answer,
         hint,
@@ -197,15 +194,12 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
     "delete-card",
     {
       description: "Delete a card from a bag (soft delete)",
-      inputSchema: {
-        cardId: z.string().describe("ID of the card"),
-        bagId: z.string().describe("ID of the bag containing the card"),
-      },
+      inputSchema: { cardId, bagId },
     },
     async ({ cardId, bagId }) => {
       await client.mutation(api.learning.deleteCard, {
-        cardId: cardId as Id<"cards">,
-        bagId: bagId as Id<"bags">,
+        cardId,
+        bagId,
       });
       return {
         content: [{ type: "text", text: "Card deleted successfully." }],

@@ -2,8 +2,8 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ConvexHttpClient } from "convex/browser";
 import { z } from "zod";
 import { api } from "../convex-generated/api.js";
-import type { Id } from "../convex-generated/dataModel.js";
 import { getUserId } from "../convex-client.js";
+import { bagId, cardId, rating } from "./schema.js";
 
 const STATE_LABELS: Record<number, string> = {
   0: "New",
@@ -20,11 +20,11 @@ export function registerLearningTools(
     "get-due-card",
     {
       description: "Get the next due card for review in a bag",
-      inputSchema: { bagId: z.string().describe("ID of the bag") },
+      inputSchema: { bagId },
     },
     async ({ bagId }) => {
       const result = await client.query(api.learning.getOneDueCard, {
-        bagId: bagId as Id<"bags">,
+        bagId,
       });
       if (result === "NO_CARD_AVAILABLE") {
         return { content: [{ type: "text", text: "NO_CARD_AVAILABLE" }] };
@@ -39,11 +39,11 @@ export function registerLearningTools(
     "get-due-card-count",
     {
       description: "Get the number of cards due for review in a bag",
-      inputSchema: { bagId: z.string().describe("ID of the bag") },
+      inputSchema: { bagId },
     },
     async ({ bagId }) => {
       const count = await client.query(api.learning.getDueCardCount, {
-        bagId: bagId as Id<"bags">,
+        bagId,
       });
       return { content: [{ type: "text", text: String(count) }] };
     }
@@ -55,13 +55,8 @@ export function registerLearningTools(
       description:
         "Submit a review rating for a card. Rating: 1=Again, 2=Hard, 3=Good, 4=Easy",
       inputSchema: {
-        cardId: z.string().describe("ID of the card to review"),
-        rating: z
-          .number()
-          .int()
-          .min(1)
-          .max(4)
-          .describe("1=Again, 2=Hard, 3=Good, 4=Easy"),
+        cardId,
+        rating,
         duration: z.number().describe("Response time in milliseconds"),
         sessionId: z
           .string()
@@ -72,8 +67,8 @@ export function registerLearningTools(
     async ({ cardId, rating, duration, sessionId }) => {
       const result = await client.mutation(api.fsrs.reviewCard, {
         userId: getUserId(),
-        cardId: cardId as Id<"cards">,
-        rating: rating as 1 | 2 | 3 | 4,
+        cardId,
+        rating,
         duration,
         ...(sessionId ? { sessionId } : {}),
       });
