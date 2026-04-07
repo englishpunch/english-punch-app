@@ -28,7 +28,7 @@ const hintAndExplanationSchema = z.object({
     ),
 });
 
-const GEMINI_MODEL = "gemini-3-pro-preview";
+const GEMINI_MODEL = "gemini-3.1-pro-preview";
 const logger = getGlobalLogger();
 
 // TODO: South Korean 을 인자로 빼기
