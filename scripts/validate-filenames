@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+#
+# Filename convention validator for thoughts/ documents.
+#
+# Rule: All .md files under thoughts/**/plans/ and thoughts/**/research/
+#       must be named YYYY-MM-DD-<slug>.md
+#
+# Usage:
+#   scripts/validate-filenames                    # validate all thoughts/*.md
+#   scripts/validate-filenames file1.md file2.md  # validate specific files
+#   scripts/validate-filenames --staged           # validate git-staged files only
+#
+
+REPO_ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+TOTAL=0
+PASS=0
+FAIL=0
+HAS_FAILURE=0
+
+FILENAME_PATTERN='^[0-9]{4}-[0-9]{2}-[0-9]{2}-.+\.md$'
+
+validate_file() {
+  local file="$1"
+  local rel_path="${file#"$REPO_ROOT"/}"
+
+  # only check files under plans/ or research/
+  case "$rel_path" in
+    thoughts/research/*.md | thoughts/*/research/*.md) ;;
+    thoughts/plans/*.md | thoughts/*/plans/*.md) ;;
+    *) return 0 ;;
+  esac
+
+  TOTAL=$((TOTAL + 1))
+
+  local basename
+  basename=$(basename "$file")
+
+  if [[ "$basename" =~ $FILENAME_PATTERN ]]; then
+    PASS=$((PASS + 1))
+    printf "  ${GREEN}OK${NC}    %s\n" "$rel_path"
+  else
+    FAIL=$((FAIL + 1))
+    printf "  ${RED}FAIL${NC}  %s\n" "$rel_path"
+    printf "        ${RED}filename must match YYYY-MM-DD-<slug>.md (got: %s)${NC}\n" "$basename"
+    return 1
+  fi
+}
+
+echo "=== thoughts/ filename validation ==="
+echo ""
+echo "Pattern: YYYY-MM-DD-<slug>.md"
+echo ""
+
+if [[ "${1:-}" == "--staged" ]]; then
+  FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^thoughts/(.*/)?(research|plans)/.*\.md$' || true)
+  if [[ -z "$FILES" ]]; then
+    echo "No staged thoughts/*.md files — skipping"
+    exit 0
+  fi
+  while IFS= read -r file; do
+    validate_file "$REPO_ROOT/$file" || HAS_FAILURE=1
+  done <<< "$FILES"
+elif [[ $# -gt 0 ]]; then
+  for file in "$@"; do
+    if [[ "$file" != /* ]]; then
+      file="$REPO_ROOT/$file"
+    fi
+    if [[ -f "$file" ]]; then
+      validate_file "$file" || HAS_FAILURE=1
+    else
+      printf "  ${RED}SKIP${NC}  %s (file not found)\n" "$file"
+    fi
+  done
+else
+  while IFS= read -r file; do
+    validate_file "$file" || HAS_FAILURE=1
+  done < <(find "$REPO_ROOT/thoughts" -type f -name '*.md' \( -path '*/research/*' -o -path '*/plans/*' \) 2>/dev/null | sort)
+fi
+
+echo ""
+echo "=== Result: ${TOTAL} checked, ${PASS} passed, ${FAIL} failed ==="
+
+if [[ $HAS_FAILURE -eq 1 ]]; then
+  echo ""
+  printf "${RED}Filename validation failed. Rename files to YYYY-MM-DD-<slug>.md${NC}\n"
+  exit 1
+fi
