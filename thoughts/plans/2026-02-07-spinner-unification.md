@@ -1,3 +1,10 @@
+---
+date: 2026-02-07
+author: claude
+status: completed
+topic: Unify spinner/loading indicators into a single Spinner component
+---
+
 # 스피너 통일 구현 계획
 
 ## Overview

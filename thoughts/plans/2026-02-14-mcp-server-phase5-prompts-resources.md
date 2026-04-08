@@ -1,3 +1,10 @@
+---
+date: 2026-02-14
+author: claude
+status: completed
+topic: Implement MCP prompts and resources (Phase 5)
+---
+
 # Phase 5: Implement MCP Prompts and Resources
 
 ## Overview

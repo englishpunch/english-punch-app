@@ -1,3 +1,10 @@
+---
+date: 2026-02-14
+author: claude
+status: completed
+topic: Implement MCP tools for bags, cards, learning, and stats (Phase 4)
+---
+
 # Phase 4: Implement MCP Tools
 
 ## Overview

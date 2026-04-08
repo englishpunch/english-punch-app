@@ -1,3 +1,10 @@
+---
+date: 2026-02-14
+author: claude
+status: completed
+topic: MCP server scaffolding (Phase 3)
+---
+
 # Phase 3: MCP Server Scaffolding
 
 ## Overview

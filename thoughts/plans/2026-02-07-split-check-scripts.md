@@ -1,3 +1,10 @@
+---
+date: 2026-02-07
+author: claude
+status: completed
+topic: Split npm run check into pre-commit and post-commit scripts
+---
+
 # npm run check 스크립트 분리: Pre-commit / Post-commit
 
 ## Overview
