@@ -6,6 +6,7 @@ const CONVEX_URL =
   process.env.CONVEX_URL ?? "https://strong-otter-914.convex.cloud";
 
 let cachedClient: ConvexHttpClient | null = null;
+// eslint-disable-next-line @typescript-eslint/no-redundant-type-constituents
 let cachedUserId: Id<"users"> | null = null;
 
 export function getUserId(): Id<"users"> {
