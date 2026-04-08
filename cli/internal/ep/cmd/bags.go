@@ -13,10 +13,10 @@ type bag struct {
 	ID            string   `json:"_id"`
 	Name          string   `json:"name"`
 	Description   string   `json:"description,omitempty"`
-	TotalCards    int      `json:"totalCards"`
-	NewCards      int      `json:"newCards"`
-	LearningCards int      `json:"learningCards"`
-	ReviewCards   int      `json:"reviewCards"`
+	TotalCards    float64  `json:"totalCards"`
+	NewCards      float64  `json:"newCards"`
+	LearningCards float64  `json:"learningCards"`
+	ReviewCards   float64  `json:"reviewCards"`
 	Tags          []string `json:"tags"`
 	IsActive      bool     `json:"isActive"`
 }
@@ -69,10 +69,10 @@ func newBagsListCmd() *cobra.Command {
 				}
 				rows[i] = []string{
 					b.Name,
-					strconv.Itoa(b.TotalCards),
-					strconv.Itoa(b.NewCards),
-					strconv.Itoa(b.LearningCards),
-					strconv.Itoa(b.ReviewCards),
+					strconv.FormatFloat(b.TotalCards, 'f', 0, 64),
+					strconv.FormatFloat(b.NewCards, 'f', 0, 64),
+					strconv.FormatFloat(b.LearningCards, 'f', 0, 64),
+					strconv.FormatFloat(b.ReviewCards, 'f', 0, 64),
 					active,
 				}
 			}
