@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	version      = "dev"
 	outputFormat string
 	configDir    string
 )
@@ -18,6 +19,7 @@ func NewRootCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "ep",
 		Short:         "CLI for English Punch flashcard app",
+		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
 	}
