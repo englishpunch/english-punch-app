@@ -1,0 +1,50 @@
+version: 2
+
+project_name: ep
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/ep
+    binary: ep
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w
+
+archives:
+  - format: tar.gz
+    name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+
+brews:
+  - repository:
+      owner: echoja
+      name: homebrew-tap
+    homepage: https://github.com/echoja/english-punch-app
+    description: CLI for English Punch flashcard app
+    license: MIT
+    install: |
+      bin.install "ep"
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+release:
+  github:
+    owner: englishpunch
+    name: english-punch-app
+  name_template: "cli/{{ .Tag }}"
