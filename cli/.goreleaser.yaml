@@ -27,7 +27,7 @@ brews:
   - repository:
       owner: englishpunch
       name: english-punch-app
-      directory: Formula
+    directory: Formula
     homepage: https://github.com/englishpunch/english-punch-app
     description: CLI for English Punch flashcard app
     license: MIT
