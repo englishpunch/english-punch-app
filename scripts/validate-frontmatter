@@ -150,10 +150,12 @@ validate_file() {
       printf "        ${RED}%s${NC}\n" "$err"
       errors+=("$rel_path: $err")
     done
-    for warn in "${file_warnings[@]}"; do
-      printf "        ${YELLOW}%s${NC}\n" "$warn"
-      warnings+=("$rel_path: $warn")
-    done
+    if [[ ${#file_warnings[@]} -gt 0 ]]; then
+      for warn in "${file_warnings[@]}"; do
+        printf "        ${YELLOW}%s${NC}\n" "$warn"
+        warnings+=("$rel_path: $warn")
+      done
+    fi
     return 1
   elif [[ ${#file_warnings[@]} -gt 0 ]]; then
     WARN=$((WARN + 1))
@@ -181,7 +183,7 @@ echo ""
 HAS_FAILURE=0
 
 if [[ "${1:-}" == "--staged" ]]; then
-  FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^thoughts/(.*/)?(research|plans)/.*\.md$' || true)
+  FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '^thoughts/(.*/)?(research|plans)/.*\.md$' || true)
   if [[ -z "$FILES" ]]; then
     echo "No staged thoughts/*.md files — skipping"
     exit 0
