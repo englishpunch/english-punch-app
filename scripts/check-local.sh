@@ -10,8 +10,6 @@ for arg in "$@"; do
   esac
 done
 
-corepack enable
-
 if command -v node >/dev/null 2>&1; then
   node_version="$(node -p "process.versions.node" 2>/dev/null || true)"
   if [[ -n "${node_version}" ]]; then

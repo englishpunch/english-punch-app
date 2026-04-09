@@ -34,7 +34,6 @@ English Punch는 [FSRS (Free Spaced Repetition Scheduler)](https://github.com/op
 ### Frontend
 
 - **React**: 사용자 인터페이스 구성
-- **Tauri**: 데스크톱 애플리케이션 프레임워크 (가볍고 빠른 네이티브 앱)
 
 ### Backend
 
@@ -59,13 +58,10 @@ git clone https://github.com/yourusername/english-punch-app.git
 cd english-punch-app
 
 # 의존성 설치
-npm install
+pnpm install
 
 # 개발 서버 실행
-npm run tauri dev
-
-# Tauri 앱 빌드
-npm run tauri build
+pnpm run dev
 ```
 
 ## 환경 설정
@@ -75,7 +71,7 @@ npm run tauri build
 1. Convex 개발 환경을 설치합니다:
 
 ```bash
-npm install convex
+pnpm install convex
 ```
 
 2. Convex 프로젝트를 초기화합니다:
@@ -107,6 +103,5 @@ VITE_CONVEX_URL=https://your-project.convex.cloud
 
 - [FSRS 알고리즘 설명](https://github.com/open-spaced-repetition/fsrs4anki/wiki/ABC-of-FSRS)
 - [ts-fsrs 라이브러리](https://github.com/open-spaced-repetition/ts-fsrs)
-- [Tauri 공식 문서](https://tauri.app/)
 - [Convex 공식 문서](https://docs.convex.dev/)
 - [Convex Auth 가이드](https://docs.convex.dev/auth)

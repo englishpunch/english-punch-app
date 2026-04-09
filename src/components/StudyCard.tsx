@@ -4,8 +4,6 @@ import { Button } from "./Button";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
-import { isTauri } from "@tauri-apps/api/core";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { Link } from "@tanstack/react-router";
 
 const buildAskingPrompt = (value: string) => `What does "${value}" mean?`;
@@ -178,11 +176,7 @@ function StudyCardContent({
       return;
     }
 
-    if (isTauri()) {
-      void openUrl(chatGptUrl);
-    } else {
-      window.open(chatGptUrl, "_blank", "noopener,noreferrer");
-    }
+    window.open(chatGptUrl, "_blank", "noopener,noreferrer");
 
     closeSelectionPopover();
   };
