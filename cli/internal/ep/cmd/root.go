@@ -27,6 +27,9 @@ func NewRootCmd() *cobra.Command {
 
 	cmd.AddCommand(newAuthCmd())
 	cmd.AddCommand(newBagsCmd())
+	cmd.AddCommand(newConfigCmd())
+	cmd.AddCommand(newDoctorCmd())
+	cmd.AddCommand(newOpenCmd())
 
 	return cmd
 }
