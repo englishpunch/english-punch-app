@@ -12,6 +12,7 @@ import (
 var (
 	version   = "dev"
 	configDir string
+	jsonFlag  common.JSONFlag
 )
 
 func NewRootCmd() *cobra.Command {
@@ -35,6 +36,7 @@ func NewRootCmd() *cobra.Command {
 }
 
 func Execute() {
+	jsonFlag.Parse()
 	cmd := NewRootCmd()
 	if err := cmd.Execute(); err != nil {
 		var exitErr *common.ExitError

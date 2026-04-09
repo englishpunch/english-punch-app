@@ -20,6 +20,18 @@ type bag struct {
 	IsActive      bool     `json:"isActive"`
 }
 
+var bagFields = []common.Field{
+	{Name: "_id", Type: "string"},
+	{Name: "name", Type: "string"},
+	{Name: "description", Type: "string"},
+	{Name: "totalCards", Type: "number"},
+	{Name: "newCards", Type: "number"},
+	{Name: "learningCards", Type: "number"},
+	{Name: "reviewCards", Type: "number"},
+	{Name: "tags", Type: "string[]"},
+	{Name: "isActive", Type: "boolean"},
+}
+
 func newBagsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bags",
@@ -36,6 +48,12 @@ func newBagsListCmd() *cobra.Command {
 		Use:   "list",
 		Short: "List your flashcard bags",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// --json with no value: list fields
+			if jsonFlag.Used && len(jsonFlag.Fields) == 0 {
+				common.PrintFieldList(bagFields)
+				return nil
+			}
+
 			ctx := cmd.Context()
 
 			client, user, err := authenticatedClient(ctx)
@@ -53,6 +71,10 @@ func newBagsListCmd() *cobra.Command {
 			var bags []bag
 			if err := json.Unmarshal(raw, &bags); err != nil {
 				return fmt.Errorf("parse bags: %w", err)
+			}
+
+			if handled, err := jsonFlag.HandleOutput(bags, bagFields); handled {
+				return err
 			}
 
 			return common.PrintJSON(bags)
