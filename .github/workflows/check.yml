@@ -6,6 +6,31 @@ on:
   pull_request:
 
 jobs:
+  check-go:
+    name: Go CI
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: cli
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: cli/go.mod
+          cache-dependency-path: cli/go.sum
+
+      - name: Build
+        run: go build ./cmd/ep ./internal/...
+
+      - name: Test
+        run: go test ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          working-directory: cli
+
   check:
     runs-on: ubuntu-latest
     steps:
