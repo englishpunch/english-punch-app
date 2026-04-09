@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# pre-commit hook: validate thoughts/*.md documents
+#
+# Skip: THOUGHTS_SKIP=1 git commit ...
+#
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+
+if [ "${THOUGHTS_SKIP:-}" != "1" ]; then
+  for script in validate-filenames validate-frontmatter; do
+    VALIDATE_SCRIPT="$REPO_ROOT/scripts/$script"
+    if [ -x "$VALIDATE_SCRIPT" ]; then
+      if ! "$VALIDATE_SCRIPT" --staged; then
+        echo ""
+        echo "[$script] Validation failed."
+        echo "Skip with: THOUGHTS_SKIP=1 git commit ..."
+        exit 1
+      fi
+    fi
+  done
+fi
