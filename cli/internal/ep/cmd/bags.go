@@ -8,29 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type bag struct {
-	ID            string   `json:"_id"`
-	Name          string   `json:"name"`
-	Description   string   `json:"description,omitempty"`
-	TotalCards    float64  `json:"totalCards"`
-	NewCards      float64  `json:"newCards"`
-	LearningCards float64  `json:"learningCards"`
-	ReviewCards   float64  `json:"reviewCards"`
-	Tags          []string `json:"tags"`
-	IsActive      bool     `json:"isActive"`
-}
-
-var bagFields = []common.Field{
-	{Name: "_id", Type: "string"},
-	{Name: "name", Type: "string"},
-	{Name: "description", Type: "string"},
-	{Name: "totalCards", Type: "number"},
-	{Name: "newCards", Type: "number"},
-	{Name: "learningCards", Type: "number"},
-	{Name: "reviewCards", Type: "number"},
-	{Name: "tags", Type: "string[]"},
-	{Name: "isActive", Type: "boolean"},
-}
+// bag and bagFields are generated in types_gen.go
 
 func newBagsCmd() *cobra.Command {
 	cmd := &cobra.Command{
