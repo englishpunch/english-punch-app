@@ -66,7 +66,7 @@ func (c *Client) do(ctx context.Context, endpoint, path string, args any) (json.
 	if err != nil {
 		return nil, common.NewConnectionError("convex request failed", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {

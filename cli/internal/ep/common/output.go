@@ -24,7 +24,7 @@ func PrintTable(header []string, rows [][]string) {
 
 func printTableTo(w io.Writer, header []string, rows [][]string) {
 	if len(rows) == 0 {
-		fmt.Fprintln(w, "No results.")
+		_, _ = fmt.Fprintln(w, "No results.")
 		return
 	}
 

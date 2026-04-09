@@ -53,12 +53,8 @@ func TestNewConnectionError(t *testing.T) {
 	if err.Code != ExitConnectionError {
 		t.Errorf("Code = %d, want %d", err.Code, ExitConnectionError)
 	}
-	if !errors.Is(err, fmt.Errorf("dial")) {
-		// Unwrap check
-		var inner error
-		inner = errors.Unwrap(err)
-		if inner == nil || inner.Error() != "dial" {
-			t.Errorf("Unwrap = %v, want dial error", inner)
-		}
+	inner := errors.Unwrap(err)
+	if inner == nil || inner.Error() != "dial" {
+		t.Errorf("Unwrap = %v, want dial error", inner)
 	}
 }

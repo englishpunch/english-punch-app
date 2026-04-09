@@ -8,6 +8,20 @@ import (
 	"testing"
 )
 
+func writeJSON(t *testing.T, w http.ResponseWriter, v any) {
+	t.Helper()
+	if err := json.NewEncoder(w).Encode(v); err != nil {
+		t.Fatalf("writeJSON: %v", err)
+	}
+}
+
+func readJSON(t *testing.T, r *http.Request, v any) {
+	t.Helper()
+	if err := json.NewDecoder(r.Body).Decode(v); err != nil {
+		t.Fatalf("readJSON: %v", err)
+	}
+}
+
 func TestClient_Query(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/query" {
@@ -18,12 +32,12 @@ func TestClient_Query(t *testing.T) {
 		}
 
 		var req request
-		json.NewDecoder(r.Body).Decode(&req)
+		readJSON(t, r, &req)
 		if req.Path != "test:func" {
 			t.Errorf("path = %s, want test:func", req.Path)
 		}
 
-		json.NewEncoder(w).Encode(response{Value: json.RawMessage(`{"result":"ok"}`)})
+		writeJSON(t, w, response{Value: json.RawMessage(`{"result":"ok"}`)})
 	}))
 	defer server.Close()
 
@@ -34,7 +48,9 @@ func TestClient_Query(t *testing.T) {
 	}
 
 	var result map[string]string
-	json.Unmarshal(raw, &result)
+	if err := json.Unmarshal(raw, &result); err != nil {
+		t.Fatalf("Unmarshal: %v", err)
+	}
 	if result["result"] != "ok" {
 		t.Errorf("result = %v, want ok", result)
 	}
@@ -45,7 +61,7 @@ func TestClient_Action(t *testing.T) {
 		if r.URL.Path != "/api/action" {
 			t.Errorf("path = %s, want /api/action", r.URL.Path)
 		}
-		json.NewEncoder(w).Encode(response{Value: json.RawMessage(`"done"`)})
+		writeJSON(t, w, response{Value: json.RawMessage(`"done"`)})
 	}))
 	defer server.Close()
 
@@ -64,7 +80,7 @@ func TestClient_Mutation(t *testing.T) {
 		if r.URL.Path != "/api/mutation" {
 			t.Errorf("path = %s, want /api/mutation", r.URL.Path)
 		}
-		json.NewEncoder(w).Encode(response{Value: json.RawMessage(`null`)})
+		writeJSON(t, w, response{Value: json.RawMessage(`null`)})
 	}))
 	defer server.Close()
 
@@ -81,7 +97,7 @@ func TestClient_AuthHeader(t *testing.T) {
 		if auth != "Bearer test-jwt" {
 			t.Errorf("Authorization = %q, want 'Bearer test-jwt'", auth)
 		}
-		json.NewEncoder(w).Encode(response{Value: json.RawMessage(`null`)})
+		writeJSON(t, w, response{Value: json.RawMessage(`null`)})
 	}))
 	defer server.Close()
 
@@ -96,11 +112,11 @@ func TestClient_AuthHeader(t *testing.T) {
 func TestClient_SignIn(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var req request
-		json.NewDecoder(r.Body).Decode(&req)
+		readJSON(t, r, &req)
 		if req.Path != "auth:signIn" {
 			t.Errorf("path = %s, want auth:signIn", req.Path)
 		}
-		json.NewEncoder(w).Encode(response{
+		writeJSON(t, w, response{
 			Value: json.RawMessage(`{"tokens":{"token":"jwt-abc123"}}`),
 		})
 	}))
@@ -118,7 +134,7 @@ func TestClient_SignIn(t *testing.T) {
 
 func TestClient_SignIn_NoToken(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(response{
+		writeJSON(t, w, response{
 			Value: json.RawMessage(`{"tokens":{"token":""}}`),
 		})
 	}))
@@ -133,7 +149,7 @@ func TestClient_SignIn_NoToken(t *testing.T) {
 
 func TestClient_ConvexError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(response{ErrorMessage: "function not found"})
+		writeJSON(t, w, response{ErrorMessage: "function not found"})
 	}))
 	defer server.Close()
 
@@ -147,7 +163,7 @@ func TestClient_ConvexError(t *testing.T) {
 func TestClient_HTTPError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte("internal error"))
+		_, _ = w.Write([]byte("internal error"))
 	}))
 	defer server.Close()
 
@@ -160,7 +176,7 @@ func TestClient_HTTPError(t *testing.T) {
 
 func TestClient_GetCurrentUser(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(response{
+		writeJSON(t, w, response{
 			Value: json.RawMessage(`{"_id":"users:abc","email":"test@example.com","name":"Test"}`),
 		})
 	}))

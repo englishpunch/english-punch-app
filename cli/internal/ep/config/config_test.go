@@ -21,7 +21,9 @@ func TestLoad_Defaults(t *testing.T) {
 func TestLoad_ConfigFile(t *testing.T) {
 	dir := t.TempDir()
 	content := []byte("convex_url: https://custom.convex.cloud\n")
-	os.WriteFile(filepath.Join(dir, "config.yaml"), content, 0644)
+	if err := os.WriteFile(filepath.Join(dir, "config.yaml"), content, 0644); err != nil {
+		t.Fatal(err)
+	}
 
 	cfg, err := Load(dir)
 	if err != nil {
