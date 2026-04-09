@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	version      = "dev"
-	outputFormat string
-	configDir    string
+	version   = "dev"
+	configDir string
 )
 
 func NewRootCmd() *cobra.Command {
@@ -24,7 +23,6 @@ func NewRootCmd() *cobra.Command {
 		SilenceErrors: true,
 	}
 
-	cmd.PersistentFlags().StringVarP(&outputFormat, "output", "o", "table", "Output format: table or json")
 	cmd.PersistentFlags().StringVar(&configDir, "config-dir", "", "Config directory (default: ~/.config/english-punch)")
 
 	cmd.AddCommand(newAuthCmd())
