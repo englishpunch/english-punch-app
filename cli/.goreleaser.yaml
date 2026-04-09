@@ -33,6 +33,7 @@ brews:
     license: MIT
     install: |
       bin.install "ep"
+      generate_completions_from_executable(bin/"ep", "completion")
 
 checksum:
   name_template: checksums.txt
