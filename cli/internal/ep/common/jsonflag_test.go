@@ -23,12 +23,12 @@ func captureStdout(t *testing.T, fn func()) string {
 	done := make(chan string)
 	go func() {
 		var buf bytes.Buffer
-		io.Copy(&buf, r)
+		_, _ = io.Copy(&buf, r)
 		done <- buf.String()
 	}()
 
 	fn()
-	w.Close()
+	_ = w.Close()
 	return <-done
 }
 
