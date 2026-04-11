@@ -34,7 +34,7 @@
 
 ### Go CLI (`cli/`)
 
-- `go vet` 는 `errcheck` / `staticcheck` 같은 엄격한 룰을 못 잡음. CI는 `golangci-lint v2.11.4` 로 돌리므로, Go CLI 쪽을 `push` 하기 전에 반드시 동일 버전으로 로컬 검사할 것. 그렇지 않으면 CI fail → fix → re-push 의 round-trip 을 겪게 됨.
+- `go vet` 는 `errcheck` / `staticcheck` 같은 엄격한 룰을 못 잡음. CI는 `golangci-lint` 로 돌리므로, Go CLI 쪽을 `push` 하기 전에 반드시 로컬에서 같이 돌릴 것. 그렇지 않으면 CI fail → fix → re-push 의 round-trip 을 겪게 됨.
 - **Push 전 체크 (필수)**: `cd cli && ~/go/bin/golangci-lint run`
 - 빠른 개발 루프: `cd cli && go vet ./... && go test ./... && go build ./...`
-- golangci-lint 설치 (한 번만): `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4`
+- golangci-lint 설치 (한 번만): `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest`

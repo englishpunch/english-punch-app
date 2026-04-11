@@ -64,7 +64,7 @@ Before merging a new `ep` subcommand, confirm:
 - [ ] Default output has no ANSI, no spinners, no progress bars, no emoji
 - [ ] The help-text Go test passes (`go test ./internal/ep/cmd/...`)
 - [ ] The error-token Go test passes (`go test ./internal/ep/common/...`)
-- [ ] `cd cli && ~/go/bin/golangci-lint run` reports **0 issues** — this catches `errcheck` / `staticcheck` violations that plain `go vet` misses. Do not skip: CI runs `golangci-lint v2.11.4` and will fail the push if anything slips through.
+- [ ] `cd cli && ~/go/bin/golangci-lint run` reports **0 issues** — this catches `errcheck` / `staticcheck` violations that plain `go vet` misses. Do not skip: CI runs `golangci-lint` and will fail the push if anything slips through.
 
 ## References
 
