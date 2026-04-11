@@ -92,3 +92,27 @@ func (f *JSONFlag) HandleOutput(data any, available []Field) (bool, error) {
 
 	return true, FilterFields(data, f.Fields, available)
 }
+
+// HandleOKOutput is the --json shortcut for confirmation-only
+// mutations. When --json is used it prints {"ok": true, ...extras}
+// through the --json pipeline (bare --json lists fields, --json f1,f2
+// filters). Callers use the return values identically to HandleOutput:
+// when the returned handled flag is true, the caller must not print
+// any additional human-readable output.
+//
+// extraFields lets each command document its payload shape so bare
+// --json discovery works without hardcoding "ok" as the only field.
+// The "ok" field is added automatically.
+func (f *JSONFlag) HandleOKOutput(extras map[string]any, extraFields []Field) (bool, error) {
+	if !f.Used {
+		return false, nil
+	}
+	payload := map[string]any{"ok": true}
+	for k, v := range extras {
+		payload[k] = v
+	}
+	fields := make([]Field, 0, len(extraFields)+1)
+	fields = append(fields, Field{Name: "ok", Type: "boolean"})
+	fields = append(fields, extraFields...)
+	return f.HandleOutput(payload, fields)
+}
