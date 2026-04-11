@@ -31,3 +31,10 @@
 
 - 개별 파일 수정 시: `getDiagnostics`(IDE LSP 플러그인)를 사용하여 즉시 타입 에러를 확인할 것. `tsc --noEmit` 불필요.
 - 프로젝트 전체 체크가 필요한 경우(커밋 전 등): `tsc --noEmit`을 최후 수단으로 실행할 것.
+
+### Go CLI (`cli/`)
+
+- `go vet` 는 `errcheck` / `staticcheck` 같은 엄격한 룰을 못 잡음. CI는 `golangci-lint v2.11.4` 로 돌리므로, Go CLI 쪽을 `push` 하기 전에 반드시 동일 버전으로 로컬 검사할 것. 그렇지 않으면 CI fail → fix → re-push 의 round-trip 을 겪게 됨.
+- **Push 전 체크 (필수)**: `cd cli && ~/go/bin/golangci-lint run`
+- 빠른 개발 루프: `cd cli && go vet ./... && go test ./... && go build ./...`
+- golangci-lint 설치 (한 번만): `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.11.4`

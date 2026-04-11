@@ -62,7 +62,9 @@ Before merging a new `ep` subcommand, confirm:
 - [ ] Mutation is idempotent OR the `Long` help explains why it is not
 - [ ] `Short`, `Long`, `Example`, and every flag description are filled in
 - [ ] Default output has no ANSI, no spinners, no progress bars, no emoji
-- [ ] The help-text Go test passes
+- [ ] The help-text Go test passes (`go test ./internal/ep/cmd/...`)
+- [ ] The error-token Go test passes (`go test ./internal/ep/common/...`)
+- [ ] `cd cli && ~/go/bin/golangci-lint run` reports **0 issues** — this catches `errcheck` / `staticcheck` violations that plain `go vet` misses. Do not skip: CI runs `golangci-lint v2.11.4` and will fail the push if anything slips through.
 
 ## References
 
