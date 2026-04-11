@@ -16,8 +16,20 @@ const (
 //
 // See docs/cli-llm-as-caller.md for the design rationale.
 const (
-	TokenBagNotFound = "BAG_NOT_FOUND"
+	// Bag lifecycle
+	TokenBagNotFound  = "BAG_NOT_FOUND"
 	TokenNoDefaultBag = "NO_DEFAULT_BAG"
+
+	// Auth lifecycle
+	TokenNotLoggedIn        = "NOT_LOGGED_IN"
+	TokenInvalidCredentials = "INVALID_CREDENTIALS"
+	TokenNotATTY            = "NOT_A_TTY"
+	TokenKeychainFailed     = "KEYCHAIN_FAILED"
+
+	// Convex transport
+	TokenConvexUnreachable = "CONVEX_UNREACHABLE"
+	TokenConvexHTTPError   = "CONVEX_HTTP_ERROR"
+	TokenConvexAPIError    = "CONVEX_API_ERROR"
 )
 
 // CanonicalTokens is the runtime-readable set of valid error tokens,
@@ -25,8 +37,15 @@ const (
 // need to validate tokens dynamically. Must stay in sync with the
 // Token* constants above — the drift test enforces this.
 var CanonicalTokens = map[string]struct{}{
-	TokenBagNotFound:  {},
-	TokenNoDefaultBag: {},
+	TokenBagNotFound:        {},
+	TokenNoDefaultBag:       {},
+	TokenNotLoggedIn:        {},
+	TokenInvalidCredentials: {},
+	TokenNotATTY:            {},
+	TokenKeychainFailed:     {},
+	TokenConvexUnreachable:  {},
+	TokenConvexHTTPError:    {},
+	TokenConvexAPIError:     {},
 }
 
 // ExitError is an error with a specific exit code and an optional
