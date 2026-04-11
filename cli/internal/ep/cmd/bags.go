@@ -17,6 +17,10 @@ func newBagsCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bags",
 		Short: "Manage flashcard bags",
+		Long: `Manage flashcard bags (the English Punch term for a study
+collection). Use "ep bags list" to discover IDs, and
+"ep bags default set <id>" to avoid repeating --bag on every
+card-scoped command.`,
 	}
 
 	cmd.AddCommand(newBagsListCmd())
@@ -134,6 +138,16 @@ func newBagsListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List your flashcard bags",
+		Long: `List every flashcard bag owned by the currently signed-in
+user. Output is JSON by default; --json supports field discovery
+(bare --json) and field filtering (--json field1,field2).
+
+Errors from the Convex API propagate with their token intact (e.g.
+CONVEX_UNREACHABLE on network failure, NOT_LOGGED_IN if credentials
+are missing).`,
+		Example: `  ep bags list
+  ep bags list --json
+  ep bags list --json _id,name,totalCards`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// --json with no value: list fields
 			if jsonFlag.Used && len(jsonFlag.Fields) == 0 {
@@ -152,7 +166,7 @@ func newBagsListCmd() *cobra.Command {
 				"userId": user.ID,
 			})
 			if err != nil {
-				return fmt.Errorf("fetch bags: %w", err)
+				return err
 			}
 
 			var bags []bag
