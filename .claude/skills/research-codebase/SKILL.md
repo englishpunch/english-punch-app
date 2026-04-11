@@ -1,6 +1,8 @@
 ---
 name: research-codebase
 description: Research and document codebase patterns in thoughts/research/ with validated frontmatter
+metadata:
+  internal: true
 ---
 
 # Research Codebase

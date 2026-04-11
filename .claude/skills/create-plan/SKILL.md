@@ -1,6 +1,8 @@
 ---
 name: create-plan
 description: Create implementation plans in thoughts/plans/ with validated frontmatter
+metadata:
+  internal: true
 ---
 
 # Create Plan
