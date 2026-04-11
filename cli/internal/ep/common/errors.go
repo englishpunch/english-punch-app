@@ -37,6 +37,12 @@ const (
 
 	// Input validation
 	TokenMissingRequiredField = "MISSING_REQUIRED_FIELD"
+
+	// Review lifecycle (convex/review.ts + ep review subcommands)
+	TokenReviewAlreadyPending = "REVIEW_ALREADY_PENDING"
+	TokenNoPendingReview      = "NO_PENDING_REVIEW"
+	TokenReviewNotRevealed    = "REVIEW_NOT_REVEALED"
+	TokenNoCardAvailable      = "NO_CARD_AVAILABLE"
 )
 
 // CanonicalTokens is the runtime-readable set of valid error tokens,
@@ -56,6 +62,10 @@ var CanonicalTokens = map[string]struct{}{
 	TokenConfigReadFailed:     {},
 	TokenConfigWriteFailed:    {},
 	TokenMissingRequiredField: {},
+	TokenReviewAlreadyPending: {},
+	TokenNoPendingReview:      {},
+	TokenReviewNotRevealed:    {},
+	TokenNoCardAvailable:      {},
 }
 
 // ExitError is an error with a specific exit code and an optional

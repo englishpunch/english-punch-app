@@ -175,6 +175,26 @@ export const learningTables = {
     .index("by_rating", ["rating"]),
 
   /**
+   * 진행 중인 복습 시도 (stateless CLI review flow 용)
+   *
+   * 사용자당 최대 1개 행. 존재 여부와 `revealTime`의 유무로
+   * 생명주기를 표현한다:
+   *   row 없음           → 진행 중인 복습 없음
+   *   row 있음, reveal X → 문제 제시됨, 답 숨김
+   *   row 있음, reveal O → 답 공개됨, 평가 대기
+   *
+   * 평가(`rateReview`) 또는 포기(`abandonReview`) 시 행 삭제.
+   * append-only인 reviewLogs 스키마를 건드리지 않기 위한 전용 테이블.
+   */
+  pendingReviews: defineTable({
+    userId: v.id("users"),
+    cardId: v.id("cards"),
+    bagId: v.id("bags"),
+    startTime: v.number(), // Date.now() at creation — source of truth for duration
+    revealTime: v.optional(v.number()), // Date.now() when answer was revealed
+  }).index("by_user", ["userId"]),
+
+  /**
    * 학습 세션
    */
   sessions: defineTable({

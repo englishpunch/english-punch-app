@@ -55,6 +55,7 @@ design target.`,
 	cmd.AddCommand(newConfigCmd())
 	cmd.AddCommand(newDoctorCmd())
 	cmd.AddCommand(newOpenCmd())
+	cmd.AddCommand(newReviewCmd())
 
 	return cmd
 }

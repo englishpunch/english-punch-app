@@ -15,6 +15,7 @@ import type * as fsrs from "../fsrs.js";
 import type * as fsrsSchema from "../fsrsSchema.js";
 import type * as http from "../http.js";
 import type * as learning from "../learning.js";
+import type * as review from "../review.js";
 import type * as router from "../router.js";
 
 import type {
@@ -31,6 +32,7 @@ declare const fullApi: ApiFromModules<{
   fsrsSchema: typeof fsrsSchema;
   http: typeof http;
   learning: typeof learning;
+  review: typeof review;
   router: typeof router;
 }>;
 
