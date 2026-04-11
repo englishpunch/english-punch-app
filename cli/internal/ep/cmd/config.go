@@ -41,9 +41,15 @@ func newConfigShowCmd() *cobra.Command {
 				exists = configFile
 			}
 
+			defaultBag := cfg.DefaultBagID
+			if defaultBag == "" {
+				defaultBag = "(unset)"
+			}
+
 			fmt.Printf("Config dir:   %s\n", dir)
 			fmt.Printf("Config file:  %s\n", exists)
 			fmt.Printf("Convex URL:   %s\n", cfg.ConvexURL)
+			fmt.Printf("Default bag:  %s\n", defaultBag)
 
 			return nil
 		},

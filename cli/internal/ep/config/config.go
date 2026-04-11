@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -16,7 +17,8 @@ const (
 
 // Config holds the application configuration.
 type Config struct {
-	ConvexURL string `mapstructure:"convex_url"`
+	ConvexURL    string `mapstructure:"convex_url"`
+	DefaultBagID string `mapstructure:"default_bag_id"`
 }
 
 // Load reads configuration from file, environment, and defaults.
@@ -25,6 +27,7 @@ func Load(configDir string) (*Config, error) {
 	v := viper.New()
 
 	v.SetDefault("convex_url", defaultConvexURL)
+	v.SetDefault("default_bag_id", "")
 
 	v.SetEnvPrefix("EP")
 	v.AutomaticEnv()
@@ -50,6 +53,29 @@ func Load(configDir string) (*Config, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+// Save writes the given config to configDir/config.yaml. Creates the
+// directory if it does not exist. Existing unknown keys in the file are
+// not preserved — only fields known to Config are written.
+func Save(configDir string, cfg *Config) error {
+	dir := configDir
+	if dir == "" {
+		dir = DefaultConfigDir()
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return fmt.Errorf("create config dir: %w", err)
+	}
+
+	v := viper.New()
+	v.Set("convex_url", cfg.ConvexURL)
+	v.Set("default_bag_id", cfg.DefaultBagID)
+
+	configFile := filepath.Join(dir, configFileName+"."+configFileType)
+	if err := v.WriteConfigAs(configFile); err != nil {
+		return fmt.Errorf("write config file: %w", err)
+	}
+	return nil
 }
 
 // DefaultConfigDir returns ~/.config/english-punch.
