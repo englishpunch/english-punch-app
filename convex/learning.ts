@@ -649,9 +649,10 @@ export const createCard = mutation({
     sourceWord: v.optional(v.string()),
     expression: v.optional(v.string()),
   },
+  returns: v.id("cards"),
   handler: async (ctx, args) => {
     const now = Date.now();
-    await ctx.db.insert("cards", {
+    const cardId = await ctx.db.insert("cards", {
       bagId: args.bagId,
       userId: args.userId,
       question: args.question,
@@ -674,7 +675,7 @@ export const createCard = mutation({
         lastModified: new Date(now).toISOString(),
       });
     }
-    return null;
+    return cardId;
   },
 });
 

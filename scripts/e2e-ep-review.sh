@@ -19,8 +19,10 @@
 #   EP_BIN=./cli/dist/ep scripts/e2e-ep-review.sh
 #
 # Side effects on the live deployment:
-#   - inserts one new card into the default bag
-#     (answer = "e2e_test_<unix-ts>" so reruns do not collide)
+#   - inserts one new card into the default bag and soft-deletes it
+#     at the end of a successful run via `ep cards delete`. If the
+#     script aborts mid-run the test card is left behind for
+#     inspection (its answer = "e2e_test_<unix-ts>", greppable).
 #   - advances one due card from New/Learning to the next FSRS state
 #     (the card `ep review start` happens to pick — not necessarily
 #     the test card, since the bag already contains other due cards)
@@ -72,12 +74,14 @@ cleanup
 step "seed: create a test card"
 ts=$(date +%s)
 answer="e2e_test_${ts}"
-"$EP" cards create "$answer" \
+create_json=$("$EP" cards create "$answer" \
   --question "The e2e harness inserted this card at ___ for a one-shot check." \
   --hint "a placeholder token for an automated test" \
   --explanation "This card is inserted by scripts/e2e-ep-review.sh to verify that ep cards create still round-trips. The answer embeds a Unix timestamp so reruns do not collide on a unique index." \
-  --json ok >/dev/null
-pass "created card with answer=$answer"
+  --json ok,cardId)
+test_card_id=$(jq -r '.cardId' <<<"$create_json")
+[[ -n "$test_card_id" && "$test_card_id" != "null" ]] || fail "create did not return a cardId"
+pass "created card $test_card_id with answer=$answer"
 
 # ─── happy path ───────────────────────────────────────────────────────────
 
@@ -164,5 +168,16 @@ pass "abort 1: existed=true"
 abort2=$("$EP" review abort --json ok,existed)
 [[ $(jq -r '.existed' <<<"$abort2") == "false" ]] || fail "second abort should have existed=false"
 pass "abort 2: existed=false (idempotent)"
+
+step "cleanup: delete the test card"
+delete_json=$("$EP" cards delete "$test_card_id" --json ok,cardId)
+[[ $(jq -r '.ok'     <<<"$delete_json") == "true"          ]] || fail "delete should have ok=true"
+[[ $(jq -r '.cardId' <<<"$delete_json") == "$test_card_id" ]] || fail "delete cardId mismatch"
+pass "deleted test card $test_card_id"
+
+# Idempotent re-delete to lock in the contract.
+redelete_json=$("$EP" cards delete "$test_card_id" --json ok)
+[[ $(jq -r '.ok' <<<"$redelete_json") == "true" ]] || fail "re-delete should also succeed"
+pass "delete is idempotent"
 
 printf "\nALL CHECKS PASSED\n"
