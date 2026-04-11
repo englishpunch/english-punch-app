@@ -30,6 +30,10 @@ const (
 	TokenConvexUnreachable = "CONVEX_UNREACHABLE"
 	TokenConvexHTTPError   = "CONVEX_HTTP_ERROR"
 	TokenConvexAPIError    = "CONVEX_API_ERROR"
+
+	// Config IO
+	TokenConfigReadFailed  = "CONFIG_READ_FAILED"
+	TokenConfigWriteFailed = "CONFIG_WRITE_FAILED"
 )
 
 // CanonicalTokens is the runtime-readable set of valid error tokens,
@@ -46,6 +50,8 @@ var CanonicalTokens = map[string]struct{}{
 	TokenConvexUnreachable:  {},
 	TokenConvexHTTPError:    {},
 	TokenConvexAPIError:     {},
+	TokenConfigReadFailed:   {},
+	TokenConfigWriteFailed:  {},
 }
 
 // ExitError is an error with a specific exit code and an optional
