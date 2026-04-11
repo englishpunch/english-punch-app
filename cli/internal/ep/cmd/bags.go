@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/echoja/english-punch-app/cli/internal/ep/common"
 	"github.com/echoja/english-punch-app/cli/internal/ep/config"
@@ -169,6 +170,34 @@ prompt the user.`,
 			return nil
 		},
 	}
+}
+
+// resolveBagID returns the bag id to use for card-scoped commands. If
+// flagValue is non-empty it wins. Otherwise the function falls back to
+// cfg.DefaultBagID from the viper config. Returns NO_DEFAULT_BAG if
+// neither source provides an id — this is a client-side validation so
+// card commands fail fast before spending a Convex round-trip.
+//
+// Intentionally does not pre-verify bag ownership; that costs a query
+// per command and the server will reject unauthorized ids on the
+// mutation anyway. Individual commands that want stronger guarantees
+// (like ep bags default set) still call verifyBagOwnership explicitly.
+func resolveBagID(flagValue string) (string, error) {
+	if strings.TrimSpace(flagValue) != "" {
+		return flagValue, nil
+	}
+	cfg, err := config.Load(configDir)
+	if err != nil {
+		return "", common.NewTokenError(common.TokenConfigReadFailed, "load config", err)
+	}
+	if cfg.DefaultBagID == "" {
+		return "", common.NewTokenError(
+			common.TokenNoDefaultBag,
+			"no bag specified — pass --bag <id> or run 'ep bags default set <id>'",
+			nil,
+		)
+	}
+	return cfg.DefaultBagID, nil
 }
 
 func verifyBagOwnership(ctx context.Context, client *convex.Client, userID, bagID string) error {

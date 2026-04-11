@@ -51,6 +51,7 @@ design target.`,
 
 	cmd.AddCommand(newAuthCmd())
 	cmd.AddCommand(newBagsCmd())
+	cmd.AddCommand(newCardsCmd())
 	cmd.AddCommand(newConfigCmd())
 	cmd.AddCommand(newDoctorCmd())
 	cmd.AddCommand(newOpenCmd())
