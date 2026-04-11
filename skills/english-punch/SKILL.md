@@ -84,15 +84,9 @@ On success without `--json` the command prints a short confirmation.
 For scripted use add `--json` — success returns
 `{"ok": true, "bagId": "...", "question": "...", "answer": "...", "hint": "...", "explanation": "..."}`.
 
-### Error tokens you may see
-
-| Token                    | What to do                                              |
-|---|---|
-| `MISSING_REQUIRED_FIELD`  | You forgot a flag — the message names which one. Retry. |
-| `NO_DEFAULT_BAG`          | Run the bag-selection flow in the Prerequisites section. |
-| `NOT_LOGGED_IN`           | Ask the user to run `ep auth login`. Do not retry.      |
-| `CONVEX_UNREACHABLE`      | Network issue. Tell the user and stop.                  |
-| `CONVEX_API_ERROR`        | Server rejected the call (e.g. invalid bag). Show the message verbatim. |
+If the call fails with `NOT_LOGGED_IN` or `NO_DEFAULT_BAG`, rerun the
+relevant Prerequisites step — do not auto-retry `cards create` on
+`NOT_LOGGED_IN`, since only the user can complete `ep auth login`.
 
 ## Reviewing flashcards (planned)
 
