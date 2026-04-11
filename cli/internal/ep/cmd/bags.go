@@ -127,7 +127,7 @@ func verifyBagOwnership(ctx context.Context, client *convex.Client, userID, bagI
 			return nil
 		}
 	}
-	return fmt.Errorf("bag %q not found among your bags", bagID)
+	return common.NewTokenError(common.TokenBagNotFound, fmt.Sprintf("bag %q not found among your bags", bagID), nil)
 }
 
 func newBagsListCmd() *cobra.Command {
