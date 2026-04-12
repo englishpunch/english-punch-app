@@ -46,8 +46,14 @@ pnpm workspace + Turborepo 기반 모노레포입니다.
 - skill 본문은 [`skills/english-punch/SKILL.md`](skills/english-punch/SKILL.md)에 있으며, [Vercel Labs `skills` CLI](https://github.com/vercel-labs/skills)를 통해 Claude Code · Cursor · Cline · Continue 등 40+ 에이전트에 동일한 방식으로 설치할 수 있습니다:
 
   ```bash
-  npx skills add englishpunch/english-punch-app
+  npx -y skills add englishpunch/english-punch-app --global --yes
   ```
+
+  플래그 의미:
+
+  - `npx -y` — `skills` 패키지 설치 프롬프트를 자동으로 수락합니다.
+  - `--global` (`-g`) — 현재 프로젝트뿐 아니라 사용자 수준으로 설치하여 모든 Claude Code 세션에서 곧바로 사용할 수 있게 합니다.
+  - `--yes` (`-y`) — `skills` CLI 자체의 확인 프롬프트를 모두 건너뜁니다.
 
   설치 후 Claude Code 세션에서 `english-punch` skill이 자동 노출되며, 별도 등록이나 API 키가 필요 없습니다. 업데이트는 같은 명령을 다시 실행하면 됩니다.
 
