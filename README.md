@@ -43,6 +43,13 @@ pnpm workspace + Turborepo 기반 모노레포입니다.
   - 대화 도중 마주친 낯선 어휘를 플래시카드로 즉시 캡처
   - 대화 맥락에서 문제/힌트/해설 자동 생성
   - FSRS 기반 스케줄링으로 복습 세션을 엔드 투 엔드로 진행
+- skill 본문은 [`skills/english-punch/SKILL.md`](skills/english-punch/SKILL.md)에 있으며, [Vercel Labs `skills` CLI](https://github.com/vercel-labs/skills)를 통해 Claude Code · Cursor · Cline · Continue 등 40+ 에이전트에 동일한 방식으로 설치할 수 있습니다:
+
+  ```bash
+  npx skills add englishpunch/english-punch-app
+  ```
+
+  설치 후 Claude Code 세션에서 `english-punch` skill이 자동 노출되며, 별도 등록이나 API 키가 필요 없습니다. 업데이트는 같은 명령을 다시 실행하면 됩니다.
 
 ## 기술 스택
 
