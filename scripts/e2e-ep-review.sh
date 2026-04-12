@@ -6,32 +6,22 @@
 # `ep review start / reveal / rate / status / abort`, plus a sanity
 # call to `ep cards create` and `ep cards delete`.
 #
-# Pinned to a specific user and bag so it never touches a real
-# study collection by accident:
-#   - the logged-in account MUST match $E2E_USER_EMAIL
-#   - the test bag is looked up by name ($E2E_BAG_NAME, default
-#     "123") and passed to every command via --bag explicitly,
-#     so the user's `default_bag_id` config is neither read nor
-#     written by this script.
+# Hardcoded to a specific user (echoja's test account) and bag (the
+# "123" test bag) so it can never touch a real study collection by
+# accident. The bag id is passed via --bag on every command — the
+# user's default_bag_id config is neither read nor written.
 #
 # Preconditions (the script aborts with a clear message if any
 # are missing):
 #   - `ep` (>= 0.3.1) on PATH or $EP_BIN
-#   - logged in as $E2E_USER_EMAIL: `ep auth login ...`
-#   - a bag named $E2E_BAG_NAME exists and has at least one due card
+#   - logged in as the hardcoded EXPECTED_EMAIL
+#   - the hardcoded TEST_BAG_ID still exists and has at least one
+#     card currently due
 #   - jq on PATH
 #
-# Required env:
-#   E2E_USER_EMAIL  the email of the test account (hard-checked)
-#
-# Optional env:
-#   EP_BIN          path to the ep binary (default: `ep` from PATH)
-#   E2E_BAG_NAME    name of the test bag (default: "123")
-#
 # Usage:
-#   E2E_USER_EMAIL=test@example.com scripts/e2e-ep-review.sh
-#   E2E_USER_EMAIL=… EP_BIN=./cli/dist/ep scripts/e2e-ep-review.sh
-#   E2E_USER_EMAIL=… E2E_BAG_NAME=e2e-tests scripts/e2e-ep-review.sh
+#   scripts/e2e-ep-review.sh              # uses `ep` from PATH
+#   EP_BIN=./cli/dist/ep scripts/e2e-ep-review.sh
 #
 # Side effects on the live deployment:
 #   - inserts one new card into the test bag and soft-deletes it at
@@ -48,7 +38,12 @@
 set -euo pipefail
 
 EP=${EP_BIN:-ep}
-E2E_BAG_NAME=${E2E_BAG_NAME:-123}
+
+# ─── hardcoded test fixture ───────────────────────────────────────────────
+# These are echoja's personal test account + test bag. If you need to run
+# this script against a different deployment, fork it and replace both.
+EXPECTED_EMAIL="eszqsc112@gmail.com"
+TEST_BAG_ID="mn71he5336mg9e9sympj4627t17yzkyj"  # bag named "123"
 
 step() { printf "\n==> %s\n" "$*"; }
 pass() { printf "  OK  %s\n" "$*"; }
@@ -67,27 +62,27 @@ trap cleanup EXIT
 command -v jq >/dev/null 2>&1 || fail "missing dependency: jq"
 command -v "$EP" >/dev/null 2>&1 || fail "ep not found (set EP_BIN): $EP"
 
-[[ -n "${E2E_USER_EMAIL:-}" ]] \
-  || fail "E2E_USER_EMAIL is not set — refusing to run against an arbitrary account"
-
 step "preflight"
 "$EP" --version >/dev/null
 pass "ep runs: $("$EP" --version)"
 
 auth_json=$("$EP" auth status --json loggedIn,email)
 [[ $(jq -r '.loggedIn' <<<"$auth_json") == "true" ]] \
-  || fail "not logged in — run 'ep auth login --email $E2E_USER_EMAIL ...'"
+  || fail "not logged in — run 'ep auth login --email $EXPECTED_EMAIL ...'"
 auth_email=$(jq -r '.email' <<<"$auth_json")
-[[ "$auth_email" == "$E2E_USER_EMAIL" ]] \
-  || fail "logged in as $auth_email, expected $E2E_USER_EMAIL — refusing to run against the wrong account"
+[[ "$auth_email" == "$EXPECTED_EMAIL" ]] \
+  || fail "logged in as $auth_email, expected $EXPECTED_EMAIL — refusing to run against the wrong account"
 pass "authenticated as $auth_email"
 
-bag_id=$("$EP" bags list --json _id,name \
-  | jq -r --arg n "$E2E_BAG_NAME" '.[] | select(.name == $n) | ._id' \
-  | head -n1)
-[[ -n "$bag_id" ]] \
-  || fail "no bag named '$E2E_BAG_NAME' found for $auth_email — create one or set E2E_BAG_NAME"
-pass "test bag '$E2E_BAG_NAME': $bag_id"
+# Verify the hardcoded bag id still belongs to this user, so a deleted
+# or re-created test bag fails the script up-front instead of in the
+# middle of cards create.
+bag_match=$("$EP" bags list --json _id \
+  | jq -r --arg id "$TEST_BAG_ID" '[.[] | select(._id == $id)] | length')
+[[ "$bag_match" == "1" ]] \
+  || fail "test bag $TEST_BAG_ID not found for $auth_email — was it deleted?"
+pass "test bag pinned: $TEST_BAG_ID"
+bag_id=$TEST_BAG_ID
 
 # Clean up any pending row left behind by a previous interrupted run.
 cleanup
