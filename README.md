@@ -29,7 +29,13 @@ pnpm workspace + Turborepo 기반 모노레포입니다.
 
 - **1순위 사용자는 Claude Code skill**이며, 사람 터미널 사용자는 부수적입니다.
 - 모든 커맨드가 `--json` 플래그, 결정적 에러 토큰, 멱등성, 자기기술형 `--help`를 제공합니다. 자세한 설계 원칙은 [`docs/cli-llm-as-caller.md`](docs/cli-llm-as-caller.md) 참고.
-- Homebrew 설치: `brew install englishpunch/tap/ep`
+- Homebrew 설치 (formula는 본 저장소의 `Formula/` 디렉터리에 있어 tap URL을 명시해야 합니다):
+
+  ```bash
+  brew tap englishpunch/cli https://github.com/englishpunch/english-punch-app
+  brew install englishpunch/cli/ep
+  ep --version
+  ```
 
 ### Claude Code Skill
 

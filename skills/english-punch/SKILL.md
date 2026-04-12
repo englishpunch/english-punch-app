@@ -24,7 +24,11 @@ thin wrapper around the Convex backend that stores the cards.
 Before using any `ep` tool, check the environment:
 
 1. **Is `ep` installed?** — run `ep --version`. If missing, tell the
-   user to `brew install englishpunch/tap/ep` (or equivalent).
+   user to install via:
+   ```bash
+   brew tap englishpunch/cli https://github.com/englishpunch/english-punch-app
+   brew install englishpunch/cli/ep
+   ```
 2. **Is the user logged in?** — run `ep auth status --json`. If the
    exit code is `2` or the token is `NOT_LOGGED_IN`, ask the user to
    run `ep auth login` themselves (it needs interactive input).
