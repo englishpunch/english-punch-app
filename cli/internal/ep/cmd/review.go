@@ -1,15 +1,20 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/echoja/english-punch-app/cli/internal/ep/common"
 	"github.com/echoja/english-punch-app/cli/internal/ep/convex"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // Field lists for --json discovery. Kept alongside the commands
@@ -102,6 +107,47 @@ type reviewAbandonResult struct {
 	Existed bool `json:"existed"`
 }
 
+type reviewAutoService interface {
+	FetchPendingReview(ctx context.Context) (*reviewStatusResult, error)
+	StartReview(ctx context.Context, bagID string) (reviewStartResult, error)
+	RevealReview(ctx context.Context) (reviewRevealResult, error)
+	RateReview(ctx context.Context, rating int) (reviewRateResult, error)
+	AbandonReview(ctx context.Context) (reviewAbandonResult, error)
+}
+
+type reviewAutoCard struct {
+	CardID   string
+	Question string
+	Hint     *string
+	Revealed bool
+	Resumed  bool
+}
+
+type convexReviewAutoService struct {
+	client *convex.Client
+	userID string
+}
+
+func (s convexReviewAutoService) FetchPendingReview(ctx context.Context) (*reviewStatusResult, error) {
+	return fetchPendingReview(ctx, s.client, s.userID)
+}
+
+func (s convexReviewAutoService) StartReview(ctx context.Context, bagID string) (reviewStartResult, error) {
+	return startReview(ctx, s.client, s.userID, bagID)
+}
+
+func (s convexReviewAutoService) RevealReview(ctx context.Context) (reviewRevealResult, error) {
+	return revealReview(ctx, s.client, s.userID)
+}
+
+func (s convexReviewAutoService) RateReview(ctx context.Context, rating int) (reviewRateResult, error) {
+	return rateReview(ctx, s.client, s.userID, rating)
+}
+
+func (s convexReviewAutoService) AbandonReview(ctx context.Context) (reviewAbandonResult, error) {
+	return abandonReview(ctx, s.client, s.userID)
+}
+
 func newReviewCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "review",
@@ -124,6 +170,7 @@ after a crash / terminal switch) and 'ep review abort' to discard it.`,
 	cmd.AddCommand(newReviewStartCmd())
 	cmd.AddCommand(newReviewRevealCmd())
 	cmd.AddCommand(newReviewRateCmd())
+	cmd.AddCommand(newReviewAutoCmd())
 	cmd.AddCommand(newReviewStatusCmd())
 	cmd.AddCommand(newReviewAbortCmd())
 
@@ -449,6 +496,331 @@ func rateReview(ctx context.Context, client *convex.Client, userID string, ratin
 	}
 
 	return result, nil
+}
+
+func newReviewAutoCmd() *cobra.Command {
+	var bagID string
+
+	cmd := &cobra.Command{
+		Use:   "auto",
+		Short: "Continuously review due cards in an interactive loop",
+		Long: `Run a human-oriented review loop that continuously
+resumes or starts a pending review, reveals the answer on Enter,
+prompts for a 1-4 FSRS rating, and repeats until there are no due
+cards left.
+
+Unlike the stateless subcommands, this command is intentionally
+interactive: it requires a terminal and does not support --json.
+If a pending review already exists, auto resumes it instead of
+failing with REVIEW_ALREADY_PENDING.`,
+		Example: `  ep review auto
+  ep review auto --bag k17abc...`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if jsonFlag.Used {
+				return common.NewTokenError(
+					common.TokenInteractiveOnly,
+					"'ep review auto' is interactive only and does not support --json",
+					nil,
+				)
+			}
+			if !isInteractiveTerminal(cmd.InOrStdin()) || !isInteractiveTerminal(cmd.OutOrStdout()) {
+				return common.NewTokenError(
+					common.TokenNotATTY,
+					"'ep review auto' requires an interactive terminal on stdin and stdout",
+					nil,
+				)
+			}
+
+			ctx := cmd.Context()
+			client, user, err := authenticatedClient(ctx)
+			if err != nil {
+				return err
+			}
+
+			service := convexReviewAutoService{client: client, userID: user.ID}
+			return runReviewAuto(
+				ctx,
+				service,
+				func() (string, error) { return resolveBagID(bagID) },
+				cmd.InOrStdin(),
+				cmd.OutOrStdout(),
+			)
+		},
+	}
+
+	cmd.Flags().StringVar(&bagID, "bag", "", "Target bag ID for newly started reviews. Falls back to default_bag_id in the config file.")
+	return cmd
+}
+
+type fileDescriptorProvider interface {
+	Fd() uintptr
+}
+
+func isInteractiveTerminal(stream any) bool {
+	fdStream, ok := stream.(fileDescriptorProvider)
+	if !ok {
+		return false
+	}
+	return term.IsTerminal(int(fdStream.Fd()))
+}
+
+func runReviewAuto(
+	ctx context.Context,
+	service reviewAutoService,
+	resolveBag func() (string, error),
+	in io.Reader,
+	out io.Writer,
+) error {
+	reader := bufio.NewReader(in)
+	completed := 0
+	var (
+		cachedBagID string
+		bagResolved bool
+	)
+
+	resolveBagOnce := func() (string, error) {
+		if bagResolved {
+			return cachedBagID, nil
+		}
+		resolvedBagID, err := resolveBag()
+		if err != nil {
+			return "", err
+		}
+		cachedBagID = resolvedBagID
+		bagResolved = true
+		return cachedBagID, nil
+	}
+
+	for {
+		card, exhausted, err := nextReviewAutoCard(ctx, service, resolveBagOnce)
+		if err != nil {
+			return err
+		}
+		if exhausted {
+			printReviewAutoSummary(out, completed)
+			return nil
+		}
+
+		printReviewAutoQuestion(out, card)
+		if !card.Revealed {
+			quit, err := promptReviewAutoReveal(reader, out)
+			if err != nil {
+				return err
+			}
+			if quit {
+				return abandonReviewAuto(ctx, service, out)
+			}
+		} else {
+			fmt.Fprintln(out, "Answer was already revealed. Showing it again before rating.")
+		}
+
+		revealed, err := service.RevealReview(ctx)
+		if err != nil {
+			return err
+		}
+		printReviewAutoReveal(out, revealed)
+
+		rating, quit, err := promptReviewAutoRating(reader, out)
+		if err != nil {
+			return err
+		}
+		if quit {
+			return abandonReviewAuto(ctx, service, out)
+		}
+
+		rated, err := service.RateReview(ctx, rating)
+		if err != nil {
+			return err
+		}
+		completed++
+		printReviewAutoRate(out, rating, rated)
+		if int(rated.DueCount) == 0 {
+			printReviewAutoSummary(out, completed)
+			return nil
+		}
+	}
+}
+
+func nextReviewAutoCard(
+	ctx context.Context,
+	service reviewAutoService,
+	resolveBag func() (string, error),
+) (*reviewAutoCard, bool, error) {
+	pending, err := service.FetchPendingReview(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	if pending != nil {
+		return &reviewAutoCard{
+			CardID:   pending.CardID,
+			Question: pending.Question,
+			Hint:     pending.Hint,
+			Revealed: pending.Revealed,
+			Resumed:  true,
+		}, false, nil
+	}
+
+	bagID, err := resolveBag()
+	if err != nil {
+		return nil, false, err
+	}
+
+	started, err := service.StartReview(ctx, bagID)
+	if err != nil {
+		if hasExitToken(err, common.TokenNoCardAvailable) {
+			return nil, true, nil
+		}
+		if hasExitToken(err, common.TokenReviewAlreadyPending) {
+			pending, pendingErr := service.FetchPendingReview(ctx)
+			if pendingErr != nil {
+				return nil, false, pendingErr
+			}
+			if pending == nil {
+				return nil, false, fmt.Errorf("review auto: pending review disappeared while resuming")
+			}
+			return &reviewAutoCard{
+				CardID:   pending.CardID,
+				Question: pending.Question,
+				Hint:     pending.Hint,
+				Revealed: pending.Revealed,
+				Resumed:  true,
+			}, false, nil
+		}
+		return nil, false, err
+	}
+
+	return &reviewAutoCard{
+		CardID:   started.CardID,
+		Question: started.Question,
+		Hint:     started.Hint,
+		Revealed: false,
+		Resumed:  false,
+	}, false, nil
+}
+
+func promptReviewAutoReveal(reader *bufio.Reader, out io.Writer) (bool, error) {
+	for {
+		fmt.Fprint(out, "Press Enter to reveal, or q to quit and discard this pending review: ")
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return false, fmt.Errorf("read reveal input: %w", err)
+		}
+
+		switch strings.ToLower(strings.TrimSpace(line)) {
+		case "":
+			return false, nil
+		case "q", "quit", "exit":
+			return true, nil
+		default:
+			fmt.Fprintln(out, "Enter to reveal, or q to quit.")
+		}
+	}
+}
+
+func promptReviewAutoRating(reader *bufio.Reader, out io.Writer) (int, bool, error) {
+	for {
+		fmt.Fprint(out, "Rate [1] Again [2] Hard [3] Good [4] Easy, or q to quit and discard this pending review: ")
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return 0, false, fmt.Errorf("read rating input: %w", err)
+		}
+
+		rating, quit, ok := parseReviewAutoRating(line)
+		if ok {
+			return rating, quit, nil
+		}
+		fmt.Fprintln(out, "Enter 1, 2, 3, 4, or q.")
+	}
+}
+
+func parseReviewAutoRating(input string) (int, bool, bool) {
+	switch strings.ToLower(strings.TrimSpace(input)) {
+	case "1", "a", "again":
+		return 1, false, true
+	case "2", "h", "hard":
+		return 2, false, true
+	case "3", "g", "good":
+		return 3, false, true
+	case "4", "e", "easy":
+		return 4, false, true
+	case "q", "quit", "exit":
+		return 0, true, true
+	default:
+		return 0, false, false
+	}
+}
+
+func abandonReviewAuto(ctx context.Context, service reviewAutoService, out io.Writer) error {
+	result, err := service.AbandonReview(ctx)
+	if err != nil {
+		return err
+	}
+
+	if result.Existed {
+		fmt.Fprintln(out, "Pending review discarded. Exiting review auto.")
+	} else {
+		fmt.Fprintln(out, "No pending review remained. Exiting review auto.")
+	}
+	return nil
+}
+
+func printReviewAutoQuestion(out io.Writer, card *reviewAutoCard) {
+	fmt.Fprintln(out)
+	if card.Resumed {
+		fmt.Fprintln(out, "Resuming pending review.")
+	} else {
+		fmt.Fprintln(out, "Starting next due card.")
+	}
+	fmt.Fprintf(out, "cardId: %s\n", card.CardID)
+	fmt.Fprintf(out, "question: %s\n", card.Question)
+	if card.Hint != nil && *card.Hint != "" {
+		fmt.Fprintf(out, "hint: %s\n", *card.Hint)
+	}
+}
+
+func printReviewAutoReveal(out io.Writer, revealed reviewRevealResult) {
+	fmt.Fprintf(out, "answer: %s\n", revealed.Answer)
+	if revealed.Explanation != nil && *revealed.Explanation != "" {
+		fmt.Fprintf(out, "explanation: %s\n", *revealed.Explanation)
+	}
+	if revealed.Context != nil && *revealed.Context != "" {
+		fmt.Fprintf(out, "context: %s\n", *revealed.Context)
+	}
+}
+
+func printReviewAutoRate(out io.Writer, rating int, rated reviewRateResult) {
+	fmt.Fprintf(out, "rated: %s\n", reviewAutoRatingLabel(rating))
+	fmt.Fprintf(out, "nextReviewDate: %s\n", rated.NextReviewDate)
+	fmt.Fprintf(out, "remainingDue: %d\n", int(rated.DueCount))
+}
+
+func printReviewAutoSummary(out io.Writer, completed int) {
+	if completed == 0 {
+		fmt.Fprintln(out, "No due cards right now.")
+		return
+	}
+	fmt.Fprintf(out, "Review complete. Rated %d card(s).\n", completed)
+}
+
+func reviewAutoRatingLabel(rating int) string {
+	switch rating {
+	case 1:
+		return "Again"
+	case 2:
+		return "Hard"
+	case 3:
+		return "Good"
+	case 4:
+		return "Easy"
+	default:
+		return strconv.Itoa(rating)
+	}
+}
+
+func hasExitToken(err error, token string) bool {
+	var exitErr *common.ExitError
+	return errors.As(err, &exitErr) && exitErr.Token == token
 }
 
 func newReviewStatusCmd() *cobra.Command {
