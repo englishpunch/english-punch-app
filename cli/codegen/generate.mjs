@@ -60,7 +60,9 @@ function convexTypeToGo(fieldType) {
 function generateStruct(name, validator) {
   const schema = validator.json;
   if (schema.type !== "object") {
-    throw new Error(`Expected object validator for ${name}, got ${schema.type}`);
+    throw new Error(
+      `Expected object validator for ${name}, got ${schema.type}`
+    );
   }
 
   const fields = [];
@@ -78,7 +80,14 @@ function generateStruct(name, validator) {
       ? `\`json:"${fieldName},omitempty"\``
       : `\`json:"${fieldName}"\``;
 
-    fields.push({ goFieldName, goType, jsonTag, fieldName, fieldType, optional });
+    fields.push({
+      goFieldName,
+      goType,
+      jsonTag,
+      fieldName,
+      fieldType,
+      optional,
+    });
   }
 
   return fields;
@@ -90,7 +99,9 @@ function emit() {
   lines.push("");
   lines.push("package cmd");
   lines.push("");
-  lines.push('import "github.com/echoja/english-punch-app/cli/internal/ep/common"');
+  lines.push(
+    'import "github.com/echoja/english-punch-app/cli/internal/ep/common"'
+  );
   lines.push("");
 
   for (const [name, { validator }] of Object.entries(schemas)) {
