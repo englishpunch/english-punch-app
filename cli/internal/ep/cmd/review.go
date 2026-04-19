@@ -598,11 +598,15 @@ func runReviewAuto(
 			return err
 		}
 		if exhausted {
-			printReviewAutoSummary(out, completed)
+			if err := printReviewAutoSummary(out, completed); err != nil {
+				return err
+			}
 			return nil
 		}
 
-		printReviewAutoQuestion(out, card)
+		if err := printReviewAutoQuestion(out, card); err != nil {
+			return err
+		}
 		if !card.Revealed {
 			quit, err := promptReviewAutoReveal(reader, out)
 			if err != nil {
@@ -612,14 +616,18 @@ func runReviewAuto(
 				return abandonReviewAuto(ctx, service, out)
 			}
 		} else {
-			fmt.Fprintln(out, "Answer was already revealed. Showing it again before rating.")
+			if err := writeLine(out, "Answer was already revealed. Showing it again before rating."); err != nil {
+				return err
+			}
 		}
 
 		revealed, err := service.RevealReview(ctx)
 		if err != nil {
 			return err
 		}
-		printReviewAutoReveal(out, revealed)
+		if err := printReviewAutoReveal(out, revealed); err != nil {
+			return err
+		}
 
 		rating, quit, err := promptReviewAutoRating(reader, out)
 		if err != nil {
@@ -634,9 +642,13 @@ func runReviewAuto(
 			return err
 		}
 		completed++
-		printReviewAutoRate(out, rating, rated)
+		if err := printReviewAutoRate(out, rating, rated); err != nil {
+			return err
+		}
 		if int(rated.DueCount) == 0 {
-			printReviewAutoSummary(out, completed)
+			if err := printReviewAutoSummary(out, completed); err != nil {
+				return err
+			}
 			return nil
 		}
 	}
@@ -701,7 +713,9 @@ func nextReviewAutoCard(
 
 func promptReviewAutoReveal(reader *bufio.Reader, out io.Writer) (bool, error) {
 	for {
-		fmt.Fprint(out, "Press Enter to reveal, or q to quit and discard this pending review: ")
+		if err := writeString(out, "Press Enter to reveal, or q to quit and discard this pending review: "); err != nil {
+			return false, fmt.Errorf("write reveal prompt: %w", err)
+		}
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			return false, fmt.Errorf("read reveal input: %w", err)
@@ -713,14 +727,18 @@ func promptReviewAutoReveal(reader *bufio.Reader, out io.Writer) (bool, error) {
 		case "q", "quit", "exit":
 			return true, nil
 		default:
-			fmt.Fprintln(out, "Enter to reveal, or q to quit.")
+			if err := writeLine(out, "Enter to reveal, or q to quit."); err != nil {
+				return false, fmt.Errorf("write reveal retry prompt: %w", err)
+			}
 		}
 	}
 }
 
 func promptReviewAutoRating(reader *bufio.Reader, out io.Writer) (int, bool, error) {
 	for {
-		fmt.Fprint(out, "Rate [1] Again [2] Hard [3] Good [4] Easy, or q to quit and discard this pending review: ")
+		if err := writeString(out, "Rate [1] Again [2] Hard [3] Good [4] Easy, or q to quit and discard this pending review: "); err != nil {
+			return 0, false, fmt.Errorf("write rating prompt: %w", err)
+		}
 		line, err := reader.ReadString('\n')
 		if err != nil {
 			return 0, false, fmt.Errorf("read rating input: %w", err)
@@ -730,7 +748,9 @@ func promptReviewAutoRating(reader *bufio.Reader, out io.Writer) (int, bool, err
 		if ok {
 			return rating, quit, nil
 		}
-		fmt.Fprintln(out, "Enter 1, 2, 3, 4, or q.")
+		if err := writeLine(out, "Enter 1, 2, 3, 4, or q."); err != nil {
+			return 0, false, fmt.Errorf("write rating retry prompt: %w", err)
+		}
 	}
 }
 
@@ -758,49 +778,70 @@ func abandonReviewAuto(ctx context.Context, service reviewAutoService, out io.Wr
 	}
 
 	if result.Existed {
-		fmt.Fprintln(out, "Pending review discarded. Exiting review auto.")
+		return writeLine(out, "Pending review discarded. Exiting review auto.")
+	}
+	return writeLine(out, "No pending review remained. Exiting review auto.")
+}
+
+func printReviewAutoQuestion(out io.Writer, card *reviewAutoCard) error {
+	if err := writeLine(out, ""); err != nil {
+		return err
+	}
+	if card.Resumed {
+		if err := writeLine(out, "Resuming pending review."); err != nil {
+			return err
+		}
 	} else {
-		fmt.Fprintln(out, "No pending review remained. Exiting review auto.")
+		if err := writeLine(out, "Starting next due card."); err != nil {
+			return err
+		}
+	}
+	if err := writef(out, "cardId: %s\n", card.CardID); err != nil {
+		return err
+	}
+	if err := writef(out, "question: %s\n", card.Question); err != nil {
+		return err
+	}
+	if card.Hint != nil && *card.Hint != "" {
+		if err := writef(out, "hint: %s\n", *card.Hint); err != nil {
+			return err
+		}
 	}
 	return nil
 }
 
-func printReviewAutoQuestion(out io.Writer, card *reviewAutoCard) {
-	fmt.Fprintln(out)
-	if card.Resumed {
-		fmt.Fprintln(out, "Resuming pending review.")
-	} else {
-		fmt.Fprintln(out, "Starting next due card.")
+func printReviewAutoReveal(out io.Writer, revealed reviewRevealResult) error {
+	if err := writef(out, "answer: %s\n", revealed.Answer); err != nil {
+		return err
 	}
-	fmt.Fprintf(out, "cardId: %s\n", card.CardID)
-	fmt.Fprintf(out, "question: %s\n", card.Question)
-	if card.Hint != nil && *card.Hint != "" {
-		fmt.Fprintf(out, "hint: %s\n", *card.Hint)
-	}
-}
-
-func printReviewAutoReveal(out io.Writer, revealed reviewRevealResult) {
-	fmt.Fprintf(out, "answer: %s\n", revealed.Answer)
 	if revealed.Explanation != nil && *revealed.Explanation != "" {
-		fmt.Fprintf(out, "explanation: %s\n", *revealed.Explanation)
+		if err := writef(out, "explanation: %s\n", *revealed.Explanation); err != nil {
+			return err
+		}
 	}
 	if revealed.Context != nil && *revealed.Context != "" {
-		fmt.Fprintf(out, "context: %s\n", *revealed.Context)
+		if err := writef(out, "context: %s\n", *revealed.Context); err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func printReviewAutoRate(out io.Writer, rating int, rated reviewRateResult) {
-	fmt.Fprintf(out, "rated: %s\n", reviewAutoRatingLabel(rating))
-	fmt.Fprintf(out, "nextReviewDate: %s\n", rated.NextReviewDate)
-	fmt.Fprintf(out, "remainingDue: %d\n", int(rated.DueCount))
+func printReviewAutoRate(out io.Writer, rating int, rated reviewRateResult) error {
+	if err := writef(out, "rated: %s\n", reviewAutoRatingLabel(rating)); err != nil {
+		return err
+	}
+	if err := writef(out, "nextReviewDate: %s\n", rated.NextReviewDate); err != nil {
+		return err
+	}
+	return writef(out, "remainingDue: %d\n", int(rated.DueCount))
 }
 
-func printReviewAutoSummary(out io.Writer, completed int) {
+func printReviewAutoSummary(out io.Writer, completed int) error {
 	if completed == 0 {
-		fmt.Fprintln(out, "No due cards right now.")
-		return
+		return writeLine(out, "No due cards right now.")
 	}
-	fmt.Fprintf(out, "Review complete. Rated %d card(s).\n", completed)
+	return writef(out, "Review complete. Rated %d card(s).\n", completed)
 }
 
 func reviewAutoRatingLabel(rating int) string {
@@ -821,6 +862,21 @@ func reviewAutoRatingLabel(rating int) string {
 func hasExitToken(err error, token string) bool {
 	var exitErr *common.ExitError
 	return errors.As(err, &exitErr) && exitErr.Token == token
+}
+
+func writeString(out io.Writer, text string) error {
+	_, err := io.WriteString(out, text)
+	return err
+}
+
+func writeLine(out io.Writer, text string) error {
+	_, err := fmt.Fprintln(out, text)
+	return err
+}
+
+func writef(out io.Writer, format string, args ...any) error {
+	_, err := fmt.Fprintf(out, format, args...)
+	return err
 }
 
 func newReviewStatusCmd() *cobra.Command {
