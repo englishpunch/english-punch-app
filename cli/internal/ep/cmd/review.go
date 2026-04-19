@@ -1,15 +1,20 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/echoja/english-punch-app/cli/internal/ep/common"
 	"github.com/echoja/english-punch-app/cli/internal/ep/convex"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 // Field lists for --json discovery. Kept alongside the commands
@@ -102,6 +107,47 @@ type reviewAbandonResult struct {
 	Existed bool `json:"existed"`
 }
 
+type reviewAutoService interface {
+	FetchPendingReview(ctx context.Context) (*reviewStatusResult, error)
+	StartReview(ctx context.Context, bagID string) (reviewStartResult, error)
+	RevealReview(ctx context.Context) (reviewRevealResult, error)
+	RateReview(ctx context.Context, rating int) (reviewRateResult, error)
+	AbandonReview(ctx context.Context) (reviewAbandonResult, error)
+}
+
+type reviewAutoCard struct {
+	CardID   string
+	Question string
+	Hint     *string
+	Revealed bool
+	Resumed  bool
+}
+
+type convexReviewAutoService struct {
+	client *convex.Client
+	userID string
+}
+
+func (s convexReviewAutoService) FetchPendingReview(ctx context.Context) (*reviewStatusResult, error) {
+	return fetchPendingReview(ctx, s.client, s.userID)
+}
+
+func (s convexReviewAutoService) StartReview(ctx context.Context, bagID string) (reviewStartResult, error) {
+	return startReview(ctx, s.client, s.userID, bagID)
+}
+
+func (s convexReviewAutoService) RevealReview(ctx context.Context) (reviewRevealResult, error) {
+	return revealReview(ctx, s.client, s.userID)
+}
+
+func (s convexReviewAutoService) RateReview(ctx context.Context, rating int) (reviewRateResult, error) {
+	return rateReview(ctx, s.client, s.userID, rating)
+}
+
+func (s convexReviewAutoService) AbandonReview(ctx context.Context) (reviewAbandonResult, error) {
+	return abandonReview(ctx, s.client, s.userID)
+}
+
 func newReviewCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "review",
@@ -124,6 +170,7 @@ after a crash / terminal switch) and 'ep review abort' to discard it.`,
 	cmd.AddCommand(newReviewStartCmd())
 	cmd.AddCommand(newReviewRevealCmd())
 	cmd.AddCommand(newReviewRateCmd())
+	cmd.AddCommand(newReviewAutoCmd())
 	cmd.AddCommand(newReviewStatusCmd())
 	cmd.AddCommand(newReviewAbortCmd())
 
@@ -176,21 +223,9 @@ a second 'start' if it is unsure whether the first call landed.`,
 				return err
 			}
 
-			raw, err := client.Mutation(ctx, "review:startReview", map[string]any{
-				"userId": user.ID,
-				"bagId":  resolvedBag,
-			})
+			result, err := startReview(ctx, client, user.ID, resolvedBag)
 			if err != nil {
 				return err
-			}
-
-			var result reviewStartResult
-			if err := json.Unmarshal(raw, &result); err != nil {
-				return fmt.Errorf("parse startReview response: %w", err)
-			}
-
-			if !result.Ok {
-				return reviewStartError(result)
 			}
 
 			payload := map[string]any{
@@ -243,6 +278,27 @@ func reviewStartError(r reviewStartResult) error {
 	return fmt.Errorf("unexpected startReview failure token: %q", r.Token)
 }
 
+func startReview(ctx context.Context, client *convex.Client, userID, bagID string) (reviewStartResult, error) {
+	raw, err := client.Mutation(ctx, "review:startReview", map[string]any{
+		"userId": userID,
+		"bagId":  bagID,
+	})
+	if err != nil {
+		return reviewStartResult{}, err
+	}
+
+	var result reviewStartResult
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return reviewStartResult{}, fmt.Errorf("parse startReview response: %w", err)
+	}
+
+	if !result.Ok {
+		return reviewStartResult{}, reviewStartError(result)
+	}
+
+	return result, nil
+}
+
 func newReviewRevealCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "reveal",
@@ -274,27 +330,9 @@ Errors:
 				return err
 			}
 
-			raw, err := client.Mutation(ctx, "review:revealReview", map[string]any{
-				"userId": user.ID,
-			})
+			result, err := revealReview(ctx, client, user.ID)
 			if err != nil {
 				return err
-			}
-
-			var result reviewRevealResult
-			if err := json.Unmarshal(raw, &result); err != nil {
-				return fmt.Errorf("parse revealReview response: %w", err)
-			}
-
-			if !result.Ok {
-				if result.Token == common.TokenNoPendingReview {
-					return common.NewTokenError(
-						common.TokenNoPendingReview,
-						"no pending review — run 'ep review start' first",
-						nil,
-					)
-				}
-				return fmt.Errorf("unexpected revealReview failure token: %q", result.Token)
 			}
 
 			payload := map[string]any{
@@ -330,6 +368,33 @@ Errors:
 			return nil
 		},
 	}
+}
+
+func revealReview(ctx context.Context, client *convex.Client, userID string) (reviewRevealResult, error) {
+	raw, err := client.Mutation(ctx, "review:revealReview", map[string]any{
+		"userId": userID,
+	})
+	if err != nil {
+		return reviewRevealResult{}, err
+	}
+
+	var result reviewRevealResult
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return reviewRevealResult{}, fmt.Errorf("parse revealReview response: %w", err)
+	}
+
+	if !result.Ok {
+		if result.Token == common.TokenNoPendingReview {
+			return reviewRevealResult{}, common.NewTokenError(
+				common.TokenNoPendingReview,
+				"no pending review — run 'ep review start' first",
+				nil,
+			)
+		}
+		return reviewRevealResult{}, fmt.Errorf("unexpected revealReview failure token: %q", result.Token)
+	}
+
+	return result, nil
 }
 
 func newReviewRateCmd() *cobra.Command {
@@ -375,35 +440,9 @@ rather than an error.`,
 				return err
 			}
 
-			raw, err := client.Mutation(ctx, "review:rateReview", map[string]any{
-				"userId": user.ID,
-				"rating": rating,
-			})
+			result, err := rateReview(ctx, client, user.ID, rating)
 			if err != nil {
 				return err
-			}
-
-			var result reviewRateResult
-			if err := json.Unmarshal(raw, &result); err != nil {
-				return fmt.Errorf("parse rateReview response: %w", err)
-			}
-
-			if !result.Ok {
-				switch result.Token {
-				case common.TokenNoPendingReview:
-					return common.NewTokenError(
-						common.TokenNoPendingReview,
-						"no pending review — run 'ep review start' first",
-						nil,
-					)
-				case common.TokenReviewNotRevealed:
-					return common.NewTokenError(
-						common.TokenReviewNotRevealed,
-						"pending review has not been revealed yet — run 'ep review reveal' before 'rate'",
-						nil,
-					)
-				}
-				return fmt.Errorf("unexpected rateReview failure token: %q", result.Token)
 			}
 
 			payload := map[string]any{
@@ -422,6 +461,422 @@ rather than an error.`,
 			return nil
 		},
 	}
+}
+
+func rateReview(ctx context.Context, client *convex.Client, userID string, rating int) (reviewRateResult, error) {
+	raw, err := client.Mutation(ctx, "review:rateReview", map[string]any{
+		"userId": userID,
+		"rating": rating,
+	})
+	if err != nil {
+		return reviewRateResult{}, err
+	}
+
+	var result reviewRateResult
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return reviewRateResult{}, fmt.Errorf("parse rateReview response: %w", err)
+	}
+
+	if !result.Ok {
+		switch result.Token {
+		case common.TokenNoPendingReview:
+			return reviewRateResult{}, common.NewTokenError(
+				common.TokenNoPendingReview,
+				"no pending review — run 'ep review start' first",
+				nil,
+			)
+		case common.TokenReviewNotRevealed:
+			return reviewRateResult{}, common.NewTokenError(
+				common.TokenReviewNotRevealed,
+				"pending review has not been revealed yet — run 'ep review reveal' before 'rate'",
+				nil,
+			)
+		}
+		return reviewRateResult{}, fmt.Errorf("unexpected rateReview failure token: %q", result.Token)
+	}
+
+	return result, nil
+}
+
+func newReviewAutoCmd() *cobra.Command {
+	var bagID string
+
+	cmd := &cobra.Command{
+		Use:   "auto",
+		Short: "Continuously review due cards in an interactive loop",
+		Long: `Run a human-oriented review loop that continuously
+resumes or starts a pending review, reveals the answer on Enter,
+prompts for a 1-4 FSRS rating, and repeats until there are no due
+cards left.
+
+Unlike the stateless subcommands, this command is intentionally
+interactive: it requires a terminal and does not support --json.
+If a pending review already exists, auto resumes it instead of
+failing with REVIEW_ALREADY_PENDING.`,
+		Example: `  ep review auto
+  ep review auto --bag k17abc...`,
+		Args: cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if jsonFlag.Used {
+				return common.NewTokenError(
+					common.TokenInteractiveOnly,
+					"'ep review auto' is interactive only and does not support --json",
+					nil,
+				)
+			}
+			if !isInteractiveTerminal(cmd.InOrStdin()) || !isInteractiveTerminal(cmd.OutOrStdout()) {
+				return common.NewTokenError(
+					common.TokenNotATTY,
+					"'ep review auto' requires an interactive terminal on stdin and stdout",
+					nil,
+				)
+			}
+
+			ctx := cmd.Context()
+			client, user, err := authenticatedClient(ctx)
+			if err != nil {
+				return err
+			}
+
+			service := convexReviewAutoService{client: client, userID: user.ID}
+			return runReviewAuto(
+				ctx,
+				service,
+				func() (string, error) { return resolveBagID(bagID) },
+				cmd.InOrStdin(),
+				cmd.OutOrStdout(),
+			)
+		},
+	}
+
+	cmd.Flags().StringVar(&bagID, "bag", "", "Target bag ID for newly started reviews. Falls back to default_bag_id in the config file.")
+	return cmd
+}
+
+type fileDescriptorProvider interface {
+	Fd() uintptr
+}
+
+func isInteractiveTerminal(stream any) bool {
+	fdStream, ok := stream.(fileDescriptorProvider)
+	if !ok {
+		return false
+	}
+	return term.IsTerminal(int(fdStream.Fd()))
+}
+
+func runReviewAuto(
+	ctx context.Context,
+	service reviewAutoService,
+	resolveBag func() (string, error),
+	in io.Reader,
+	out io.Writer,
+) error {
+	reader := bufio.NewReader(in)
+	completed := 0
+	var (
+		cachedBagID string
+		bagResolved bool
+	)
+
+	resolveBagOnce := func() (string, error) {
+		if bagResolved {
+			return cachedBagID, nil
+		}
+		resolvedBagID, err := resolveBag()
+		if err != nil {
+			return "", err
+		}
+		cachedBagID = resolvedBagID
+		bagResolved = true
+		return cachedBagID, nil
+	}
+
+	for {
+		card, exhausted, err := nextReviewAutoCard(ctx, service, resolveBagOnce)
+		if err != nil {
+			return err
+		}
+		if exhausted {
+			if err := printReviewAutoSummary(out, completed); err != nil {
+				return err
+			}
+			return nil
+		}
+
+		if err := printReviewAutoQuestion(out, card); err != nil {
+			return err
+		}
+		if !card.Revealed {
+			quit, err := promptReviewAutoReveal(reader, out)
+			if err != nil {
+				return err
+			}
+			if quit {
+				return abandonReviewAuto(ctx, service, out)
+			}
+		} else {
+			if err := writeLine(out, "Answer was already revealed. Showing it again before rating."); err != nil {
+				return err
+			}
+		}
+
+		revealed, err := service.RevealReview(ctx)
+		if err != nil {
+			return err
+		}
+		if err := printReviewAutoReveal(out, revealed); err != nil {
+			return err
+		}
+
+		rating, quit, err := promptReviewAutoRating(reader, out)
+		if err != nil {
+			return err
+		}
+		if quit {
+			return abandonReviewAuto(ctx, service, out)
+		}
+
+		rated, err := service.RateReview(ctx, rating)
+		if err != nil {
+			return err
+		}
+		completed++
+		if err := printReviewAutoRate(out, rating, rated); err != nil {
+			return err
+		}
+		if int(rated.DueCount) == 0 {
+			if err := printReviewAutoSummary(out, completed); err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+}
+
+func nextReviewAutoCard(
+	ctx context.Context,
+	service reviewAutoService,
+	resolveBag func() (string, error),
+) (*reviewAutoCard, bool, error) {
+	pending, err := service.FetchPendingReview(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+	if pending != nil {
+		return &reviewAutoCard{
+			CardID:   pending.CardID,
+			Question: pending.Question,
+			Hint:     pending.Hint,
+			Revealed: pending.Revealed,
+			Resumed:  true,
+		}, false, nil
+	}
+
+	bagID, err := resolveBag()
+	if err != nil {
+		return nil, false, err
+	}
+
+	started, err := service.StartReview(ctx, bagID)
+	if err != nil {
+		if hasExitToken(err, common.TokenNoCardAvailable) {
+			return nil, true, nil
+		}
+		if hasExitToken(err, common.TokenReviewAlreadyPending) {
+			pending, pendingErr := service.FetchPendingReview(ctx)
+			if pendingErr != nil {
+				return nil, false, pendingErr
+			}
+			if pending == nil {
+				return nil, false, fmt.Errorf("review auto: pending review disappeared while resuming")
+			}
+			return &reviewAutoCard{
+				CardID:   pending.CardID,
+				Question: pending.Question,
+				Hint:     pending.Hint,
+				Revealed: pending.Revealed,
+				Resumed:  true,
+			}, false, nil
+		}
+		return nil, false, err
+	}
+
+	return &reviewAutoCard{
+		CardID:   started.CardID,
+		Question: started.Question,
+		Hint:     started.Hint,
+		Revealed: false,
+		Resumed:  false,
+	}, false, nil
+}
+
+func promptReviewAutoReveal(reader *bufio.Reader, out io.Writer) (bool, error) {
+	for {
+		if err := writeString(out, "Press Enter to reveal, or q to quit and discard this pending review: "); err != nil {
+			return false, fmt.Errorf("write reveal prompt: %w", err)
+		}
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return false, fmt.Errorf("read reveal input: %w", err)
+		}
+
+		switch strings.ToLower(strings.TrimSpace(line)) {
+		case "":
+			return false, nil
+		case "q", "quit", "exit":
+			return true, nil
+		default:
+			if err := writeLine(out, "Enter to reveal, or q to quit."); err != nil {
+				return false, fmt.Errorf("write reveal retry prompt: %w", err)
+			}
+		}
+	}
+}
+
+func promptReviewAutoRating(reader *bufio.Reader, out io.Writer) (int, bool, error) {
+	for {
+		if err := writeString(out, "Rate [1] Again [2] Hard [3] Good [4] Easy, or q to quit and discard this pending review: "); err != nil {
+			return 0, false, fmt.Errorf("write rating prompt: %w", err)
+		}
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return 0, false, fmt.Errorf("read rating input: %w", err)
+		}
+
+		rating, quit, ok := parseReviewAutoRating(line)
+		if ok {
+			return rating, quit, nil
+		}
+		if err := writeLine(out, "Enter 1, 2, 3, 4, or q."); err != nil {
+			return 0, false, fmt.Errorf("write rating retry prompt: %w", err)
+		}
+	}
+}
+
+func parseReviewAutoRating(input string) (int, bool, bool) {
+	switch strings.ToLower(strings.TrimSpace(input)) {
+	case "1", "a", "again":
+		return 1, false, true
+	case "2", "h", "hard":
+		return 2, false, true
+	case "3", "g", "good":
+		return 3, false, true
+	case "4", "e", "easy":
+		return 4, false, true
+	case "q", "quit", "exit":
+		return 0, true, true
+	default:
+		return 0, false, false
+	}
+}
+
+func abandonReviewAuto(ctx context.Context, service reviewAutoService, out io.Writer) error {
+	result, err := service.AbandonReview(ctx)
+	if err != nil {
+		return err
+	}
+
+	if result.Existed {
+		return writeLine(out, "Pending review discarded. Exiting review auto.")
+	}
+	return writeLine(out, "No pending review remained. Exiting review auto.")
+}
+
+func printReviewAutoQuestion(out io.Writer, card *reviewAutoCard) error {
+	if err := writeLine(out, ""); err != nil {
+		return err
+	}
+	if card.Resumed {
+		if err := writeLine(out, "Resuming pending review."); err != nil {
+			return err
+		}
+	} else {
+		if err := writeLine(out, "Starting next due card."); err != nil {
+			return err
+		}
+	}
+	if err := writef(out, "cardId: %s\n", card.CardID); err != nil {
+		return err
+	}
+	if err := writef(out, "question: %s\n", card.Question); err != nil {
+		return err
+	}
+	if card.Hint != nil && *card.Hint != "" {
+		if err := writef(out, "hint: %s\n", *card.Hint); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func printReviewAutoReveal(out io.Writer, revealed reviewRevealResult) error {
+	if err := writef(out, "answer: %s\n", revealed.Answer); err != nil {
+		return err
+	}
+	if revealed.Explanation != nil && *revealed.Explanation != "" {
+		if err := writef(out, "explanation: %s\n", *revealed.Explanation); err != nil {
+			return err
+		}
+	}
+	if revealed.Context != nil && *revealed.Context != "" {
+		if err := writef(out, "context: %s\n", *revealed.Context); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func printReviewAutoRate(out io.Writer, rating int, rated reviewRateResult) error {
+	if err := writef(out, "rated: %s\n", reviewAutoRatingLabel(rating)); err != nil {
+		return err
+	}
+	if err := writef(out, "nextReviewDate: %s\n", rated.NextReviewDate); err != nil {
+		return err
+	}
+	return writef(out, "remainingDue: %d\n", int(rated.DueCount))
+}
+
+func printReviewAutoSummary(out io.Writer, completed int) error {
+	if completed == 0 {
+		return writeLine(out, "No due cards right now.")
+	}
+	return writef(out, "Review complete. Rated %d card(s).\n", completed)
+}
+
+func reviewAutoRatingLabel(rating int) string {
+	switch rating {
+	case 1:
+		return "Again"
+	case 2:
+		return "Hard"
+	case 3:
+		return "Good"
+	case 4:
+		return "Easy"
+	default:
+		return strconv.Itoa(rating)
+	}
+}
+
+func hasExitToken(err error, token string) bool {
+	var exitErr *common.ExitError
+	return errors.As(err, &exitErr) && exitErr.Token == token
+}
+
+func writeString(out io.Writer, text string) error {
+	_, err := io.WriteString(out, text)
+	return err
+}
+
+func writeLine(out io.Writer, text string) error {
+	_, err := fmt.Fprintln(out, text)
+	return err
+}
+
+func writef(out io.Writer, format string, args ...any) error {
+	_, err := fmt.Fprintf(out, format, args...)
+	return err
 }
 
 func newReviewStatusCmd() *cobra.Command {
@@ -507,6 +962,22 @@ func fetchPendingReview(ctx context.Context, client *convex.Client, userID strin
 	return &pending, nil
 }
 
+func abandonReview(ctx context.Context, client *convex.Client, userID string) (reviewAbandonResult, error) {
+	raw, err := client.Mutation(ctx, "review:abandonReview", map[string]any{
+		"userId": userID,
+	})
+	if err != nil {
+		return reviewAbandonResult{}, err
+	}
+
+	var result reviewAbandonResult
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return reviewAbandonResult{}, fmt.Errorf("parse abandonReview response: %w", err)
+	}
+
+	return result, nil
+}
+
 func newReviewAbortCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "abort",
@@ -536,16 +1007,9 @@ quietly and returns existed=false.`,
 				return err
 			}
 
-			raw, err := client.Mutation(ctx, "review:abandonReview", map[string]any{
-				"userId": user.ID,
-			})
+			result, err := abandonReview(ctx, client, user.ID)
 			if err != nil {
 				return err
-			}
-
-			var result reviewAbandonResult
-			if err := json.Unmarshal(raw, &result); err != nil {
-				return fmt.Errorf("parse abandonReview response: %w", err)
 			}
 
 			if handled, err := jsonFlag.HandleOKOutput(

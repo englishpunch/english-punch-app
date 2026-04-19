@@ -37,6 +37,7 @@ const (
 
 	// Input validation
 	TokenMissingRequiredField = "MISSING_REQUIRED_FIELD"
+	TokenInteractiveOnly      = "INTERACTIVE_ONLY"
 
 	// Review lifecycle (convex/review.ts + ep review subcommands)
 	TokenReviewAlreadyPending = "REVIEW_ALREADY_PENDING"
@@ -50,18 +51,19 @@ const (
 // need to validate tokens dynamically. Must stay in sync with the
 // Token* constants above — the drift test enforces this.
 var CanonicalTokens = map[string]struct{}{
-	TokenBagNotFound:        {},
-	TokenNoDefaultBag:       {},
-	TokenNotLoggedIn:        {},
-	TokenInvalidCredentials: {},
-	TokenNotATTY:            {},
-	TokenKeychainFailed:     {},
-	TokenConvexUnreachable:  {},
-	TokenConvexHTTPError:    {},
-	TokenConvexAPIError:     {},
+	TokenBagNotFound:          {},
+	TokenNoDefaultBag:         {},
+	TokenNotLoggedIn:          {},
+	TokenInvalidCredentials:   {},
+	TokenNotATTY:              {},
+	TokenKeychainFailed:       {},
+	TokenConvexUnreachable:    {},
+	TokenConvexHTTPError:      {},
+	TokenConvexAPIError:       {},
 	TokenConfigReadFailed:     {},
 	TokenConfigWriteFailed:    {},
 	TokenMissingRequiredField: {},
+	TokenInteractiveOnly:      {},
 	TokenReviewAlreadyPending: {},
 	TokenNoPendingReview:      {},
 	TokenReviewNotRevealed:    {},
