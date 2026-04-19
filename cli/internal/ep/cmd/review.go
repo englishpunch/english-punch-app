@@ -176,21 +176,9 @@ a second 'start' if it is unsure whether the first call landed.`,
 				return err
 			}
 
-			raw, err := client.Mutation(ctx, "review:startReview", map[string]any{
-				"userId": user.ID,
-				"bagId":  resolvedBag,
-			})
+			result, err := startReview(ctx, client, user.ID, resolvedBag)
 			if err != nil {
 				return err
-			}
-
-			var result reviewStartResult
-			if err := json.Unmarshal(raw, &result); err != nil {
-				return fmt.Errorf("parse startReview response: %w", err)
-			}
-
-			if !result.Ok {
-				return reviewStartError(result)
 			}
 
 			payload := map[string]any{
@@ -243,6 +231,27 @@ func reviewStartError(r reviewStartResult) error {
 	return fmt.Errorf("unexpected startReview failure token: %q", r.Token)
 }
 
+func startReview(ctx context.Context, client *convex.Client, userID, bagID string) (reviewStartResult, error) {
+	raw, err := client.Mutation(ctx, "review:startReview", map[string]any{
+		"userId": userID,
+		"bagId":  bagID,
+	})
+	if err != nil {
+		return reviewStartResult{}, err
+	}
+
+	var result reviewStartResult
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return reviewStartResult{}, fmt.Errorf("parse startReview response: %w", err)
+	}
+
+	if !result.Ok {
+		return reviewStartResult{}, reviewStartError(result)
+	}
+
+	return result, nil
+}
+
 func newReviewRevealCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "reveal",
@@ -274,27 +283,9 @@ Errors:
 				return err
 			}
 
-			raw, err := client.Mutation(ctx, "review:revealReview", map[string]any{
-				"userId": user.ID,
-			})
+			result, err := revealReview(ctx, client, user.ID)
 			if err != nil {
 				return err
-			}
-
-			var result reviewRevealResult
-			if err := json.Unmarshal(raw, &result); err != nil {
-				return fmt.Errorf("parse revealReview response: %w", err)
-			}
-
-			if !result.Ok {
-				if result.Token == common.TokenNoPendingReview {
-					return common.NewTokenError(
-						common.TokenNoPendingReview,
-						"no pending review — run 'ep review start' first",
-						nil,
-					)
-				}
-				return fmt.Errorf("unexpected revealReview failure token: %q", result.Token)
 			}
 
 			payload := map[string]any{
@@ -330,6 +321,33 @@ Errors:
 			return nil
 		},
 	}
+}
+
+func revealReview(ctx context.Context, client *convex.Client, userID string) (reviewRevealResult, error) {
+	raw, err := client.Mutation(ctx, "review:revealReview", map[string]any{
+		"userId": userID,
+	})
+	if err != nil {
+		return reviewRevealResult{}, err
+	}
+
+	var result reviewRevealResult
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return reviewRevealResult{}, fmt.Errorf("parse revealReview response: %w", err)
+	}
+
+	if !result.Ok {
+		if result.Token == common.TokenNoPendingReview {
+			return reviewRevealResult{}, common.NewTokenError(
+				common.TokenNoPendingReview,
+				"no pending review — run 'ep review start' first",
+				nil,
+			)
+		}
+		return reviewRevealResult{}, fmt.Errorf("unexpected revealReview failure token: %q", result.Token)
+	}
+
+	return result, nil
 }
 
 func newReviewRateCmd() *cobra.Command {
@@ -375,35 +393,9 @@ rather than an error.`,
 				return err
 			}
 
-			raw, err := client.Mutation(ctx, "review:rateReview", map[string]any{
-				"userId": user.ID,
-				"rating": rating,
-			})
+			result, err := rateReview(ctx, client, user.ID, rating)
 			if err != nil {
 				return err
-			}
-
-			var result reviewRateResult
-			if err := json.Unmarshal(raw, &result); err != nil {
-				return fmt.Errorf("parse rateReview response: %w", err)
-			}
-
-			if !result.Ok {
-				switch result.Token {
-				case common.TokenNoPendingReview:
-					return common.NewTokenError(
-						common.TokenNoPendingReview,
-						"no pending review — run 'ep review start' first",
-						nil,
-					)
-				case common.TokenReviewNotRevealed:
-					return common.NewTokenError(
-						common.TokenReviewNotRevealed,
-						"pending review has not been revealed yet — run 'ep review reveal' before 'rate'",
-						nil,
-					)
-				}
-				return fmt.Errorf("unexpected rateReview failure token: %q", result.Token)
 			}
 
 			payload := map[string]any{
@@ -422,6 +414,41 @@ rather than an error.`,
 			return nil
 		},
 	}
+}
+
+func rateReview(ctx context.Context, client *convex.Client, userID string, rating int) (reviewRateResult, error) {
+	raw, err := client.Mutation(ctx, "review:rateReview", map[string]any{
+		"userId": userID,
+		"rating": rating,
+	})
+	if err != nil {
+		return reviewRateResult{}, err
+	}
+
+	var result reviewRateResult
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return reviewRateResult{}, fmt.Errorf("parse rateReview response: %w", err)
+	}
+
+	if !result.Ok {
+		switch result.Token {
+		case common.TokenNoPendingReview:
+			return reviewRateResult{}, common.NewTokenError(
+				common.TokenNoPendingReview,
+				"no pending review — run 'ep review start' first",
+				nil,
+			)
+		case common.TokenReviewNotRevealed:
+			return reviewRateResult{}, common.NewTokenError(
+				common.TokenReviewNotRevealed,
+				"pending review has not been revealed yet — run 'ep review reveal' before 'rate'",
+				nil,
+			)
+		}
+		return reviewRateResult{}, fmt.Errorf("unexpected rateReview failure token: %q", result.Token)
+	}
+
+	return result, nil
 }
 
 func newReviewStatusCmd() *cobra.Command {
@@ -507,6 +534,22 @@ func fetchPendingReview(ctx context.Context, client *convex.Client, userID strin
 	return &pending, nil
 }
 
+func abandonReview(ctx context.Context, client *convex.Client, userID string) (reviewAbandonResult, error) {
+	raw, err := client.Mutation(ctx, "review:abandonReview", map[string]any{
+		"userId": userID,
+	})
+	if err != nil {
+		return reviewAbandonResult{}, err
+	}
+
+	var result reviewAbandonResult
+	if err := json.Unmarshal(raw, &result); err != nil {
+		return reviewAbandonResult{}, fmt.Errorf("parse abandonReview response: %w", err)
+	}
+
+	return result, nil
+}
+
 func newReviewAbortCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "abort",
@@ -536,16 +579,9 @@ quietly and returns existed=false.`,
 				return err
 			}
 
-			raw, err := client.Mutation(ctx, "review:abandonReview", map[string]any{
-				"userId": user.ID,
-			})
+			result, err := abandonReview(ctx, client, user.ID)
 			if err != nil {
 				return err
-			}
-
-			var result reviewAbandonResult
-			if err := json.Unmarshal(raw, &result); err != nil {
-				return fmt.Errorf("parse abandonReview response: %w", err)
 			}
 
 			if handled, err := jsonFlag.HandleOKOutput(
