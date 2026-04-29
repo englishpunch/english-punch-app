@@ -176,6 +176,18 @@ func TestRunReviewAuto_CompletesUntilDueCountZero(t *testing.T) {
 	if !reflect.DeepEqual(service.ratings, []int{3, 4}) {
 		t.Fatalf("ratings = %#v, want [3 4]", service.ratings)
 	}
+	if !strings.Contains(output.String(), "[Question]") {
+		t.Fatalf("output missing question header:\n%s", output.String())
+	}
+	if strings.Count(output.String(), reviewAutoQuestionRuleFallback) < 2 {
+		t.Fatalf("output missing question separators:\n%s", output.String())
+	}
+	if !strings.Contains(output.String(), "[Reveal]") {
+		t.Fatalf("output missing reveal header:\n%s", output.String())
+	}
+	if !strings.Contains(output.String(), "[Result]") {
+		t.Fatalf("output missing result header:\n%s", output.String())
+	}
 	if !strings.Contains(output.String(), "Review complete. Rated 2 card(s).") {
 		t.Fatalf("output missing completion summary:\n%s", output.String())
 	}
@@ -238,6 +250,9 @@ func TestRunReviewAuto_ResumesRevealedPendingReview(t *testing.T) {
 	}
 	if !strings.Contains(output.String(), "Resuming pending review.") {
 		t.Fatalf("output missing resume message:\n%s", output.String())
+	}
+	if !strings.Contains(output.String(), "[Question]") {
+		t.Fatalf("output missing question header:\n%s", output.String())
 	}
 	if !strings.Contains(output.String(), "Answer was already revealed.") {
 		t.Fatalf("output missing revealed resume message:\n%s", output.String())
