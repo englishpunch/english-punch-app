@@ -23,21 +23,25 @@ export function ActivityHeatmapCell({
 }: ActivityHeatmapCellProps) {
   const { t } = useTranslation();
   const dateLabel = day.date;
+  const questionSeenLabel = t("activity.summary.questionSeen");
+  const revealedLabel = t("activity.summary.revealed");
+  const ratedLabel = t("activity.summary.rated");
 
   return (
     <Tooltip.Root>
       <Tooltip.Trigger asChild>
         <button
           type="button"
-          aria-label={getHeatmapDayLabel(
-            dateLabel,
-            t("activity.summary.questionSeen"),
-            day.questionSeenCount,
-            t("activity.summary.revealed"),
-            day.revealCount,
-            t("activity.summary.rated"),
-            day.ratedCount
-          )}
+          aria-label={t("activity.heatmapDayAriaLabel", {
+            date: dateLabel,
+            questionSeenLabel,
+            questionSeenCount: day.questionSeenCount,
+            revealedLabel,
+            revealCount: day.revealCount,
+            ratedLabel,
+            ratedCount: day.ratedCount,
+          })}
+          data-testid={`activity-heatmap-cell-${day.date}`}
           onClick={() => onSelect(day.date)}
           className="group relative flex h-4 w-4 items-center justify-center outline-none"
         >
@@ -61,11 +65,11 @@ export function ActivityHeatmapCell({
         >
           <span className="block text-left text-gray-300">{dateLabel}</span>
           <span className="mt-1 grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5">
-            <span>{t("activity.summary.questionSeen")}</span>
+            <span>{questionSeenLabel}</span>
             <span className="text-right">{day.questionSeenCount}</span>
-            <span>{t("activity.summary.revealed")}</span>
+            <span>{revealedLabel}</span>
             <span className="text-right">{day.revealCount}</span>
-            <span>{t("activity.summary.rated")}</span>
+            <span>{ratedLabel}</span>
             <span className="text-right">{day.ratedCount}</span>
           </span>
           <Tooltip.Arrow className="fill-gray-900" />
@@ -84,16 +88,4 @@ function getHeatmapCellClass(intensity: number) {
     "border-emerald-500 bg-emerald-700",
   ];
   return classes[intensity] ?? classes[0];
-}
-
-function getHeatmapDayLabel(
-  date: string,
-  questionSeenLabel: string,
-  questionSeenCount: number,
-  revealedLabel: string,
-  revealCount: number,
-  ratedLabel: string,
-  ratedCount: number
-) {
-  return `${date}: ${questionSeenLabel} ${questionSeenCount}, ${revealedLabel} ${revealCount}, ${ratedLabel} ${ratedCount}`;
 }

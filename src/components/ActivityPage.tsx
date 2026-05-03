@@ -95,7 +95,11 @@ export default function ActivityPage() {
 
   return (
     <div className="space-y-5">
-      <section className="space-y-2">
+      <section
+        aria-label={t("activity.heatmapAriaLabel")}
+        data-testid="activity-heatmap"
+        className="space-y-2"
+      >
         <div className="text-right text-xs text-gray-500">
           {formatDateRange(heatmap.fromDate, heatmap.toDate)}
         </div>
@@ -113,7 +117,12 @@ export default function ActivityPage() {
             skipDelayDuration={0}
             disableHoverableContent
           >
-            <div className="grid w-fit grid-flow-col grid-rows-7">
+            <div
+              role="group"
+              aria-label={t("activity.heatmapGridAriaLabel")}
+              data-testid="activity-heatmap-grid"
+              className="grid w-fit grid-flow-col grid-rows-7"
+            >
               {heatmap.days.map((day) => (
                 <ActivityHeatmapCell
                   key={day.date}

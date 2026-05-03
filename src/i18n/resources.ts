@@ -72,6 +72,10 @@ const enTranslation = {
     signInError: "Sign-in failed. Please try again.",
   },
   activity: {
+    heatmapAriaLabel: "Activity heatmap",
+    heatmapGridAriaLabel: "Activity heatmap days",
+    heatmapDayAriaLabel:
+      "{{date}} activity: {{questionSeenLabel}} {{questionSeenCount}}, {{revealedLabel}} {{revealCount}}, {{ratedLabel}} {{ratedCount}}",
     selectedDateSubtitle: "Activity for this day",
     emptyTitle: "No revealed answers yet",
     emptyDescription:
@@ -436,6 +440,10 @@ const koTranslation = {
     signInError: "로그인에 실패했어요. 다시 시도해주세요.",
   },
   activity: {
+    heatmapAriaLabel: "활동 히트맵",
+    heatmapGridAriaLabel: "활동 히트맵 날짜",
+    heatmapDayAriaLabel:
+      "{{date}} 활동: {{questionSeenLabel}} {{questionSeenCount}}, {{revealedLabel}} {{revealCount}}, {{ratedLabel}} {{ratedCount}}",
     selectedDateSubtitle: "이날의 활동",
     emptyTitle: "아직 공개한 답이 없습니다",
     emptyDescription: "학습 중 답을 공개하면 활동 지도가 채워집니다.",
@@ -796,6 +804,10 @@ const jaTranslation = {
     signInError: "ログインに失敗しました。もう一度お試しください。",
   },
   activity: {
+    heatmapAriaLabel: "アクティビティヒートマップ",
+    heatmapGridAriaLabel: "アクティビティヒートマップの日付",
+    heatmapDayAriaLabel:
+      "{{date}}のアクティビティ: {{questionSeenLabel}} {{questionSeenCount}}, {{revealedLabel}} {{revealCount}}, {{ratedLabel}} {{ratedCount}}",
     selectedDateSubtitle: "この日のアクティビティ",
     emptyTitle: "まだ表示した答えがありません",
     emptyDescription: "学習中に答えを表示するとアクティビティが記録されます。",

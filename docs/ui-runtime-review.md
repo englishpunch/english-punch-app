@@ -94,6 +94,10 @@ Prefer an interactive browser session for iterative UI work:
 - If Playwright MCP or equivalent browser automation is not available, say so
   instead of implying that runtime behavior was checked.
 
+TODO: Standardize this workflow on the repo-local `playwright-cli` skill and
+remove the remaining Playwright MCP wording once the CLI workflow is fully
+documented.
+
 Check at least:
 
 - Mouse: hover, click, moving between neighboring targets, outside click.
