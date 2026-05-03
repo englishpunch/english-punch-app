@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { reviewCardHandler } from "./fsrs";
+import { logReviewAnswerRevealed, logReviewQuestionSeen } from "./activities";
 
 /**
  * Server-side pending-review concept for the stateless CLI review
@@ -97,11 +98,25 @@ export const startReview = mutation({
       return { ok: false as const, token: "NO_CARD_AVAILABLE" as const };
     }
 
-    await ctx.db.insert("pendingReviews", {
+    const pendingId = await ctx.db.insert("pendingReviews", {
       userId: args.userId,
       cardId: card._id,
       bagId: args.bagId,
       startTime: now,
+    });
+
+    await logReviewQuestionSeen(ctx, {
+      userId: args.userId,
+      cardId: card._id,
+      bagId: args.bagId,
+      source: "cli",
+      attemptId: pendingId,
+      dedupeKey: `cli:${pendingId}:question_seen`,
+      occurredAt: now,
+      payload: {
+        questionSnapshot: card.question,
+        hintSnapshot: card.hint,
+      },
     });
 
     return {
@@ -157,8 +172,25 @@ export const revealReview = mutation({
     }
 
     if (pending.revealTime === undefined) {
+      const revealTime = Date.now();
       await ctx.db.patch("pendingReviews", pending._id, {
-        revealTime: Date.now(),
+        revealTime,
+      });
+
+      await logReviewAnswerRevealed(ctx, {
+        userId: args.userId,
+        cardId: card._id,
+        bagId: pending.bagId,
+        source: "cli",
+        attemptId: pending._id,
+        dedupeKey: `cli:${pending._id}:answer_revealed`,
+        occurredAt: revealTime,
+        payload: {
+          questionSnapshot: card.question,
+          answerSnapshot: card.answer,
+          explanationSnapshot: card.explanation,
+          elapsedSinceQuestionMs: revealTime - pending.startTime,
+        },
       });
     }
 
@@ -227,6 +259,8 @@ export const rateReview = mutation({
       rating: args.rating,
       duration,
       sessionId: pending._id,
+      attemptId: pending._id,
+      source: "cli",
     });
 
     await ctx.db.delete("pendingReviews", pending._id);

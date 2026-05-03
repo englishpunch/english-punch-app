@@ -33,7 +33,9 @@
 }
 
 @layer base {
-  *, ::before, ::after {
+  *,
+  ::before,
+  ::after {
     border-color: var(--color-gray-200);
   }
 }

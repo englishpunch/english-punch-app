@@ -31,9 +31,9 @@ import {
   type ColumnFiltersState,
 } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
-import { getLocaleForLanguage } from "@/i18n";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { dayjs, DATE_FORMAT } from "@/lib/dayjs";
 
 type Card = {
   _id: Id<"cards">;
@@ -48,8 +48,7 @@ type Card = {
 };
 
 export default function BagDetailPage() {
-  const { t, i18n } = useTranslation();
-  const locale = getLocaleForLanguage(i18n.language);
+  const { t } = useTranslation();
   const { bagId } = useParams({ from: "/plans/$bagId" });
   const isMock = useIsMock();
   const loggedInUser = useQuery(api.auth.loggedInUser);
@@ -159,14 +158,9 @@ export default function BagDetailPage() {
       columnHelper.accessor("_creationTime", {
         header: t("bagDetail.tableHeaders.created"),
         cell: (info) => {
-          const date = new Date(info.getValue());
           return (
             <div className="text-xs text-gray-500">
-              {date.toLocaleDateString(locale, {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-              })}
+              {dayjs(info.getValue()).format(DATE_FORMAT)}
             </div>
           );
         },
@@ -209,7 +203,7 @@ export default function BagDetailPage() {
         size: 120,
       }),
     ],
-    [bag, columnHelper, isMock, locale, navigate, setPendingDeleteCard, t]
+    [bag, columnHelper, isMock, navigate, setPendingDeleteCard, t]
   );
 
   const table = useReactTable({

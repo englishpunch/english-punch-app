@@ -8,12 +8,6 @@ export const languageLabels: Record<SupportedLanguage, string> = {
   ja: "日本語",
 };
 
-export const languageLocales: Record<SupportedLanguage, string> = {
-  en: "en-US",
-  ko: "ko-KR",
-  ja: "ja-JP",
-};
-
 const enTranslation = {
   nav: {
     home: "Home",
@@ -78,10 +72,25 @@ const enTranslation = {
     signInError: "Sign-in failed. Please try again.",
   },
   activity: {
-    emptyTitle: "No recent review logs",
-    emptyDescription: "Start studying to see your history here.",
+    selectedDateSubtitle: "Activity for this day",
+    emptyTitle: "No revealed answers yet",
+    emptyDescription:
+      "Reveal answers while studying to fill your activity map.",
     noCardContent: "No card content",
+    noActivitiesForDate: "No activities for this day.",
     durationMs: "{{ms}}ms",
+    showAnswer: "Show answer",
+    hideAnswer: "Hide answer",
+    summary: {
+      questionSeen: "Seen",
+      revealed: "Revealed",
+      rated: "Rated",
+    },
+    events: {
+      review_question_seen: "Question seen",
+      review_answer_revealed: "Answer revealed",
+      review_rated: "Rated",
+    },
   },
   ratings: {
     labels: {
@@ -427,10 +436,24 @@ const koTranslation = {
     signInError: "로그인에 실패했어요. 다시 시도해주세요.",
   },
   activity: {
-    emptyTitle: "최근 리뷰 로그가 없습니다",
-    emptyDescription: "학습을 시작하면 기록이 여기에 표시됩니다.",
+    selectedDateSubtitle: "이날의 활동",
+    emptyTitle: "아직 공개한 답이 없습니다",
+    emptyDescription: "학습 중 답을 공개하면 활동 지도가 채워집니다.",
     noCardContent: "카드 내용 없음",
+    noActivitiesForDate: "이날의 활동이 없습니다.",
     durationMs: "{{ms}}ms",
+    showAnswer: "답 보기",
+    hideAnswer: "답 숨기기",
+    summary: {
+      questionSeen: "문제 봄",
+      revealed: "답 공개",
+      rated: "평가",
+    },
+    events: {
+      review_question_seen: "문제를 봄",
+      review_answer_revealed: "답을 공개함",
+      review_rated: "평가함",
+    },
   },
   ratings: {
     labels: {
@@ -773,10 +796,24 @@ const jaTranslation = {
     signInError: "ログインに失敗しました。もう一度お試しください。",
   },
   activity: {
-    emptyTitle: "最近のレビュー履歴がありません",
-    emptyDescription: "学習を始めるとここに記録が表示されます。",
+    selectedDateSubtitle: "この日のアクティビティ",
+    emptyTitle: "まだ表示した答えがありません",
+    emptyDescription: "学習中に答えを表示するとアクティビティが記録されます。",
     noCardContent: "カード内容なし",
+    noActivitiesForDate: "この日のアクティビティはありません。",
     durationMs: "{{ms}}ms",
+    showAnswer: "答えを表示",
+    hideAnswer: "答えを隠す",
+    summary: {
+      questionSeen: "問題",
+      revealed: "答え表示",
+      rated: "評価",
+    },
+    events: {
+      review_question_seen: "問題を見た",
+      review_answer_revealed: "答えを表示した",
+      review_rated: "評価した",
+    },
   },
   ratings: {
     labels: {

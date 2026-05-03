@@ -16,6 +16,19 @@
 - `ep` CLI의 **1순위 사용자는 Claude Code skill**이다. 사람 터미널 사용자는 부수적.
 - 새 `ep` 커맨드를 추가하거나 기존 커맨드를 수정할 때는 반드시 @docs/cli-llm-as-caller.md 의 다섯 가지 규칙(`--json` 필수, 에러 토큰, 멱등성, `--help` 자기기술, 최소 chrome)을 준수할 것.
 
+## Date and Time
+
+- 날짜/시간 처리와 포맷 규칙은 반드시 @docs/date-time-rules.md 를 따를 것.
+
+## Frontend UI Runtime Review
+
+- UI 레이아웃, interaction, state, overlay, dense control 을 변경할 때는 반드시 @docs/ui-runtime-review.md 를 따를 것.
+- 코드 diff 만으로 확인하기 어려운 UI 변경은 가능한 경우 실제 브라우저 런타임에서 확인하고, 확인하지 못했다면 최종 응답에 명시할 것.
+
+## Frontend Components
+
+- JSX 일부를 컴포넌트로 분리할 때는 로컬 함수 컴포넌트로 남기지 말고 별도 파일로 분리할 것.
+
 ## Check Commands
 
 - `pnpm run check` — 커밋 전에 실행. lint + knip + test. Staged 변경이 있어도 안전.

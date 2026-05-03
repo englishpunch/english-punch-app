@@ -76,6 +76,50 @@ export default tseslint.config(
           selector: "TSTypeAssertion > TSAnyKeyword",
           message: "Avoid `as any`; use a narrower type or `unknown` instead.",
         },
+        {
+          selector:
+            "NewExpression[callee.object.name='Intl'][callee.property.name='DateTimeFormat']",
+          message:
+            "Use configured dayjs from `@/lib/dayjs` instead of Intl.DateTimeFormat.",
+        },
+        {
+          selector:
+            "CallExpression[callee.object.name='Intl'][callee.property.name='DateTimeFormat']",
+          message:
+            "Use configured dayjs from `@/lib/dayjs` instead of Intl.DateTimeFormat.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name=/^(toLocaleDateString|toLocaleTimeString|toLocaleString)$/]",
+          message:
+            "Use configured dayjs from `@/lib/dayjs` instead of toLocale* date formatting.",
+        },
+        {
+          selector:
+            "CallExpression[callee.property.name='slice'][callee.object.type='CallExpression'][callee.object.callee.property.name='toISOString']",
+          message:
+            "Use dayjs(...).format(DATE_FORMAT) instead of toISOString().slice(...) for date-only strings.",
+        },
+      ],
+
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "dayjs",
+              message:
+                "Import configured { dayjs } from `@/lib/dayjs` so plugins and formats stay centralized.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["dayjs/plugin/*", "dayjs/locale/*"],
+              message:
+                "Configure dayjs plugins/locales only in `src/lib/dayjs.ts`.",
+            },
+          ],
+        },
       ],
 
       // START: Allow implicit `any`s
@@ -89,6 +133,12 @@ export default tseslint.config(
       // Allow async functions without await
       // for consistency (esp. Convex `handler`s)
       "@typescript-eslint/require-await": "off",
+    },
+  },
+  {
+    files: ["src/lib/dayjs.ts"],
+    rules: {
+      "no-restricted-imports": "off",
     },
   },
   {

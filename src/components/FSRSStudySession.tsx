@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -7,6 +7,7 @@ import { Button } from "./Button";
 import { FileText } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
+import { dayjs, DATE_FORMAT } from "@/lib/dayjs";
 
 interface FSRSStudySessionProps {
   bagId: Id<"bags">;
@@ -37,6 +38,48 @@ export default function FSRSStudySession({
       : `${dueCardCount}`;
 
   const reviewCard = useMutation(api.fsrs.reviewCard);
+  const logQuestionSeen = useMutation(
+    api.activities.logReviewQuestionSeenFromWeb
+  );
+  const logAnswerRevealed = useMutation(
+    api.activities.logReviewAnswerRevealedFromWeb
+  );
+
+  const reviewCardForAttempt =
+    dueCard && dueCard !== "NO_CARD_AVAILABLE" ? dueCard : null;
+  const attemptId = reviewCardForAttempt
+    ? `${reviewCardForAttempt._id}:${reviewCardForAttempt.reps}:${
+        reviewCardForAttempt.last_review ?? "new"
+      }:${dayjs().format(DATE_FORMAT)}`
+    : "none";
+  const reviewCardId = reviewCardForAttempt?._id;
+
+  useEffect(() => {
+    if (!userId || !reviewCardId) {
+      return;
+    }
+
+    void logQuestionSeen({
+      userId,
+      cardId: reviewCardId,
+      attemptId,
+      dedupeKey: `web:${attemptId}:question_seen`,
+    }).catch(() => undefined);
+  }, [attemptId, logQuestionSeen, reviewCardId, userId]);
+
+  const handleReveal = (elapsedSinceQuestionMs: number) => {
+    if (!userId || !reviewCardId) {
+      return;
+    }
+
+    void logAnswerRevealed({
+      userId,
+      cardId: reviewCardId,
+      attemptId,
+      dedupeKey: `web:${attemptId}:answer_revealed`,
+      elapsedSinceQuestionMs,
+    }).catch(() => undefined);
+  };
 
   const handleGrade = async (rating: 1 | 2 | 3 | 4, duration: number) => {
     if (!userId || !dueCard || dueCard === "NO_CARD_AVAILABLE" || isReviewing) {
@@ -51,6 +94,8 @@ export default function FSRSStudySession({
         cardId: dueCard._id,
         rating,
         duration,
+        attemptId,
+        source: "web",
       });
     } catch (error) {
       console.error("Failed to review card:", error);
@@ -110,6 +155,7 @@ export default function FSRSStudySession({
       {dueCard && (
         <StudyCard
           card={dueCard}
+          onReveal={handleReveal}
           onGrade={(rating, duration) => void handleGrade(rating, duration)}
           isLoading={isReviewing}
         />

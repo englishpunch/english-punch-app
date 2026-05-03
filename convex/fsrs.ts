@@ -3,6 +3,7 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import { fsrs, State, Grade, Steps } from "ts-fsrs";
 import { getGlobalLogger } from "../src/lib/globalLogger";
+import { logReviewRated, type ActivitySource } from "./activities";
 
 type ReviewCardArgs = {
   userId: Id<"users">;
@@ -10,6 +11,8 @@ type ReviewCardArgs = {
   rating: 1 | 2 | 3 | 4;
   duration: number;
   sessionId?: string;
+  attemptId?: string;
+  source?: ActivitySource;
 };
 
 type ReviewCardResult = {
@@ -204,6 +207,45 @@ export const reviewCardHandler = async (
     reviewType: "scheduled",
   });
 
+  const attemptId = args.attemptId ?? args.sessionId ?? reviewLog;
+  await logReviewRated(ctx, {
+    userId: args.userId,
+    cardId: args.cardId,
+    bagId: card.bagId,
+    source: args.source ?? "web",
+    attemptId,
+    dedupeKey: `${args.source ?? "web"}:${attemptId}:rated`,
+    occurredAt: recordLogItem.log.review.getTime(),
+    payload: {
+      rating: args.rating,
+      durationMs: args.duration,
+      reviewType: "scheduled",
+      legacyReviewLogId: reviewLog,
+      fsrs: {
+        before: {
+          state: card.state,
+          due: card.due,
+          scheduled_days: card.scheduled_days,
+          elapsed_days: previousElapsedDays,
+          reps: card.reps,
+          lapses: card.lapses,
+          stability: card.stability,
+          difficulty: card.difficulty,
+        },
+        after: {
+          state: recordLogItem.card.state,
+          due: recordLogItem.card.due.getTime(),
+          scheduled_days: recordLogItem.card.scheduled_days,
+          elapsed_days: recordLogItem.card.elapsed_days,
+          reps: recordLogItem.card.reps,
+          lapses: recordLogItem.card.lapses,
+          stability: recordLogItem.card.stability,
+          difficulty: recordLogItem.card.difficulty,
+        },
+      },
+    },
+  });
+
   logger.info(runId, { m: "📝 ReviewLog created:", reviewLog });
 
   const result = {
@@ -225,6 +267,8 @@ export const reviewCard = mutation({
     rating: v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4)), // Again, Hard, Good, Easy
     duration: v.number(), // 응답 시간 (밀리초)
     sessionId: v.optional(v.string()),
+    attemptId: v.optional(v.string()),
+    source: v.optional(v.union(v.literal("web"), v.literal("cli"))),
   },
   returns: v.object({
     nextReviewDate: v.string(),

@@ -2,7 +2,6 @@ import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import {
   languageLabels,
-  languageLocales,
   resources,
   supportedLanguages,
   type SupportedLanguage,
@@ -31,9 +30,6 @@ export const languageOptions = supportedLanguages.map((value) => ({
   value,
   label: languageLabels[value],
 }));
-
-export const getLocaleForLanguage = (language?: string | null) =>
-  languageLocales[normalizeLanguage(language)];
 
 const initialLanguage = getInitialLanguage();
 

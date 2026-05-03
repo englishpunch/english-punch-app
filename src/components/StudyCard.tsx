@@ -18,16 +18,20 @@ interface StudyCardProps {
     state: number;
     reps: number;
   };
+  onReveal?: (elapsedSinceQuestionMs: number) => void;
   onGrade: (rating: 1 | 2 | 3 | 4, duration: number) => void;
   isLoading?: boolean;
 }
 
 export default function StudyCard(props: StudyCardProps) {
-  return <StudyCardContent key={props.card._id} {...props} />;
+  return (
+    <StudyCardContent key={`${props.card._id}:${props.card.reps}`} {...props} />
+  );
 }
 
 function StudyCardContent({
   card,
+  onReveal,
   onGrade,
   isLoading = false,
 }: StudyCardProps) {
@@ -48,8 +52,12 @@ function StudyCardContent({
   }, []);
 
   const handleShowAnswer = useCallback(() => {
+    const elapsedSinceQuestionMs = startTimeRef.current
+      ? Date.now() - startTimeRef.current
+      : 0;
     setShowAnswer(true);
-  }, []);
+    onReveal?.(elapsedSinceQuestionMs);
+  }, [onReveal]);
 
   const handleGrade = useCallback(
     (rating: 1 | 2 | 3 | 4) => {

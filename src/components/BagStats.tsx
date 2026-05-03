@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
-import { getLocaleForLanguage } from "@/i18n";
+import { dayjs, DATE_FORMAT } from "@/lib/dayjs";
 
 interface BagStatsProps {
   bagId: Id<"bags">;
@@ -107,8 +107,7 @@ function DistributionBar({ title, data, total }: DistributionBarProps) {
 }
 
 export default function BagStats({ bagId, onBack }: BagStatsProps) {
-  const { t, i18n } = useTranslation();
-  const locale = getLocaleForLanguage(i18n.language);
+  const { t } = useTranslation();
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
   const stats = useQuery(
@@ -380,7 +379,7 @@ export default function BagStats({ bagId, onBack }: BagStatsProps) {
           <div>
             <span className="text-gray-600">{t("bagStats.lastModified")}:</span>
             <span className="ml-2 font-medium">
-              {new Date(bagInfo.lastModified).toLocaleDateString(locale)}
+              {dayjs(bagInfo.lastModified).format(DATE_FORMAT)}
             </span>
           </div>
         </div>

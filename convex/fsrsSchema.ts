@@ -175,6 +175,36 @@ export const learningTables = {
     .index("by_rating", ["rating"]),
 
   /**
+   * 사용자 활동 이벤트.
+   *
+   * `reviewLogs`는 완료된 FSRS 리뷰 원장으로 유지하고, 이 테이블은
+   * Activity 탭에서 보여줄 행동 타임라인과 reveal 기반 heatmap을 담당한다.
+   */
+  activities: defineTable({
+    userId: v.id("users"),
+    eventType: v.union(
+      v.literal("review_question_seen"),
+      v.literal("review_answer_revealed"),
+      v.literal("review_rated")
+    ),
+    occurredAt: v.number(),
+    localDate: v.string(), // YYYY-MM-DD in `timezone`
+    timezone: v.string(),
+    source: v.union(v.literal("web"), v.literal("cli"), v.literal("system")),
+    cardId: v.optional(v.id("cards")),
+    bagId: v.optional(v.id("bags")),
+    attemptId: v.optional(v.string()),
+    dedupeKey: v.string(),
+    schemaVersion: v.number(),
+    payload: v.optional(v.any()),
+  })
+    .index("by_user_and_occurred_at", ["userId", "occurredAt"])
+    .index("by_user_event_date", ["userId", "eventType", "localDate"])
+    .index("by_user_date_time", ["userId", "localDate", "occurredAt"])
+    .index("by_user_and_dedupe_key", ["userId", "dedupeKey"])
+    .index("by_attempt", ["attemptId"]),
+
+  /**
    * 진행 중인 복습 시도 (stateless CLI review flow 용)
    *
    * 사용자당 최대 1개 행. 존재 여부와 `revealTime`의 유무로
