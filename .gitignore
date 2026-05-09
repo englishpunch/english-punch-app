@@ -8,6 +8,8 @@ pnpm-debug.log*
 lerna-debug.log*
 .env
 .env.local
+.env.convex-*
+!.env.convex-*.example
 .tanstack
 
 node_modules
