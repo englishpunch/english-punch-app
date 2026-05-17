@@ -7,7 +7,7 @@ import { Button } from "./Button";
 import { FileText } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
-import { dayjs, DATE_FORMAT } from "@/lib/dayjs";
+import { dayjs } from "@/lib/dayjs";
 
 interface FSRSStudySessionProps {
   bagId: Id<"bags">;
@@ -50,7 +50,7 @@ export default function FSRSStudySession({
   const attemptId = reviewCardForAttempt
     ? `${reviewCardForAttempt._id}:${reviewCardForAttempt.reps}:${
         reviewCardForAttempt.last_review ?? "new"
-      }:${dayjs().format(DATE_FORMAT)}`
+      }:${dayjs().format("YYYYMMDDHH")}`
     : "none";
   const reviewCardId = reviewCardForAttempt?._id;
 
