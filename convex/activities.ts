@@ -341,7 +341,7 @@ export const getActivitiesByDate = query({
       .withIndex("by_user_date_time", (q) =>
         q.eq("userId", args.userId).eq("localDate", args.localDate)
       )
-      .order("asc")
+      .order("desc")
       .collect();
 
     let questionSeenCount = 0;
