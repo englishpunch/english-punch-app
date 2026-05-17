@@ -34,6 +34,18 @@
 - `pnpm run check` — 커밋 전에 실행. lint + knip + test. Staged 변경이 있어도 안전.
 - `pnpm run check:all` — 커밋 후 또는 clean tree에서 실행. 위 항목 + dedupe 체크 포함. CI에서 실행되는 전체 범위.
 
+### Push 후 CI 확인
+
+- CI는 로컬 `pnpm run check`보다 넓은 범위(`pnpm run check:all` 상당)를 실행하므로, push 직후 실패가 늦게 드러날 수 있다.
+- 항상 push 후 GitHub Actions가 완료될 때까지 확인할 것.
+- 항상 다음 명령으로 최신 run 상태를 확인하고, 실패하면 로그를 읽고 수정 후 다시 push할 것.
+
+```sh
+gh run list --branch "$(git branch --show-current)" --limit 5
+gh run watch
+gh run view --log-failed
+```
+
 ### 개별 실행
 
 - `pnpm run lint` — ESLint
