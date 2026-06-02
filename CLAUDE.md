@@ -20,6 +20,23 @@
 
 - 날짜/시간 처리와 포맷 규칙은 반드시 @docs/date-time-rules.md 를 따를 것.
 
+## Convex Rules
+
+- Convex 코드를 수정하기 전에는 반드시 @docs/convex_rules.mdc 를 확인할 것.
+- @docs/convex_rules.mdc 는 https://convex.link/convex_rules.mdc 에서 가져온 생성 파일로 취급하고 직접 편집하지 말 것.
+- 갱신 일자는 @docs/convex_rules.meta.json 의 `updatedAt`에 기록한다.
+- Convex 작업을 시작할 때 다음 명령을 실행할 것. `updatedAt`이 7일 이상 지났거나 metadata가 없으면 자동으로 최신 파일로 덮어쓴다.
+
+```sh
+scripts/update-convex-rules.sh
+```
+
+- 즉시 강제 갱신이 필요하면 다음 명령을 사용한다.
+
+```sh
+scripts/update-convex-rules.sh --force
+```
+
 ## Frontend UI Runtime Review
 
 - UI 레이아웃, interaction, state, overlay, dense control 을 변경할 때는 반드시 @docs/ui-runtime-review.md 를 따를 것.
