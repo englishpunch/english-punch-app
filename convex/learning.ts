@@ -327,6 +327,139 @@ export const updateBagStats = mutation({
   },
 });
 
+const stateCountField = (state: 0 | 1 | 2 | 3) => {
+  if (state === 0) {
+    return "newCards";
+  }
+  if (state === 1) {
+    return "learningCards";
+  }
+  if (state === 2) {
+    return "reviewCards";
+  }
+  return null;
+};
+
+const buildMovedBagStats = (
+  bag: {
+    totalCards: number;
+    newCards: number;
+    learningCards: number;
+    reviewCards: number;
+  },
+  state: 0 | 1 | 2 | 3,
+  direction: 1 | -1
+) => {
+  const patch: {
+    totalCards: number;
+    newCards?: number;
+    learningCards?: number;
+    reviewCards?: number;
+  } = {
+    totalCards: Math.max(0, bag.totalCards + direction),
+  };
+  const field = stateCountField(state);
+  if (field) {
+    patch[field] = Math.max(0, bag[field] + direction);
+  }
+  return patch;
+};
+
+export const disableCardForRun = mutation({
+  args: {
+    cardId: v.id("cards"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    const card = await ctx.db.get("cards", args.cardId);
+    if (!card || card.userId !== userId || card.deletedAt !== undefined) {
+      throw new ConvexError("Card not found");
+    }
+
+    if (card.suspended) {
+      return null;
+    }
+
+    const nowIso = new Date().toISOString();
+    await ctx.db.patch("cards", args.cardId, {
+      suspended: true,
+    });
+
+    const bag = await ctx.db.get("bags", card.bagId);
+    if (bag && bag.userId === userId && bag.deletedAt === undefined) {
+      await ctx.db.patch("bags", card.bagId, {
+        lastModified: nowIso,
+      });
+    }
+
+    return null;
+  },
+});
+
+export const moveCardToBag = mutation({
+  args: {
+    cardId: v.id("cards"),
+    targetBagId: v.id("bags"),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
+
+    const card = await ctx.db.get("cards", args.cardId);
+    if (!card || card.userId !== userId || card.deletedAt !== undefined) {
+      throw new ConvexError("Card not found");
+    }
+
+    if (card.bagId === args.targetBagId) {
+      return null;
+    }
+
+    const [sourceBag, targetBag] = await Promise.all([
+      ctx.db.get("bags", card.bagId),
+      ctx.db.get("bags", args.targetBagId),
+    ]);
+
+    if (
+      !sourceBag ||
+      sourceBag.userId !== userId ||
+      sourceBag.deletedAt !== undefined
+    ) {
+      throw new ConvexError("Source bag not found");
+    }
+
+    if (
+      !targetBag ||
+      targetBag.userId !== userId ||
+      targetBag.deletedAt !== undefined
+    ) {
+      throw new ConvexError("Target bag not found");
+    }
+
+    const nowIso = new Date().toISOString();
+    await ctx.db.patch("cards", args.cardId, {
+      bagId: args.targetBagId,
+    });
+    await ctx.db.patch("bags", card.bagId, {
+      ...buildMovedBagStats(sourceBag, card.state, -1),
+      lastModified: nowIso,
+    });
+    await ctx.db.patch("bags", args.targetBagId, {
+      ...buildMovedBagStats(targetBag, card.state, 1),
+      lastModified: nowIso,
+    });
+
+    return null;
+  },
+});
+
 /**
  * 백 상세 통계 조회
  */

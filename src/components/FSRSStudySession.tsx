@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -8,6 +8,7 @@ import { FileText } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 import { dayjs } from "@/lib/dayjs";
+import { toast } from "sonner";
 
 interface FSRSStudySessionProps {
   bagId: Id<"bags">;
@@ -29,6 +30,12 @@ export default function FSRSStudySession({
     bagId,
   });
 
+  const bags = useQuery(api.learning.getUserBags, userId ? { userId } : "skip");
+  const moveTargetBags = useMemo(
+    () => bags?.filter((bag) => bag._id !== bagId) ?? [],
+    [bagId, bags]
+  );
+
   const dueCardCount = useQuery(api.learning.getDueCardCount, {
     bagId,
   });
@@ -38,6 +45,8 @@ export default function FSRSStudySession({
       : `${dueCardCount}`;
 
   const reviewCard = useMutation(api.fsrs.reviewCard);
+  const disableCardForRun = useMutation(api.learning.disableCardForRun);
+  const moveCardToBag = useMutation(api.learning.moveCardToBag);
   const logQuestionSeen = useMutation(
     api.activities.logReviewQuestionSeenFromWeb
   );
@@ -103,6 +112,50 @@ export default function FSRSStudySession({
     setIsReviewing(false);
   };
 
+  const handleDisableCard = async () => {
+    if (!userId || !reviewCardForAttempt || isReviewing) {
+      return;
+    }
+
+    setIsReviewing(true);
+    try {
+      await disableCardForRun({
+        cardId: reviewCardForAttempt._id,
+      });
+      toast.success(t("studySession.toasts.disabled"));
+    } catch (error) {
+      console.error("Failed to disable card:", error);
+      toast.error(t("studySession.toasts.disableFailed"));
+    } finally {
+      setIsReviewing(false);
+    }
+  };
+
+  const handleMoveCard = async (targetBagId: Id<"bags">) => {
+    if (!userId || !reviewCardForAttempt || isReviewing) {
+      return;
+    }
+
+    const targetBag = moveTargetBags.find((bag) => bag._id === targetBagId);
+    setIsReviewing(true);
+    try {
+      await moveCardToBag({
+        cardId: reviewCardForAttempt._id,
+        targetBagId,
+      });
+      toast.success(
+        t("studySession.toasts.moved", {
+          name: targetBag?.name ?? t("studySession.toasts.unknownBag"),
+        })
+      );
+    } catch (error) {
+      console.error("Failed to move card:", error);
+      toast.error(t("studySession.toasts.moveFailed"));
+    } finally {
+      setIsReviewing(false);
+    }
+  };
+
   // 뒤로 가기 핸들러 (카드 목록 초기화 포함)
   const handleBack = () => {
     onComplete();
@@ -157,6 +210,9 @@ export default function FSRSStudySession({
           card={dueCard}
           onReveal={handleReveal}
           onGrade={(rating, duration) => void handleGrade(rating, duration)}
+          onDisable={() => void handleDisableCard()}
+          onMoveToBag={(targetBagId) => void handleMoveCard(targetBagId)}
+          moveTargetBags={moveTargetBags}
           isLoading={isReviewing}
         />
       )}
