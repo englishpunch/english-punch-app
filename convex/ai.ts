@@ -75,6 +75,10 @@ ${systemInstructionPart.role}
 3. **Generate Content**:
    - question: a single fill-in-the-blank sentence with exactly one blank (___) for the target word/phrase.
      - The target answer must be the most natural completion.
+     - Strongly prefer a real, high-frequency collocation or grammatical frame for the target word (e.g., verb+noun, adjective+noun, adverb+adjective, preposition pattern).
+     - Let the collocation make the answer feel inevitable; do not rely on a long explanation-like setup.
+     - Avoid rare, poetic, or awkward combinations even if they technically fit the meaning.
+     - Match the surrounding words' register and tone to the target word and context (formal/informal, academic, business, casual, emotional, etc.). Do not mix slang with a formal target, or stiff wording with a casual target, unless the context explicitly calls for that contrast.
      - Keep the sentence simple (CEFR B1-B2), concise, and easy to memorize as a whole sentence.
      - Do not add extra background just to make the sentence longer.
      - If context/situation is provided, reflect the situation or tone naturally without explaining the context.

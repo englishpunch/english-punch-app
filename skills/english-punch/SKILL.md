@@ -60,10 +60,20 @@ action is for the web UI only.
 
 - **`--question`** — a single fill-in-the-blank sentence with `___`
   as the only blank. The answer must be the most natural completion.
-  Keep the sentence simple (CEFR B1–B2), concise, and easy to
-  memorize as a whole sentence. Do not add extra background just to
-  make the sentence longer. If the user provided context, reflect the
-  situation or tone naturally without explaining the context.
+  Strongly prefer a real, high-frequency collocation or grammatical
+  frame for the target word, such as verb+noun, adjective+noun,
+  adverb+adjective, or a common preposition pattern. Let that
+  collocation make the answer feel inevitable; do not rely on a long
+  explanation-like setup. Avoid rare, poetic, or awkward combinations
+  even if they technically fit the meaning. Match the surrounding
+  words' register and tone to the target word and context
+  (formal/informal, academic, business, casual, emotional, etc.). Do
+  not mix slang with a formal target, or stiff wording with a casual
+  target, unless the context explicitly calls for that contrast. Keep
+  the sentence simple (CEFR B1–B2), concise, and easy to memorize as a
+  whole sentence. Do not add extra background just to make the
+  sentence longer. If the user provided context, reflect the situation
+  or tone naturally without explaining the context.
 
 - **`--hint`** — 2–3 high-priority synonyms or paraphrases, preferably
   comma-separated and under 12 words total. Do not include the answer
@@ -77,7 +87,7 @@ action is for the web UI only.
 
 ```bash
 ep cards create "disheartened" \
-  --question "I felt ___ after reading the rejection letter." \
+  --question "She was deeply ___ by the rejection letter." \
   --hint "discouraged, dejected, low-spirited" \
   --explanation "Use when someone has lost confidence or hope. It is stronger than 'sad' but less intense than 'devastated', and it sounds more formal than 'bummed'."
 ```
