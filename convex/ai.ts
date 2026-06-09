@@ -31,6 +31,8 @@ const hintAndExplanationSchema = z.object({
 const GEMINI_MODEL = "gemini-3.1-pro-preview";
 const logger = getGlobalLogger();
 
+type CardPromptVersion = "v1" | "v2";
+
 // TODO: South Korean 을 인자로 빼기
 const systemInstructionPart = {
   role: `
@@ -51,7 +53,7 @@ You are an expert English linguist specialized in creating high-quality vocabula
 /**
  * System Instruction for the AI model.
  */
-const generateAllSystemInstruction = `
+const generateAllSystemInstructionV1 = `
 ${systemInstructionPart.role}
 
 ### Task
@@ -63,6 +65,28 @@ ${systemInstructionPart.role}
    ${systemInstructionPart.explanation}
    ${systemInstructionPart.finalAnswer}
 `.trim();
+
+const generateAllSystemInstructionV2 = `
+${systemInstructionPart.role}
+
+### Task
+1. Inflection Rule: If changing the tense or number makes the sentence significantly more natural, update the form (e.g., "apply" -> "applied").
+2. ${systemInstructionPart.contextAwareness}
+3. **Generate Content**:
+   - question: a single fill-in-the-blank sentence with exactly one blank (___) for the target word/phrase.
+     - The target answer must be the most natural completion.
+     - Keep the sentence simple (CEFR B1-B2), concise, and easy to memorize as a whole sentence.
+     - Do not add extra background just to make the sentence longer.
+     - If context/situation is provided, reflect the situation or tone naturally without explaining the context.
+   - hint: 2-3 high-priority synonyms or paraphrases, preferably comma-separated and under 12 words total. Do not include the answer.
+   - explanation: 10-50 words total. Briefly say when the word is appropriate and, when useful, contrast one close synonym by nuance, tone, or intensity. Do not repeat the hint.
+   ${systemInstructionPart.finalAnswer}
+`.trim();
+
+const generateAllSystemInstructions: Record<CardPromptVersion, string> = {
+  v1: generateAllSystemInstructionV1,
+  v2: generateAllSystemInstructionV2,
+};
 
 const regenerateHintAndExplanationSystemInstruction = `
 ${systemInstructionPart.role}
@@ -82,8 +106,19 @@ const buildPrompt = (answer: string, context?: string): string => {
   return prompt;
 };
 
+const requireSingleBlank = (question: string) => {
+  const blankCount = question.match(/___/g)?.length ?? 0;
+  if (blankCount !== 1) {
+    throw new Error("질문에는 ___ 빈칸이 정확히 한 번 포함되어야 합니다.");
+  }
+};
+
 export const generateCardDraft = action({
-  args: { answer: v.string(), context: v.optional(v.string()) },
+  args: {
+    answer: v.string(),
+    context: v.optional(v.string()),
+    promptVersion: v.optional(v.union(v.literal("v1"), v.literal("v2"))),
+  },
 
   returns: v.object({
     question: v.string(),
@@ -95,6 +130,7 @@ export const generateCardDraft = action({
   handler: async (_ctx, args) => {
     const answer = args.answer.trim();
     const context = args.context?.trim();
+    const promptVersion = args.promptVersion ?? "v1";
     const runId =
       "ai:generateCardDraft:" + Math.random().toString(36).slice(2, 8);
     if (!answer) {
@@ -106,6 +142,7 @@ export const generateCardDraft = action({
     logger.info(runId, {
       stage: "start",
       model: GEMINI_MODEL,
+      promptVersion,
       answerLength: answer.length,
       hasContext: !!context,
     });
@@ -128,7 +165,7 @@ export const generateCardDraft = action({
         thinkingConfig: {
           thinkingLevel: ThinkingLevel.LOW,
         },
-        systemInstruction: generateAllSystemInstruction,
+        systemInstruction: generateAllSystemInstructions[promptVersion],
       },
     });
 
@@ -154,9 +191,11 @@ export const generateCardDraft = action({
           ? undefined
           : cardResponse.finalAnswer,
     };
+    requireSingleBlank(card.question);
 
     logger.info(runId, {
       stage: "card parsed",
+      promptVersion,
       questionPreview: card.question.slice(0, 60),
       hintPreview: card.hint.slice(0, 40),
       finalAnswerApplied: card.finalAnswer,
