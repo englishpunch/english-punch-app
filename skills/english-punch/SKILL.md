@@ -50,7 +50,7 @@ pass them to `ep cards create`. Do not ask the server to generate
 them — the CLI has no AI path and the web app's `generateCardDraft`
 action is for the web UI only.
 
-### Field rules (mirrors `convex/ai.ts` at 2026-04-11)
+### Field rules
 
 - **`answer`** (positional) — the target English word or phrase.
   Keep the form the user will actually study. If the user provided
@@ -58,27 +58,28 @@ action is for the web UI only.
   inflected form (`apply` → `applied`), pick the inflected form
   **as the answer** and mention the inflection in the explanation.
 
-- **`--question`** — a fill-in-the-blank example of 1–2 sentences
-  with `___` as the only blank. The blank must be the only logical
-  completion based on the surrounding text. Keep the language
-  simple (CEFR B1–B2). **Vary the speaker's persona significantly**
-  — a frustrated mechanic, a hopeful student, a strict grandmother,
-  etc. Do not reuse the same persona in a session.
+- **`--question`** — a single fill-in-the-blank sentence with `___`
+  as the only blank. The answer must be the most natural completion.
+  Keep the sentence simple (CEFR B1–B2), concise, and easy to
+  memorize as a whole sentence. Do not add extra background just to
+  make the sentence longer. If the user provided context, reflect the
+  situation or tone naturally without explaining the context.
 
-- **`--hint`** — a short definition or synonym under 12 words. Do
-  not include the answer itself in the hint.
+- **`--hint`** — 2–3 high-priority synonyms or paraphrases, preferably
+  comma-separated and under 12 words total. Do not include the answer
+  itself in the hint.
 
-- **`--explanation`** — 10–70 words total. Specify when the word is
-  appropriate (exclude mere situation description). Contrast at
-  least two synonyms with nuance, tone, or intensity differences.
+- **`--explanation`** — 10–50 words total. Briefly say when the word
+  is appropriate and, when useful, contrast one close synonym by
+  nuance, tone, or intensity. Do not repeat the hint.
 
 ### Call shape
 
 ```bash
 ep cards create "disheartened" \
-  --question "I felt ___ after the long rejection letter arrived." \
-  --hint "extremely discouraged or low-spirited" \
-  --explanation "Stronger than 'sad' but softer than 'devastated'. Use when hope is fading but not extinguished; more formal than 'bummed' and less dramatic than 'crushed'."
+  --question "I felt ___ after reading the rejection letter." \
+  --hint "discouraged, dejected, low-spirited" \
+  --explanation "Use when someone has lost confidence or hope. It is stronger than 'sad' but less intense than 'devastated', and it sounds more formal than 'bummed'."
 ```
 
 Pass `--bag <id>` only when the user explicitly names a different
@@ -115,7 +116,7 @@ sessions.
 
 ## What this skill deliberately does not do
 
-- **Call any AI action on the server.** Question and explanation
+- **Call any AI action on the server.** Question, hint, and explanation
   generation happens in this chat using the rules above. The
   `convex/ai.ts` actions exist for the web app, not for the CLI.
 - **Store cards without the user noticing.** Always confirm the card
