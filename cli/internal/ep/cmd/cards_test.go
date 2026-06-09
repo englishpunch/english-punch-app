@@ -33,6 +33,7 @@ func resetCardsCommandTestState() {
 	cardsResolveBagIDFunc = resolveBagID
 	cardsAuthenticatedClientFunc = authenticatedClient
 	cardsGetCardFunc = getCard
+	cardsListCardsFunc = listCards
 	cardsReplaceCardContentAndResetScheduleFunc = replaceCardContentAndResetSchedule
 }
 
@@ -248,6 +249,86 @@ func TestCardsGet_CardNotFoundTokenPropagates(t *testing.T) {
 	}
 	if exitErr.Token != common.TokenCardNotFound {
 		t.Fatalf("token = %q, want %q", exitErr.Token, common.TokenCardNotFound)
+	}
+}
+
+func TestCardsList_CallsPaginatedQuery(t *testing.T) {
+	resetCardsCommandTestState()
+	t.Cleanup(resetCardsCommandTestState)
+
+	var got cardListOptions
+	cardsResolveBagIDFunc = func(flagValue string) (string, error) {
+		if flagValue != "bag-1" {
+			t.Fatalf("flagValue = %q, want bag-1", flagValue)
+		}
+		return flagValue, nil
+	}
+	cardsAuthenticatedClientFunc = func(context.Context) (*convex.Client, *convex.User, error) {
+		return &convex.Client{}, &convex.User{ID: "user-1"}, nil
+	}
+	cardsListCardsFunc = func(_ context.Context, _ *convex.Client, opts cardListOptions) (*cardListResult, error) {
+		got = opts
+		return &cardListResult{
+			BagID:  opts.BagID,
+			Search: opts.Search,
+			Count:  1,
+			IsDone: true,
+			Page: []cardDetail{
+				{
+					ID:       "card-1",
+					Question: "The surgeon needs absolute ___.",
+					Answer:   "precision",
+				},
+			},
+		}, nil
+	}
+
+	cmd := newCardsListCmd()
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+
+	err := runCardsCommand(cmd, []string{
+		"--bag", "bag-1",
+		"--search", " precision ",
+		"--limit", "42",
+		"--cursor", "cursor-1",
+	})
+	if err != nil {
+		t.Fatalf("runCardsCommand: %v", err)
+	}
+
+	if got.BagID != "bag-1" {
+		t.Fatalf("BagID = %q, want bag-1", got.BagID)
+	}
+	if got.UserID != "user-1" {
+		t.Fatalf("UserID = %q, want user-1", got.UserID)
+	}
+	if got.Search != "precision" {
+		t.Fatalf("Search = %q, want precision", got.Search)
+	}
+	if got.Limit != 42 {
+		t.Fatalf("Limit = %d, want 42", got.Limit)
+	}
+	if got.Cursor != "cursor-1" {
+		t.Fatalf("Cursor = %q, want cursor-1", got.Cursor)
+	}
+}
+
+func TestCardsList_RejectsInvalidLimit(t *testing.T) {
+	resetCardsCommandTestState()
+	t.Cleanup(resetCardsCommandTestState)
+
+	cmd := newCardsListCmd()
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+
+	err := runCardsCommand(cmd, []string{"--limit", "0"})
+	var exitErr *common.ExitError
+	if !errors.As(err, &exitErr) {
+		t.Fatalf("expected *common.ExitError, got %T: %v", err, err)
+	}
+	if exitErr.Token != common.TokenInvalidArgument {
+		t.Fatalf("token = %q, want %q", exitErr.Token, common.TokenInvalidArgument)
 	}
 }
 

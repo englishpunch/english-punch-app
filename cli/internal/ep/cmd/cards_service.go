@@ -31,6 +31,23 @@ type cardReplacement struct {
 	Expression  *string
 }
 
+type cardListOptions struct {
+	BagID  string
+	UserID string
+	Search string
+	Limit  int
+	Cursor string
+}
+
+type cardListResult struct {
+	BagID          string       `json:"bagId"`
+	Search         string       `json:"search,omitempty"`
+	Count          int          `json:"count"`
+	IsDone         bool         `json:"isDone"`
+	ContinueCursor string       `json:"continueCursor,omitempty"`
+	Page           []cardDetail `json:"page"`
+}
+
 func getCard(ctx context.Context, client *convex.Client, userID, bagID, cardID string) (*cardDetail, error) {
 	raw, err := client.Query(ctx, "learning:getCard", map[string]any{
 		"cardId": cardID,
@@ -54,6 +71,48 @@ func getCard(ctx context.Context, client *convex.Client, userID, bagID, cardID s
 		return nil, fmt.Errorf("parse getCard response: %w", err)
 	}
 	return &card, nil
+}
+
+func listCards(ctx context.Context, client *convex.Client, opts cardListOptions) (*cardListResult, error) {
+	paginationOpts := map[string]any{
+		"numItems": opts.Limit,
+		"cursor":   nil,
+	}
+	if opts.Cursor != "" {
+		paginationOpts["cursor"] = opts.Cursor
+	}
+
+	args := map[string]any{
+		"bagId":          opts.BagID,
+		"userId":         opts.UserID,
+		"paginationOpts": paginationOpts,
+	}
+	if opts.Search != "" {
+		args["search"] = opts.Search
+	}
+
+	raw, err := client.Query(ctx, "learning:getBagCardsPaginated", args)
+	if err != nil {
+		return nil, err
+	}
+
+	var response struct {
+		Page           []cardDetail `json:"page"`
+		ContinueCursor string       `json:"continueCursor"`
+		IsDone         bool         `json:"isDone"`
+	}
+	if err := json.Unmarshal(raw, &response); err != nil {
+		return nil, fmt.Errorf("parse getBagCardsPaginated response: %w", err)
+	}
+
+	return &cardListResult{
+		BagID:          opts.BagID,
+		Search:         opts.Search,
+		Count:          len(response.Page),
+		IsDone:         response.IsDone,
+		ContinueCursor: response.ContinueCursor,
+		Page:           response.Page,
+	}, nil
 }
 
 func replaceCardContentAndResetSchedule(

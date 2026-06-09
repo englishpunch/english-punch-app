@@ -38,6 +38,7 @@ const (
 
 	// Input validation
 	TokenMissingRequiredField = "MISSING_REQUIRED_FIELD"
+	TokenInvalidArgument      = "INVALID_ARGUMENT"
 	TokenInteractiveOnly      = "INTERACTIVE_ONLY"
 
 	// Review lifecycle (convex/review.ts + ep review subcommands)
@@ -65,6 +66,7 @@ var CanonicalTokens = map[string]struct{}{
 	TokenConfigReadFailed:     {},
 	TokenConfigWriteFailed:    {},
 	TokenMissingRequiredField: {},
+	TokenInvalidArgument:      {},
 	TokenInteractiveOnly:      {},
 	TokenReviewAlreadyPending: {},
 	TokenNoPendingReview:      {},
