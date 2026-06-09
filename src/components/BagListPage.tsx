@@ -73,10 +73,7 @@ export default function BagListPage() {
   const safeCurrentPage = clampPage(currentPage);
   const setPage = (next: number | ((page: number) => number)) => {
     setCurrentPage((prev) => {
-      const resolved =
-        typeof next === "function"
-          ? (next as (page: number) => number)(prev)
-          : next;
+      const resolved = typeof next === "function" ? next(prev) : next;
       return clampPage(resolved);
     });
   };

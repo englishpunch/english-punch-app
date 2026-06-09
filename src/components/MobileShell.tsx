@@ -72,10 +72,8 @@ const tabConfig: Record<
 
 export default function MobileShell({ children }: MobileShellProps) {
   const { t } = useTranslation();
-  let pathname = "/run";
-
   const { location } = useRouterState();
-  pathname = location.pathname;
+  const pathname = location.pathname;
 
   const activeTab = deriveTabFromPath(pathname);
   const [showProfile, setShowProfile] = useState(false);

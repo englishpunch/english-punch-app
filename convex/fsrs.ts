@@ -1,7 +1,7 @@
 import { mutation, query, type MutationCtx } from "./_generated/server";
 import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
-import { fsrs, State, Grade, Steps } from "ts-fsrs";
+import { fsrs, Steps } from "ts-fsrs";
 import { getGlobalLogger } from "../src/lib/globalLogger";
 import { logReviewRated, type ActivitySource } from "./activities";
 
@@ -107,13 +107,13 @@ export const reviewCardHandler = async (
     learning_steps: card.learning_steps,
     reps: card.reps,
     lapses: card.lapses,
-    state: card.state as State,
+    state: card.state,
     last_review: lastReviewDate ?? undefined,
     elapsed_days: previousElapsedDays,
   };
 
   // ts-fsrs로 다음 상태 계산 (Rating을 Grade로 변환, Manual=0 제외)
-  const grade = args.rating as Grade; // 1=Again, 2=Hard, 3=Good, 4=Easy
+  const grade = args.rating; // 1=Again, 2=Hard, 3=Good, 4=Easy
   const recordLogItem = f.next(fsrsCard, now, grade);
 
   if (
