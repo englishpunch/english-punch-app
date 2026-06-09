@@ -1,5 +1,6 @@
 import { paginationOptsValidator } from "convex/server";
-import { mutation, query } from "./_generated/server";
+import { mutation, query, type MutationCtx } from "./_generated/server";
+import type { Id } from "./_generated/dataModel";
 import { ConvexError, v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
 
@@ -627,6 +628,7 @@ const initialSchedule = (now: number) => ({
   due: now,
   stability: 0,
   difficulty: 0,
+  elapsed_days: undefined,
   scheduled_days: 0,
   learning_steps: 0,
   reps: 0,
@@ -635,6 +637,67 @@ const initialSchedule = (now: number) => ({
   last_review: undefined,
   suspended: false,
 });
+
+const cardContentReplacementArgs = {
+  bagId: v.id("bags"),
+  cardId: v.id("cards"),
+  question: v.string(),
+  answer: v.string(),
+  hint: v.optional(v.string()),
+  explanation: v.optional(v.string()),
+  context: v.optional(v.string()),
+  sourceWord: v.optional(v.string()),
+  expression: v.optional(v.string()),
+};
+
+type CardContentReplacementArgs = {
+  bagId: Id<"bags">;
+  cardId: Id<"cards">;
+  question: string;
+  answer: string;
+  hint?: string;
+  explanation?: string;
+  context?: string;
+  sourceWord?: string;
+  expression?: string;
+};
+
+export const replaceCardContentAndResetScheduleHandler = async (
+  ctx: MutationCtx,
+  args: CardContentReplacementArgs
+) => {
+  const card = await ctx.db.get("cards", args.cardId);
+  if (!card || card.bagId !== args.bagId || card.deletedAt !== undefined) {
+    return null;
+  }
+
+  const now = Date.now();
+  await ctx.db.patch("cards", args.cardId, {
+    question: args.question,
+    answer: args.answer,
+    hint: args.hint,
+    explanation: args.explanation,
+    context: args.context,
+    sourceWord: args.sourceWord,
+    expression: args.expression,
+    ...initialSchedule(now),
+  });
+
+  const bag = await ctx.db.get("bags", args.bagId);
+  if (bag && bag.deletedAt === undefined) {
+    const newCards = bag.newCards + (card.state === 0 ? 0 : 1);
+    const learningCards = bag.learningCards - (card.state === 1 ? 1 : 0);
+    const reviewCards = bag.reviewCards - (card.state === 2 ? 1 : 0);
+    await ctx.db.patch("bags", args.bagId, {
+      newCards,
+      learningCards,
+      reviewCards,
+      lastModified: new Date(now).toISOString(),
+    });
+  }
+
+  return null;
+};
 
 /** 카드 생성 */
 export const createCard = mutation({
@@ -679,18 +742,17 @@ export const createCard = mutation({
   },
 });
 
-/** 카드 수정 + 스케줄 초기화 */
+/** 카드 콘텐츠 교체 + FSRS 스케줄 초기화 */
+export const replaceCardContentAndResetSchedule = mutation({
+  args: cardContentReplacementArgs,
+  returns: v.null(),
+  handler: replaceCardContentAndResetScheduleHandler,
+});
+
+/** @deprecated use replaceCardContentAndResetSchedule */
 export const updateCard = mutation({
   args: {
-    bagId: v.id("bags"),
-    cardId: v.id("cards"),
-    question: v.string(),
-    answer: v.string(),
-    hint: v.optional(v.string()),
-    explanation: v.optional(v.string()),
-    context: v.optional(v.string()),
-    sourceWord: v.optional(v.string()),
-    expression: v.optional(v.string()),
+    ...cardContentReplacementArgs,
     due: v.optional(v.number()),
     stability: v.optional(v.number()),
     difficulty: v.optional(v.number()),
@@ -702,39 +764,8 @@ export const updateCard = mutation({
       v.union(v.literal(0), v.literal(1), v.literal(2), v.literal(3))
     ),
   },
-  handler: async (ctx, args) => {
-    const card = await ctx.db.get("cards", args.cardId);
-    if (!card || card.bagId !== args.bagId || card.deletedAt !== undefined) {
-      return null;
-    }
-
-    const now = Date.now();
-    await ctx.db.patch("cards", args.cardId, {
-      question: args.question,
-      answer: args.answer,
-      hint: args.hint,
-      explanation: args.explanation,
-      context: args.context,
-      sourceWord: args.sourceWord,
-      expression: args.expression,
-      ...initialSchedule(now),
-    });
-
-    const bag = await ctx.db.get("bags", args.bagId);
-    if (bag && bag.deletedAt === undefined) {
-      // 이전 상태가 0이 아니면 newCards 증가, 다른 상태 감소는 생략 (간단 집계)
-      const newCards = bag.newCards + (card.state === 0 ? 0 : 1);
-      const learningCards = bag.learningCards - (card.state === 1 ? 1 : 0);
-      const reviewCards = bag.reviewCards - (card.state === 2 ? 1 : 0);
-      await ctx.db.patch("bags", args.bagId, {
-        newCards,
-        learningCards,
-        reviewCards,
-        lastModified: new Date(now).toISOString(),
-      });
-    }
-    return null;
-  },
+  returns: v.null(),
+  handler: replaceCardContentAndResetScheduleHandler,
 });
 
 /** 카드 삭제 */
