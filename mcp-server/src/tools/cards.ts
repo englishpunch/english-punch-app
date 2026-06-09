@@ -149,7 +149,7 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
     "update-card",
     {
       description:
-        "Update a card's content (resets FSRS schedule to initial state)",
+        "Replace a card's content and reset its FSRS schedule to the initial state",
       inputSchema: {
         cardId,
         bagId,
@@ -173,7 +173,7 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
       sourceWord,
       expression,
     }) => {
-      await client.mutation(api.learning.updateCard, {
+      await client.mutation(api.learning.replaceCardContentAndResetSchedule, {
         cardId,
         bagId,
         question,
@@ -185,7 +185,12 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
         expression,
       });
       return {
-        content: [{ type: "text", text: `Card updated: "${answer}"` }],
+        content: [
+          {
+            type: "text",
+            text: `Card replaced and schedule reset: "${answer}"`,
+          },
+        ],
       };
     }
   );

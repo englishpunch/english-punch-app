@@ -22,7 +22,9 @@ export default function CardEditPage() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
   const navigate = useNavigate();
-  const updateCard = useMutation(api.learning.updateCard);
+  const replaceCardContentAndResetSchedule = useMutation(
+    api.learning.replaceCardContentAndResetSchedule
+  );
 
   // Get bag info
   const bagsArgs = isMock ? "skip" : userId ? { userId } : "skip";
@@ -57,7 +59,7 @@ export default function CardEditPage() {
       return;
     }
 
-    await updateCard({
+    await replaceCardContentAndResetSchedule({
       cardId: card._id,
       bagId: bag._id,
       question: formData.question,
@@ -65,15 +67,6 @@ export default function CardEditPage() {
       hint: formData.hint,
       explanation: formData.explanation,
       context: formData.context || undefined,
-      // Reset FSRS data
-      due: Date.now(),
-      stability: 0,
-      difficulty: 0,
-      scheduled_days: 0,
-      learning_steps: 0,
-      reps: 0,
-      lapses: 0,
-      state: 0,
     });
 
     toast.success(t("cardEdit.updated"));
