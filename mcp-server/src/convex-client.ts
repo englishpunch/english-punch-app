@@ -1,14 +1,14 @@
 import { ConvexHttpClient } from "convex/browser";
+import type { GenericId } from "convex/values";
 import { api } from "./convex-generated/api.js";
-import type { Id } from "./convex-generated/dataModel.js";
 
 const CONVEX_URL =
   process.env.CONVEX_URL ?? "https://strong-otter-914.convex.cloud";
 
 let cachedClient: ConvexHttpClient | null = null;
-let cachedUserId: Id<"users"> | null = null;
+let cachedUserId: GenericId<"users"> | null = null;
 
-export function getUserId(): Id<"users"> {
+export function getUserId(): GenericId<"users"> {
   if (!cachedUserId) {
     throw new Error("getUserId() called before authentication.");
   }

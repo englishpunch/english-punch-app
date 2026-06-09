@@ -1,15 +1,15 @@
 import { z } from "zod";
-import type { Id } from "../convex-generated/dataModel.js";
+import type { GenericId } from "convex/values";
 
 export const bagId = z
   .string()
   .describe("ID of the bag")
-  .transform((s) => s as Id<"bags">);
+  .transform((s) => s as GenericId<"bags">);
 
 export const cardId = z
   .string()
   .describe("ID of the card")
-  .transform((s) => s as Id<"cards">);
+  .transform((s) => s as GenericId<"cards">);
 
 export const rating = z
   .number()
