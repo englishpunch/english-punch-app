@@ -12,6 +12,7 @@ export default tseslint.config(
       "dist",
       "eslint.config.js",
       "convex/_generated",
+      "mcp-server/src/convex-generated",
       "postcss.config.js",
       "tailwind.config.js",
       "vite.config.ts",

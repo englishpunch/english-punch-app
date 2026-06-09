@@ -206,6 +206,8 @@ export default function BagDetailPage() {
     [bag, columnHelper, isMock, navigate, setPendingDeleteCard, t]
   );
 
+  // TanStack Table intentionally returns non-memoizable functions here.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: cardsToShow,
     columns,

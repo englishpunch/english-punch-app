@@ -84,12 +84,14 @@ export const startReview = mutation({
 
     const dueCards = await ctx.db
       .query("cards")
-      .withIndex("by_user_and_due", (q) =>
-        q.eq("userId", args.userId).lte("due", now)
+      .withIndex("by_user_bag_deleted_suspended_due", (q) =>
+        q
+          .eq("userId", args.userId)
+          .eq("bagId", args.bagId)
+          .eq("deletedAt", undefined)
+          .eq("suspended", false)
+          .lte("due", now)
       )
-      .filter((q) => q.eq(q.field("bagId"), args.bagId))
-      .filter((q) => q.eq(q.field("deletedAt"), undefined))
-      .filter((q) => q.eq(q.field("suspended"), false))
       .order("asc")
       .take(1);
 
@@ -267,12 +269,14 @@ export const rateReview = mutation({
 
     const remaining = await ctx.db
       .query("cards")
-      .withIndex("by_user_and_due", (q) =>
-        q.eq("userId", args.userId).lte("due", now)
+      .withIndex("by_user_bag_deleted_suspended_due", (q) =>
+        q
+          .eq("userId", args.userId)
+          .eq("bagId", pending.bagId)
+          .eq("deletedAt", undefined)
+          .eq("suspended", false)
+          .lte("due", now)
       )
-      .filter((q) => q.eq(q.field("bagId"), pending.bagId))
-      .filter((q) => q.eq(q.field("deletedAt"), undefined))
-      .filter((q) => q.eq(q.field("suspended"), false))
       .take(101);
 
     return {

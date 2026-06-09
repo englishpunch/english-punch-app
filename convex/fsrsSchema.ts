@@ -118,6 +118,14 @@ export const learningTables = {
     .index("by_due", ["due"]) // 전체 due 날짜 순 정렬
     .index("by_user_and_due", ["userId", "due"]) // 사용자별 due 날짜 순
     .index("by_bag_and_due", ["bagId", "due"]) // 샌드백별 due 날짜 순
+    .index("by_user_bag_deleted_suspended_due", [
+      "userId",
+      "bagId",
+      "deletedAt",
+      "suspended",
+      "due",
+    ])
+    .index("by_bag_deleted_user", ["bagId", "deletedAt", "userId"])
     .index("by_user_and_state", ["userId", "state"])
     .index("by_bag_and_state", ["bagId", "state"])
     .index("by_user_and_learning_steps", ["userId", "learning_steps"])

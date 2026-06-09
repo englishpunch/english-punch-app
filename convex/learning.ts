@@ -248,12 +248,14 @@ export const getOneDueCard = query({
     }
     const cards = await ctx.db
       .query("cards")
-      .withIndex("by_user_and_due", (q) =>
-        q.eq("userId", userId).lte("due", nowTimestamp)
+      .withIndex("by_user_bag_deleted_suspended_due", (q) =>
+        q
+          .eq("userId", userId)
+          .eq("bagId", args.bagId)
+          .eq("deletedAt", undefined)
+          .eq("suspended", false)
+          .lte("due", nowTimestamp)
       )
-      .filter((q) => q.eq(q.field("bagId"), args.bagId))
-      .filter((q) => q.eq(q.field("deletedAt"), undefined))
-      .filter((q) => q.eq(q.field("suspended"), false))
       .order("asc")
       .take(1);
     const card = cards[0];
@@ -278,12 +280,14 @@ export const getDueCardCount = query({
     }
     const dueCardsList = await ctx.db
       .query("cards")
-      .withIndex("by_user_and_due", (q) =>
-        q.eq("userId", userId).lte("due", nowTimestamp)
+      .withIndex("by_user_bag_deleted_suspended_due", (q) =>
+        q
+          .eq("userId", userId)
+          .eq("bagId", args.bagId)
+          .eq("deletedAt", undefined)
+          .eq("suspended", false)
+          .lte("due", nowTimestamp)
       )
-      .filter((q) => q.eq(q.field("bagId"), args.bagId))
-      .filter((q) => q.eq(q.field("deletedAt"), undefined))
-      .filter((q) => q.eq(q.field("suspended"), false))
       .take(101);
 
     return dueCardsList.length;
@@ -604,10 +608,12 @@ export const getBagCardsPaginated = query({
           )
       : ctx.db
           .query("cards")
-          .withIndex("by_bag_and_deleted_at", (q) =>
-            q.eq("bagId", args.bagId).eq("deletedAt", undefined)
+          .withIndex("by_bag_deleted_user", (q) =>
+            q
+              .eq("bagId", args.bagId)
+              .eq("deletedAt", undefined)
+              .eq("userId", args.userId)
           )
-          .filter((q) => q.eq(q.field("userId"), args.userId))
           .order("desc");
     const result = await query.paginate(args.paginationOpts);
 
