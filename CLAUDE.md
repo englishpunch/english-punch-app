@@ -13,7 +13,7 @@
 
 ## CLI Design
 
-- `ep` CLI의 **1순위 사용자는 Claude Code skill**이다. 사람 터미널 사용자는 부수적.
+- `ep` CLI의 **1순위 사용자는 AI Agent(eg. Claude Code, Codex)**이다. 사람 터미널 사용자는 부수적.
 - 새 `ep` 커맨드를 추가하거나 기존 커맨드를 수정할 때는 반드시 @docs/cli-llm-as-caller.md 의 다섯 가지 규칙(`--json` 필수, 에러 토큰, 멱등성, `--help` 자기기술, 최소 chrome)을 준수할 것.
 
 ## Date and Time
@@ -63,6 +63,44 @@ gh run view --log-failed
 - **Push 전 체크 (필수)**: `cd cli && ~/go/bin/golangci-lint run`
 - 빠른 개발 루프: `cd cli && go vet ./... && go test ./... && go build ./...`
 - golangci-lint 설치 (한 번만): `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest`
+
+### Go CLI 버전업 / 배포
+
+- `ep` CLI 배포는 `v*` 태그 push 로 시작된다. `.github/workflows/release-cli.yml` 이 GoReleaser 를 실행해서 GitHub Release, darwin 바이너리, `Formula/ep.rb` 를 갱신한다.
+- 배포 전에는 `main` 이 clean 하고 원격과 동기화되어 있어야 한다.
+
+```sh
+git checkout main
+git pull --ff-only origin main
+
+cd cli
+go test ./...
+~/go/bin/golangci-lint run
+cd ..
+
+VERSION=v0.3.3 # 예시: 최신 태그가 v0.3.2 일 때
+git tag -a "$VERSION" -m "cli $VERSION"
+git push origin "$VERSION"
+```
+
+- 태그 번호는 기존 최신 태그를 확인한 뒤 올린다: `git tag --sort=-v:refname | head`.
+- 이미 push 된 태그는 재사용하거나 강제로 옮기지 않는다. 문제가 있으면 다음 patch 버전을 새로 태그한다.
+- 태그 push 후 릴리스 workflow 완료까지 확인한다:
+
+```sh
+gh run list --workflow release-cli.yml --limit 3
+gh run watch
+gh run view --log-failed
+```
+
+- GoReleaser 가 `Formula/ep.rb` 를 main 에 push 할 수 있으므로 릴리스 완료 후 `git pull --ff-only origin main` 으로 로컬을 맞춘다.
+- 배포 확인:
+
+```sh
+brew update
+brew upgrade englishpunch/cli/ep
+ep --version
+```
 
 <!-- convex-ai-start -->
 
