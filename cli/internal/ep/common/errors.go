@@ -18,6 +18,7 @@ const (
 const (
 	// Bag lifecycle
 	TokenBagNotFound  = "BAG_NOT_FOUND"
+	TokenCardNotFound = "CARD_NOT_FOUND"
 	TokenNoDefaultBag = "NO_DEFAULT_BAG"
 
 	// Auth lifecycle
@@ -52,6 +53,7 @@ const (
 // Token* constants above — the drift test enforces this.
 var CanonicalTokens = map[string]struct{}{
 	TokenBagNotFound:          {},
+	TokenCardNotFound:         {},
 	TokenNoDefaultBag:         {},
 	TokenNotLoggedIn:          {},
 	TokenInvalidCredentials:   {},

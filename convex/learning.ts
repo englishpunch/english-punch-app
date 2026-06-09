@@ -576,6 +576,8 @@ export const getCard = query({
       hint: card.hint,
       explanation: card.explanation,
       context: card.context,
+      sourceWord: card.sourceWord,
+      expression: card.expression,
     };
   },
 });
@@ -619,6 +621,8 @@ export const getBagCardsPaginated = query({
         hint: c.hint,
         explanation: c.explanation,
         context: c.context,
+        sourceWord: c.sourceWord,
+        expression: c.expression,
       })),
     };
   },

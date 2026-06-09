@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"strings"
 	"testing"
 
 	"github.com/echoja/english-punch-app/cli/internal/ep/common"
+	"github.com/echoja/english-punch-app/cli/internal/ep/convex"
 )
 
 // These tests exercise the client-side flag validation in
@@ -24,6 +26,22 @@ func runCardsCreate(args []string) error {
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
 	return cmd.Execute()
+}
+
+func resetCardsCommandTestState() {
+	jsonFlag = common.JSONFlag{}
+	cardsResolveBagIDFunc = resolveBagID
+	cardsAuthenticatedClientFunc = authenticatedClient
+	cardsGetCardFunc = getCard
+	cardsReplaceCardContentAndResetScheduleFunc = replaceCardContentAndResetSchedule
+}
+
+func runCardsCommand(command interface {
+	SetArgs([]string)
+	Execute() error
+}, args []string) error {
+	command.SetArgs(args)
+	return command.Execute()
 }
 
 func assertMissingField(t *testing.T, err error, wantField string) {
@@ -99,4 +117,140 @@ func TestCardsCreate_ValidationOrder(t *testing.T) {
 		// every other field also missing
 	})
 	assertMissingField(t, err, "answer")
+}
+
+func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
+	resetCardsCommandTestState()
+	t.Cleanup(resetCardsCommandTestState)
+
+	explanation := "Use this when hope drops after bad news."
+	contextText := "after a rejection"
+	sourceWord := "실망한"
+	expression := "disheartened"
+	var gotReplacement cardReplacement
+
+	cardsResolveBagIDFunc = func(flagValue string) (string, error) {
+		if flagValue != "bag-1" {
+			t.Fatalf("flagValue = %q, want bag-1", flagValue)
+		}
+		return flagValue, nil
+	}
+	cardsAuthenticatedClientFunc = func(context.Context) (*convex.Client, *convex.User, error) {
+		return &convex.Client{}, &convex.User{ID: "user-1"}, nil
+	}
+	cardsGetCardFunc = func(_ context.Context, _ *convex.Client, userID, bagID, cardID string) (*cardDetail, error) {
+		if userID != "user-1" || bagID != "bag-1" || cardID != "card-1" {
+			t.Fatalf("unexpected lookup: user=%s bag=%s card=%s", userID, bagID, cardID)
+		}
+		return &cardDetail{
+			ID:          cardID,
+			Question:    "old question",
+			Answer:      "disheartened",
+			Hint:        ptr("discouraged"),
+			Explanation: &explanation,
+			Context:     &contextText,
+			SourceWord:  &sourceWord,
+			Expression:  &expression,
+		}, nil
+	}
+	cardsReplaceCardContentAndResetScheduleFunc = func(_ context.Context, _ *convex.Client, bagID, cardID string, replacement cardReplacement) error {
+		if bagID != "bag-1" || cardID != "card-1" {
+			t.Fatalf("unexpected replace target: bag=%s card=%s", bagID, cardID)
+		}
+		gotReplacement = replacement
+		return nil
+	}
+
+	cmd := newCardsReplaceCmd()
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+
+	err := runCardsCommand(cmd, []string{
+		"card-1",
+		"--bag", "bag-1",
+		"--question", "I felt ___ after reading the rejection letter.",
+		"--hint", "discouraged, dejected, low-spirited",
+	})
+	if err != nil {
+		t.Fatalf("runCardsCommand: %v", err)
+	}
+
+	if gotReplacement.Question != "I felt ___ after reading the rejection letter." {
+		t.Fatalf("question = %q", gotReplacement.Question)
+	}
+	if gotReplacement.Answer != "disheartened" {
+		t.Fatalf("answer = %q, want existing answer", gotReplacement.Answer)
+	}
+	if gotReplacement.Hint != "discouraged, dejected, low-spirited" {
+		t.Fatalf("hint = %q", gotReplacement.Hint)
+	}
+	if gotReplacement.Explanation == nil || *gotReplacement.Explanation != explanation {
+		t.Fatalf("explanation not preserved: %#v", gotReplacement.Explanation)
+	}
+	if gotReplacement.Context == nil || *gotReplacement.Context != contextText {
+		t.Fatalf("context not preserved: %#v", gotReplacement.Context)
+	}
+	if gotReplacement.SourceWord == nil || *gotReplacement.SourceWord != sourceWord {
+		t.Fatalf("sourceWord not preserved: %#v", gotReplacement.SourceWord)
+	}
+	if gotReplacement.Expression == nil || *gotReplacement.Expression != expression {
+		t.Fatalf("expression not preserved: %#v", gotReplacement.Expression)
+	}
+}
+
+func TestCardsReplace_RequiresQuestionAndHint(t *testing.T) {
+	resetCardsCommandTestState()
+	t.Cleanup(resetCardsCommandTestState)
+
+	cmd := newCardsReplaceCmd()
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+
+	err := runCardsCommand(cmd, []string{
+		"card-1",
+		"--hint", "discouraged, dejected",
+	})
+	assertMissingField(t, err, "--question")
+
+	cmd = newCardsReplaceCmd()
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+
+	err = runCardsCommand(cmd, []string{
+		"card-1",
+		"--question", "I felt ___.",
+	})
+	assertMissingField(t, err, "--hint")
+}
+
+func TestCardsGet_CardNotFoundTokenPropagates(t *testing.T) {
+	resetCardsCommandTestState()
+	t.Cleanup(resetCardsCommandTestState)
+
+	cardsResolveBagIDFunc = func(flagValue string) (string, error) {
+		return "bag-1", nil
+	}
+	cardsAuthenticatedClientFunc = func(context.Context) (*convex.Client, *convex.User, error) {
+		return &convex.Client{}, &convex.User{ID: "user-1"}, nil
+	}
+	cardsGetCardFunc = func(context.Context, *convex.Client, string, string, string) (*cardDetail, error) {
+		return nil, common.NewTokenError(common.TokenCardNotFound, "card not found", nil)
+	}
+
+	cmd := newCardsGetCmd()
+	cmd.SilenceUsage = true
+	cmd.SilenceErrors = true
+
+	err := runCardsCommand(cmd, []string{"card-1"})
+	var exitErr *common.ExitError
+	if !errors.As(err, &exitErr) {
+		t.Fatalf("expected *common.ExitError, got %T: %v", err, err)
+	}
+	if exitErr.Token != common.TokenCardNotFound {
+		t.Fatalf("token = %q, want %q", exitErr.Token, common.TokenCardNotFound)
+	}
+}
+
+func ptr(value string) *string {
+	return &value
 }
