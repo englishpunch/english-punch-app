@@ -3,9 +3,8 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import FSRSStudySession from "./FSRSStudySession";
-import BagStats from "./BagStats";
 import { Button } from "./Button";
-import { ArrowLeft, BarChart3, Eye, Plus } from "lucide-react";
+import { ArrowLeft, Plus } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 
@@ -18,9 +17,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
 
-  const [currentView, setCurrentView] = useState<"bags" | "study" | "stats">(
-    "bags"
-  );
+  const [currentView, setCurrentView] = useState<"bags" | "study">("bags");
   const [selectedBagId, setSelectedBagId] = useState<Id<"bags"> | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
@@ -49,17 +46,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
     setCurrentView("study");
   };
 
-  const handleViewStats = (bagId: Id<"bags">) => {
-    setSelectedBagId(bagId);
-    setCurrentView("stats");
-  };
-
   const handleCompleteStudy = () => {
-    setCurrentView("bags");
-    setSelectedBagId(null);
-  };
-
-  const handleBackToBags = () => {
     setCurrentView("bags");
     setSelectedBagId(null);
   };
@@ -71,10 +58,6 @@ export default function BagManager({ onBack }: BagManagerProps) {
         onComplete={handleCompleteStudy}
       />
     );
-  }
-
-  if (currentView === "stats" && selectedBagId) {
-    return <BagStats bagId={selectedBagId} onBack={handleBackToBags} />;
   }
 
   return (
@@ -138,7 +121,6 @@ export default function BagManager({ onBack }: BagManagerProps) {
               key={bag._id}
               bag={bag}
               onStartStudy={() => handleStartStudy(bag._id)}
-              onViewStats={() => handleViewStats(bag._id)}
             />
           ))}
         </div>
@@ -158,15 +140,13 @@ interface BagCardProps {
     totalCards: number;
     newCards: number;
     learningCards: number;
-    reviewCards: number;
     tags: string[];
     isActive: boolean;
   };
   onStartStudy: () => void;
-  onViewStats: () => void;
 }
 
-function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
+function BagCard({ bag, onStartStudy }: BagCardProps) {
   const dueCount = bag.newCards + bag.learningCards; // 간단히 계산
   const { t } = useTranslation();
 
@@ -212,30 +192,6 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
             </span>
             <span className="font-medium">{bag.totalCards}</span>
           </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">
-              {t("bagManager.stats.newCards")}:
-            </span>
-            <span className="text-primary-700 font-semibold">
-              {bag.newCards}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">
-              {t("bagManager.stats.learningCards")}:
-            </span>
-            <span className="text-primary-700 font-semibold">
-              {bag.learningCards}
-            </span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">
-              {t("bagManager.stats.reviewCards")}:
-            </span>
-            <span className="text-primary-700 font-semibold">
-              {bag.reviewCards}
-            </span>
-          </div>
         </div>
 
         {/* 액션 버튼 */}
@@ -249,27 +205,6 @@ function BagCard({ bag, onStartStudy, onViewStats }: BagCardProps) {
               {t("bagManager.actions.noCards")}
             </Button>
           )}
-
-          <div className="flex gap-2">
-            <Button
-              onClick={onStartStudy}
-              variant="secondary"
-              size="sm"
-              className="flex-1 gap-2"
-            >
-              <Eye className="h-4 w-4" aria-hidden />
-              {t("bagManager.actions.viewAll")}
-            </Button>
-            <Button
-              onClick={onViewStats}
-              variant="secondary"
-              size="sm"
-              className="flex-1 gap-2"
-            >
-              <BarChart3 className="h-4 w-4" aria-hidden />
-              {t("bagManager.actions.stats")}
-            </Button>
-          </div>
         </div>
       </div>
     </div>

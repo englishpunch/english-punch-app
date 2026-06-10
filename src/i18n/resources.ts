@@ -126,10 +126,6 @@ const enTranslation = {
       unknown: "Unknown",
     },
     reps: "Reviews {{count}}",
-    shortcuts: {
-      showAnswer: "Space: Show answer",
-      grade: "1-4: Grade",
-    },
     sections: {
       question: "Question",
       hint: "Hint",
@@ -137,9 +133,14 @@ const enTranslation = {
       explanation: "Explanation",
     },
     showAnswer: "Show answer",
-    showAnswerShortcut: "(Space)",
     ratingPrompt: "How well did you remember?",
-    ratingShortcut: "({{shortcut}})",
+    actions: {
+      title: "Card actions",
+      disable: "Disable card",
+      moveTo: "Move to bag",
+      move: "Move",
+      noOtherBags: "No other bags",
+    },
   },
   studySession: {
     completeTitle: "Session complete!",
@@ -150,6 +151,13 @@ const enTranslation = {
     progress: "Progress",
     sessionTitle: "Study Session",
     cardsDue: "{{countDisplay}} cards due",
+    toasts: {
+      disabled: "Card disabled.",
+      disableFailed: "Failed to disable the card.",
+      moved: 'Moved to "{{name}}".',
+      moveFailed: "Failed to move the card.",
+      unknownBag: "selected bag",
+    },
   },
   bagManager: {
     title: "English Study Bag",
@@ -493,10 +501,6 @@ const koTranslation = {
       unknown: "알 수 없음",
     },
     reps: "복습 {{count}}회",
-    shortcuts: {
-      showAnswer: "Space: 답 보기",
-      grade: "1-4: 평가하기",
-    },
     sections: {
       question: "문제",
       hint: "힌트",
@@ -504,9 +508,14 @@ const koTranslation = {
       explanation: "설명",
     },
     showAnswer: "답 보기",
-    showAnswerShortcut: "(Space)",
     ratingPrompt: "얼마나 잘 기억하셨나요?",
-    ratingShortcut: "({{shortcut}})",
+    actions: {
+      title: "카드 작업",
+      disable: "이 카드 비활성화",
+      moveTo: "옮길 샌드백",
+      move: "이동",
+      noOtherBags: "다른 샌드백 없음",
+    },
   },
   studySession: {
     completeTitle: "학습 완료!",
@@ -518,6 +527,13 @@ const koTranslation = {
     progress: "진행률",
     sessionTitle: "학습 세션",
     cardsDue: "복습 예정 카드 {{countDisplay}}장",
+    toasts: {
+      disabled: "카드를 비활성화했습니다.",
+      disableFailed: "카드를 비활성화하지 못했습니다.",
+      moved: '"{{name}}"으로 이동했습니다.',
+      moveFailed: "카드를 이동하지 못했습니다.",
+      unknownBag: "선택한 샌드백",
+    },
   },
   bagManager: {
     title: "영어 학습 샌드백",
@@ -857,10 +873,6 @@ const jaTranslation = {
       unknown: "不明",
     },
     reps: "復習 {{count}}回",
-    shortcuts: {
-      showAnswer: "Space: 答えを見る",
-      grade: "1-4: 評価",
-    },
     sections: {
       question: "問題",
       hint: "ヒント",
@@ -868,9 +880,14 @@ const jaTranslation = {
       explanation: "説明",
     },
     showAnswer: "答えを見る",
-    showAnswerShortcut: "(Space)",
     ratingPrompt: "どのくらい覚えていますか?",
-    ratingShortcut: "({{shortcut}})",
+    actions: {
+      title: "カード操作",
+      disable: "カードを無効化",
+      moveTo: "移動先のバッグ",
+      move: "移動",
+      noOtherBags: "他のバッグなし",
+    },
   },
   studySession: {
     completeTitle: "学習完了!",
@@ -882,6 +899,13 @@ const jaTranslation = {
     progress: "進捗",
     sessionTitle: "学習セッション",
     cardsDue: "復習予定のカード {{countDisplay}}枚",
+    toasts: {
+      disabled: "カードを無効化しました。",
+      disableFailed: "カードを無効化できませんでした。",
+      moved: "「{{name}}」に移動しました。",
+      moveFailed: "カードを移動できませんでした。",
+      unknownBag: "選択したバッグ",
+    },
   },
   bagManager: {
     title: "英語学習サンドバッグ",

@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import * as Popover from "@radix-ui/react-popover";
 import { Button } from "./Button";
+import { Select } from "./Input";
 import { cn } from "@/lib/utils";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 import { Link } from "@tanstack/react-router";
+import { Ban, MoveRight } from "lucide-react";
+import type { Id } from "../../convex/_generated/dataModel";
 
 const buildAskingPrompt = (value: string) => `What does "${value}" mean?`;
 
@@ -20,6 +23,9 @@ interface StudyCardProps {
   };
   onReveal?: (elapsedSinceQuestionMs: number) => void;
   onGrade: (rating: 1 | 2 | 3 | 4, duration: number) => void;
+  onDisable?: () => void | Promise<void>;
+  onMoveToBag?: (targetBagId: Id<"bags">) => void | Promise<void>;
+  moveTargetBags?: Array<{ _id: Id<"bags">; name: string }>;
   isLoading?: boolean;
 }
 
@@ -33,10 +39,16 @@ function StudyCardContent({
   card,
   onReveal,
   onGrade,
+  onDisable,
+  onMoveToBag,
+  moveTargetBags = [],
   isLoading = false,
 }: StudyCardProps) {
   const { t } = useTranslation();
   const [showAnswer, setShowAnswer] = useState(false);
+  const [selectedMoveBagId, setSelectedMoveBagId] = useState<Id<"bags"> | "">(
+    ""
+  );
   const startTimeRef = useRef<number>(0);
   const selectionContainerRef = useRef<HTMLDivElement | null>(null);
   const selectionAnchorRef = useRef<{
@@ -50,6 +62,12 @@ function StudyCardContent({
   useEffect(() => {
     startTimeRef.current = Date.now();
   }, []);
+
+  const selectedMoveBagIdForAction =
+    selectedMoveBagId &&
+    moveTargetBags.some((bag) => bag._id === selectedMoveBagId)
+      ? selectedMoveBagId
+      : (moveTargetBags[0]?._id ?? "");
 
   const handleShowAnswer = useCallback(() => {
     const elapsedSinceQuestionMs = startTimeRef.current
@@ -69,62 +87,42 @@ function StudyCardContent({
     [onGrade]
   );
 
+  const handleMoveToBag = useCallback(() => {
+    if (!selectedMoveBagIdForAction || !onMoveToBag) {
+      return;
+    }
+    void onMoveToBag(selectedMoveBagIdForAction);
+  }, [onMoveToBag, selectedMoveBagIdForAction]);
+
   const getRatingConfig = (rating: 1 | 2 | 3 | 4) => {
     const configs = {
       1: {
         label: t("ratings.labels.again"),
         className: "bg-red-500 hover:bg-red-600",
         description: t("ratings.descriptions.again"),
-        shortcut: "1",
         variant: "danger" as const,
       },
       2: {
         label: t("ratings.labels.hard"),
         className: "bg-primary-500 hover:bg-primary-600",
         description: t("ratings.descriptions.hard"),
-        shortcut: "2",
         variant: "plain" as const,
       },
       3: {
         label: t("ratings.labels.good"),
         className: "bg-primary-600 hover:bg-primary-700",
         description: t("ratings.descriptions.good"),
-        shortcut: "3",
         variant: "plain" as const,
       },
       4: {
         label: t("ratings.labels.easy"),
         className: "bg-primary-700 hover:bg-primary-800",
         description: t("ratings.descriptions.easy"),
-        shortcut: "4",
         variant: "plain" as const,
       },
     } as const;
     return configs[rating];
   };
-
-  // 키보드 단축키
-  useEffect(() => {
-    const handleKeyPress = (event: KeyboardEvent) => {
-      if (!showAnswer) {
-        if (event.code === "Space") {
-          event.preventDefault();
-          handleShowAnswer();
-        }
-        return;
-      }
-
-      // 답이 보일 때만 평가 가능
-      if (event.key >= "1" && event.key <= "4") {
-        event.preventDefault();
-        const rating = parseInt(event.key) as 1 | 2 | 3 | 4;
-        handleGrade(rating);
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [handleGrade, handleShowAnswer, showAnswer]);
 
   const closeSelectionPopover = useCallback(() => {
     setIsSelectionPopoverOpen(false);
@@ -238,7 +236,7 @@ function StudyCardContent({
       <div className="relative w-full overflow-hidden border-y border-gray-200 bg-white">
         {/* 카드 헤더 */}
         <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center">
             <div className="flex items-center gap-3">
               <span
                 className={cn(
@@ -251,10 +249,6 @@ function StudyCardContent({
               <span className="text-sm text-gray-600">
                 {t("studyCard.reps", { count: card.reps })}
               </span>
-            </div>
-            <div className="text-xs font-medium text-gray-600">
-              {!showAnswer && t("studyCard.shortcuts.showAnswer")}
-              {showAnswer && t("studyCard.shortcuts.grade")}
             </div>
           </div>
         </div>
@@ -295,10 +289,7 @@ function StudyCardContent({
                 className="px-8"
                 disabled={isLoading}
               >
-                {t("studyCard.showAnswer")}{" "}
-                <span className="text-sm opacity-80">
-                  {t("studyCard.showAnswerShortcut")}
-                </span>
+                {t("studyCard.showAnswer")}
               </Button>
             </div>
           ) : (
@@ -347,16 +338,77 @@ function StudyCardContent({
                           <div className="mt-1 text-xs opacity-90">
                             {config.description}
                           </div>
-                          <div className="mt-1 text-xs opacity-75">
-                            {t("studyCard.ratingShortcut", {
-                              shortcut: config.shortcut,
-                            })}
-                          </div>
                         </div>
                       </Button>
                     );
                   })}
                 </div>
+
+                {(onDisable || onMoveToBag) && (
+                  <div className="mt-6 border-t border-gray-200 pt-4">
+                    <h4 className="mb-3 text-sm font-medium text-gray-700">
+                      {t("studyCard.actions.title")}
+                    </h4>
+                    <div className="space-y-2">
+                      {onDisable && (
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          fullWidth
+                          className="gap-2"
+                          disabled={isLoading}
+                          onClick={() => void onDisable()}
+                        >
+                          <Ban className="h-4 w-4" aria-hidden />
+                          {t("studyCard.actions.disable")}
+                        </Button>
+                      )}
+                      {onMoveToBag && (
+                        <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-2">
+                          <label className="sr-only" htmlFor="move-card-bag">
+                            {t("studyCard.actions.moveTo")}
+                          </label>
+                          <Select
+                            id="move-card-bag"
+                            value={selectedMoveBagIdForAction}
+                            disabled={isLoading || moveTargetBags.length === 0}
+                            onChange={(event) =>
+                              setSelectedMoveBagId(
+                                event.currentTarget.value as Id<"bags">
+                              )
+                            }
+                            aria-label={t("studyCard.actions.moveTo")}
+                          >
+                            {moveTargetBags.length === 0 ? (
+                              <option value="">
+                                {t("studyCard.actions.noOtherBags")}
+                              </option>
+                            ) : (
+                              moveTargetBags.map((bag) => (
+                                <option key={bag._id} value={bag._id}>
+                                  {bag.name}
+                                </option>
+                              ))
+                            )}
+                          </Select>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            className="gap-2"
+                            disabled={isLoading || !selectedMoveBagIdForAction}
+                            onClick={handleMoveToBag}
+                            aria-label={t("studyCard.actions.move")}
+                          >
+                            <MoveRight className="h-4 w-4" aria-hidden />
+                            {t("studyCard.actions.move")}
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* 평가 가이드 */}
                 <div className="mt-6 rounded-lg bg-gray-50 p-4">
