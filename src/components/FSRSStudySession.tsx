@@ -25,7 +25,7 @@ export default function FSRSStudySession({
   const userId = loggedInUser?._id;
   const [isReviewing, setIsReviewing] = useState(false);
 
-  // Convex 쿼리 및 뮤테이션
+  // Convex queries and mutations.
   const dueCard = useQuery(api.learning.getOneDueCard, {
     bagId,
   });
@@ -156,17 +156,17 @@ export default function FSRSStudySession({
     }
   };
 
-  // 뒤로 가기 핸들러 (카드 목록 초기화 포함)
+  // Back handler, including card list reset.
   const handleBack = () => {
     onComplete();
   };
 
-  // 로딩 상태
+  // Loading state.
   if (!dueCard) {
     return <Spinner wrapper="page" />;
   }
 
-  // 카드가 없는 경우
+  // No-card state.
   if (dueCard === "NO_CARD_AVAILABLE") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">

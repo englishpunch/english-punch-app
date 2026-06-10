@@ -1,37 +1,37 @@
 # English Punch App
 
-지시사항 작성 원칙: @.claude/meta-rules.md
+Instruction writing principles: @.claude/meta-rules.md
 
 ## Project Structure
 
 - **pnpm monorepo** with Turborepo orchestration
-- 패키지 매니저는 반드시 `pnpm`을 사용할 것. `npm`, `yarn` 절대 사용 금지.
-- 워크스페이스 구성 (`pnpm-workspace.yaml`):
-  - `.` (루트) — 메인 앱 (Vite + React + TanStack Router + Convex)
-  - `cli/` — `ep` Go CLI (Cobra + Viper + Convex HTTP)
-  - `mcp-server/` — MCP 서버
+- Always use `pnpm` as the package manager. Do not use `npm` or `yarn`.
+- Workspace layout (`pnpm-workspace.yaml`):
+  - `.` (root) - main app (Vite + React + TanStack Router + Convex)
+  - `cli/` - `ep` Go CLI (Cobra + Viper + Convex HTTP)
+  - `mcp-server/` - MCP server
 
 ## CLI Design
 
-- `ep` CLI의 **1순위 사용자는 AI Agent(eg. Claude Code, Codex)**이다. 사람 터미널 사용자는 부수적.
-- 새 `ep` 커맨드를 추가하거나 기존 커맨드를 수정할 때는 반드시 @docs/cli-llm-as-caller.md 의 다섯 가지 규칙(`--json` 필수, 에러 토큰, 멱등성, `--help` 자기기술, 최소 chrome)을 준수할 것.
+- The **primary user of the `ep` CLI is an AI agent such as Claude Code or Codex**. Human terminal use is secondary.
+- When adding a new `ep` command or modifying an existing one, follow the five rules in @docs/cli-llm-as-caller.md: required `--json`, deterministic error tokens, idempotency, self-describing `--help`, and minimal chrome.
 
 ## Date and Time
 
-- 날짜/시간 처리와 포맷 규칙은 반드시 @docs/date-time-rules.md 를 따를 것.
+- Always follow @docs/date-time-rules.md for date/time handling and formatting.
 
 ## Convex Rules
 
-- Convex 코드를 수정하기 전에는 반드시 @docs/convex_rules.mdc 를 확인할 것.
-- @docs/convex_rules.mdc 는 https://convex.link/convex_rules.mdc 에서 가져온 생성 파일로 취급하고 직접 편집하지 말 것.
-- 갱신 일자는 @docs/convex_rules.meta.json 의 `updatedAt`에 기록한다.
-- Convex 작업을 시작할 때 다음 명령을 실행할 것. `updatedAt`이 7일 이상 지났거나 metadata가 없으면 자동으로 최신 파일로 덮어쓴다.
+- Before editing Convex code, always read @docs/convex_rules.mdc.
+- Treat @docs/convex_rules.mdc as a generated file fetched from https://convex.link/convex_rules.mdc. Do not edit it manually.
+- Record the refresh date in `updatedAt` in @docs/convex_rules.meta.json.
+- When starting Convex work, run the following command. If `updatedAt` is more than 7 days old or metadata is missing, it automatically overwrites the file with the latest version.
 
 ```sh
 scripts/update-convex-rules.sh
 ```
 
-- 즉시 강제 갱신이 필요하면 다음 명령을 사용한다.
+- To force an immediate refresh, run:
 
 ```sh
 scripts/update-convex-rules.sh --force
@@ -39,32 +39,32 @@ scripts/update-convex-rules.sh --force
 
 ## Frontend UI Runtime Review
 
-- UI 레이아웃, interaction, state, overlay, dense control 을 변경할 때는 반드시 @docs/ui-runtime-review.md 를 따를 것.
-- 코드 diff 만으로 확인하기 어려운 UI 변경은 가능한 경우 실제 브라우저 런타임에서 확인하고, 확인하지 못했다면 최종 응답에 명시할 것.
+- When changing UI layout, interactions, state, overlays, or dense controls, always follow @docs/ui-runtime-review.md.
+- For UI changes that are hard to verify from the code diff alone, check the real browser runtime when possible. If runtime verification was not possible, state that in the final response.
 
 ## Frontend Components
 
-- JSX 일부를 컴포넌트로 분리할 때는 로컬 함수 컴포넌트로 남기지 말고 별도 파일로 분리할 것.
+- When splitting JSX into components, move the component to a separate file instead of leaving it as a local function component.
 
 ## Check Commands
 
-- `pnpm run check` — 커밋 전에 실행. lint + knip + test. Staged 변경이 있어도 안전.
-- `pnpm run check:all` — 커밋 후 또는 clean tree에서 실행. 위 항목 + dedupe 체크 포함. CI에서 실행되는 전체 범위.
+- `pnpm run check` - run before committing. It runs lint + knip + test and is safe with staged changes.
+- `pnpm run check:all` - run after committing or from a clean tree. It includes the above checks plus dedupe checks and matches the full CI scope.
 
 ## Work Tracking
 
-- 모든 작업은 최신 `main` 기준에서 시작한다. 작업 전 `git status -sb`로 미커밋 변경 범위를 확인하고, `main`에서 `git fetch origin --tags`, `git pull --ff-only` 순서로 최신화한다. 미커밋 변경이 있으면 덮어쓰지 말고 먼저 범위를 확인한다.
-- 모든 코드/문서 변경은 GitHub Issue와 연결한다. 관련 이슈가 없으면 작업 전에 새 이슈를 만든다.
-- 작업 중인 이슈에는 작업자를 assignee로 지정한다.
-- 이슈 본문은 간단히 작성한다. 직접적인 코드 reference나 파일/라인 링크를 넣지 말고, `Direction`, `As-is`, `To-be` 중심으로 문제와 해결 방향만 남긴다. `To-be`가 아직 명확하지 않으면 억지로 해결책을 단정하지 말고 GitHub Issue에 `TBD` 라벨을 붙인다.
-- 모든 커밋 메시지는 GitHub Issue 번호를 포함한다. 예: `feat: add card filters #67`.
-- 커밋 메시지로 이슈를 자동 종료하지 않는다. `Closes #67`, `Fixes #67`, `Resolves #67` 같은 키워드는 사용하지 않는다. 이슈 종료는 수동으로 처리하거나 별도 점검 skill/workflow에서 일괄 확인한다.
+- Start every task from the latest `main`. Before work, run `git status -sb` to inspect uncommitted changes, then from `main` run `git fetch origin --tags` and `git pull --ff-only`. If uncommitted changes exist, inspect their scope before doing anything that could overwrite them.
+- Connect every code or documentation change to a GitHub Issue. If no related issue exists, create one before starting work.
+- Assign the working issue to the person doing the work.
+- Keep issue bodies simple. Do not include direct code references, file links, or line links. Use `Direction`, `As-is`, and `To-be` to describe the problem and intended direction. If `To-be` is not clear yet, do not invent a solution; add the `TBD` label to the GitHub Issue.
+- Every commit message must include a GitHub Issue number. Example: `feat: add card filters #67`.
+- Do not auto-close issues from commit messages. Avoid keywords such as `Closes #67`, `Fixes #67`, and `Resolves #67`. Close issues manually or through a separate audit skill/workflow.
 
-### Push 후 CI 확인
+### Check CI After Push
 
-- CI는 로컬 `pnpm run check`보다 넓은 범위(`pnpm run check:all` 상당)를 실행하므로, push 직후 실패가 늦게 드러날 수 있다.
-- 항상 push 후 GitHub Actions가 완료될 때까지 확인할 것.
-- 항상 다음 명령으로 최신 run 상태를 확인하고, 실패하면 로그를 읽고 수정 후 다시 push할 것.
+- CI runs a wider scope than local `pnpm run check`, roughly equivalent to `pnpm run check:all`, so failures may appear only after push.
+- Always wait for GitHub Actions to complete after pushing.
+- Always check the latest run status with the following commands. If a run fails, read the logs, fix the issue, and push again.
 
 ```sh
 gh run list --branch "$(git branch --show-current)" --limit 5
@@ -72,46 +72,46 @@ gh run watch
 gh run view --log-failed
 ```
 
-### 개별 실행
+### Individual Commands
 
-- `pnpm run lint` — ESLint
-- `pnpm run knip` — 미사용 코드/의존성 감지
-- `pnpm run test` — Vitest 단위 테스트
+- `pnpm run lint` - ESLint
+- `pnpm run knip` - detect unused code and dependencies
+- `pnpm run test` - Vitest unit tests
 
-### TypeScript 타입 체크
+### TypeScript Type Checking
 
-- 개별 파일 수정 시: `getDiagnostics`(IDE LSP 플러그인)를 사용하여 즉시 타입 에러를 확인할 것. `tsc --noEmit` 불필요.
-- 프로젝트 전체 체크가 필요한 경우(커밋 전 등): `tsc --noEmit`을 최후 수단으로 실행할 것.
+- For individual file edits, use `getDiagnostics` from the IDE LSP plugin to check type errors immediately. `tsc --noEmit` is not needed.
+- When a whole-project check is required, such as before a commit, use `tsc --noEmit` only as a last resort.
 
 ### Go CLI (`cli/`)
 
-- `go vet` 는 `errcheck` / `staticcheck` 같은 엄격한 룰을 못 잡음. CI는 `golangci-lint` 로 돌리므로, Go CLI 쪽을 `push` 하기 전에 반드시 로컬에서 같이 돌릴 것. 그렇지 않으면 CI fail → fix → re-push 의 round-trip 을 겪게 됨.
-- **Push 전 체크 (필수)**: `cd cli && ~/go/bin/golangci-lint run`
-- 빠른 개발 루프: `cd cli && go vet ./... && go test ./... && go build ./...`
-- golangci-lint 설치 (한 번만): `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest`
+- `go vet` does not catch stricter rules from tools such as `errcheck` or `staticcheck`. CI runs `golangci-lint`, so run it locally before pushing Go CLI changes. Otherwise the workflow becomes CI fail, fix, re-push.
+- **Required before push**: `cd cli && ~/go/bin/golangci-lint run`
+- Fast development loop: `cd cli && go vet ./... && go test ./... && go build ./...`
+- Install golangci-lint once: `go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest`
 
-### Go CLI 버전업 / 배포
+### Go CLI Versioning and Release
 
-- `ep` CLI 배포는 `v*` 태그 push 로 시작된다. `.github/workflows/release-cli.yml` 이 GoReleaser 를 실행해서 GitHub Release, darwin 바이너리, `Formula/ep.rb` 를 갱신한다.
-- 배포 전에는 `main` 이 clean 하고 원격과 동기화되어 있어야 한다.
+- `ep` CLI releases start by pushing a `v*` tag. `.github/workflows/release-cli.yml` runs GoReleaser and updates the GitHub Release, darwin binaries, and `Formula/ep.rb`.
+- Before releasing, `main` must be clean and synced with the remote.
 
 ```sh
 git checkout main
-git pull --ff-only origin main
+git pull --ff-only
 
 cd cli
 go test ./...
 ~/go/bin/golangci-lint run
 cd ..
 
-VERSION=v0.3.3 # 예시: 최신 태그가 v0.3.2 일 때
+VERSION=v0.3.3 # Example: when the latest tag is v0.3.2.
 git tag -a "$VERSION" -m "cli $VERSION"
 git push origin "$VERSION"
 ```
 
-- 태그 번호는 기존 최신 태그를 확인한 뒤 올린다: `git tag --sort=-v:refname | head`.
-- 이미 push 된 태그는 재사용하거나 강제로 옮기지 않는다. 문제가 있으면 다음 patch 버전을 새로 태그한다.
-- 태그 push 후 릴리스 workflow 완료까지 확인한다:
+- Check the latest existing tag before choosing a new tag number: `git tag --sort=-v:refname | head`.
+- Do not reuse or force-move a tag that has already been pushed. If there is a problem, create the next patch version tag.
+- After pushing the tag, wait for the release workflow to finish:
 
 ```sh
 gh run list --workflow release-cli.yml --limit 3
@@ -119,8 +119,8 @@ gh run watch
 gh run view --log-failed
 ```
 
-- GoReleaser 가 `Formula/ep.rb` 를 main 에 push 할 수 있으므로 릴리스 완료 후 `git pull --ff-only origin main` 으로 로컬을 맞춘다.
-- 배포 확인:
+- GoReleaser can push `Formula/ep.rb` back to `main`, so after the release completes, run `git pull --ff-only` to sync local state.
+- Verify the release:
 
 ```sh
 brew update

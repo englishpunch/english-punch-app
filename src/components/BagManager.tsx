@@ -21,7 +21,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
   const [selectedBagId, setSelectedBagId] = useState<Id<"bags"> | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
-  // Convex 쿼리 및 뮤테이션
+  // Convex queries and mutations.
   const bags = useQuery(api.learning.getUserBags, userId ? { userId } : "skip");
   const createSampleBag = useMutation(api.learning.createSampleBag);
   const updateBagStats = useMutation(api.learning.updateBagStats);
@@ -62,7 +62,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-4 py-10">
-      {/* 헤더 */}
+      {/* Header */}
       <div className="flex items-start justify-between">
         <div className="space-y-2">
           <h1 className="text-3xl font-semibold text-gray-900">
@@ -85,7 +85,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
         )}
       </div>
 
-      {/* 샘플 샌드백 생성 버튼 */}
+      {/* Sample bag creation button */}
       {(!bags || bags.length === 0) && (
         <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-sm">
           <div className="space-y-4 text-center">
@@ -113,7 +113,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
         </div>
       )}
 
-      {/* 샌드백 목록 */}
+      {/* Bag list */}
       {bags && bags.length > 0 && (
         <div className="grid grid-cols-1 gap-4">
           {bags.map((bag) => (
@@ -126,7 +126,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
         </div>
       )}
 
-      {/* 로딩 상태 */}
+      {/* Loading state */}
       {!bags && <Spinner wrapper="page" />}
     </div>
   );
@@ -147,13 +147,13 @@ interface BagCardProps {
 }
 
 function BagCard({ bag, onStartStudy }: BagCardProps) {
-  const dueCount = bag.newCards + bag.learningCards; // 간단히 계산
+  const dueCount = bag.newCards + bag.learningCards; // Simple approximation.
   const { t } = useTranslation();
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow">
       <div className="p-6">
-        {/* 샌드백 헤더 */}
+        {/* Bag header */}
         <div className="mb-3 flex items-start justify-between">
           <h3 className="text-lg font-semibold text-gray-900">{bag.name}</h3>
           <div className="flex items-center space-x-2">
@@ -165,12 +165,12 @@ function BagCard({ bag, onStartStudy }: BagCardProps) {
           </div>
         </div>
 
-        {/* 샌드백 설명 */}
+        {/* Bag description */}
         {bag.description && (
           <p className="mb-4 text-sm text-gray-600">{bag.description}</p>
         )}
 
-        {/* 태그 */}
+        {/* Tags */}
         {bag.tags.length > 0 && (
           <div className="mb-4 flex flex-wrap gap-1">
             {bag.tags.map((tag) => (
@@ -184,7 +184,7 @@ function BagCard({ bag, onStartStudy }: BagCardProps) {
           </div>
         )}
 
-        {/* 통계 */}
+        {/* Statistics */}
         <div className="mb-6 space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">
@@ -194,7 +194,7 @@ function BagCard({ bag, onStartStudy }: BagCardProps) {
           </div>
         </div>
 
-        {/* 액션 버튼 */}
+        {/* Action button */}
         <div className="space-y-2">
           {dueCount > 0 ? (
             <Button onClick={onStartStudy} fullWidth>

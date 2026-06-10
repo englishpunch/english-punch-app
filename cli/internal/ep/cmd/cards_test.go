@@ -126,7 +126,7 @@ func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
 
 	explanation := "Use this when hope drops after bad news."
 	contextText := "after a rejection"
-	sourceWord := "실망한"
+	sourceWord := "discouraged"
 	expression := "disheartened"
 	var gotReplacement cardReplacement
 

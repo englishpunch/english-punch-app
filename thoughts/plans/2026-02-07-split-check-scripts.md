@@ -5,55 +5,57 @@ status: completed
 topic: Split npm run check into pre-commit and post-commit scripts
 ---
 
-# npm run check 스크립트 분리: Pre-commit / Post-commit
+# Split npm run check: Pre-commit / Post-commit
 
 ## Overview
 
-`npm run check`가 staged 변경사항이 있을 때 실패하는 문제를 해결한다. dedupe 체크가 `git diff --exit-code`를 사용하기 때문에 dirty working tree에서 실패한다. AI agent가 커밋 전/후 어떤 명령어를 실행해야 하는지 명확히 구분할 수 있도록 스크립트를 분리한다.
+Fix the problem where `npm run check` fails when staged changes exist. The dedupe check uses `git diff --exit-code`, so it fails in a dirty working tree. Split the workflow so AI agents can clearly choose the right command before and after committing.
 
 ## Current State Analysis
 
-- `npm run check` → `scripts/check-local.sh` (lint + knip + test + dedupe 모두 실행)
-- dedupe 체크: `npm dedupe && git diff --exit-code package-lock.json` — clean working tree 필요
-- CI(`.github/workflows/check.yml`)도 동일한 4가지 체크를 개별 step으로 실행
-- CLAUDE.md 없음 — AI agent를 위한 가이드 부재
+- `npm run check` runs `scripts/check-local.sh`, which runs lint + knip + test + dedupe.
+- Dedupe check: `npm dedupe && git diff --exit-code package-lock.json`; this requires a clean working tree.
+- CI (`.github/workflows/check.yml`) also runs the same four checks as separate steps.
+- There is no `CLAUDE.md`, so AI agents do not have project-specific guidance.
 
-### Key Discoveries:
-- `scripts/check-local.sh:39` — dedupe 체크가 `git diff --exit-code` 사용
-- `package.json:21` — `"check": "./scripts/check-local.sh"`
-- `.github/workflows/check.yml:28-33` — CI dedupe step
-- Pre-commit hook/Husky 미설정
+### Key Discoveries
+
+- `scripts/check-local.sh:39` uses `git diff --exit-code` for dedupe.
+- `package.json:21` defines `"check": "./scripts/check-local.sh"`.
+- `.github/workflows/check.yml:28-33` defines the CI dedupe step.
+- No pre-commit hook or Husky setup exists.
 
 ## Desired End State
 
-- `npm run check` = lint + knip + test만 실행 (staged 변경 있어도 안전)
-- `npm run check:all` = lint + knip + test + dedupe (clean tree 필요, CI용)
-- CI 워크플로우에 pre/post 구분 반영
-- CLAUDE.md에 AI agent용 가이드 추가
+- `npm run check` runs only lint + knip + test and is safe with staged changes.
+- `npm run check:all` runs lint + knip + test + dedupe and is intended for a clean tree or CI.
+- CI documents the pre/post distinction while still running the full set.
+- `CLAUDE.md` documents the commands for AI agents.
 
-### 검증 방법:
-1. 파일을 stage한 상태에서 `npm run check` 성공 확인
-2. Clean tree에서 `npm run check:all` 성공 확인
-3. CI 워크플로우가 모든 체크를 수행하는지 확인
+### Verification
 
-## What We're NOT Doing
+1. Confirm `npm run check` succeeds when files are staged.
+2. Confirm `npm run check:all` succeeds from a clean tree.
+3. Confirm CI still runs every check.
 
-- Pre-commit hook (Husky 등) 설정
-- 체크 항목 자체의 변경 (lint rule, knip config 등)
-- CI 체크 항목 추가/제거
+## What We're Not Doing
+
+- Adding a pre-commit hook such as Husky.
+- Changing the checks themselves, such as lint rules or knip config.
+- Adding or removing CI check categories.
 
 ## Implementation Approach
 
-셸 스크립트를 분리하지 않고, 기존 `check-local.sh`에 파라미터를 추가하여 `--all` 옵션으로 dedupe 포함 여부를 제어한다. 스크립트 하나로 관리하는 것이 유지보수에 유리하다.
+Do not split the shell script into separate files. Add a parameter to the existing `check-local.sh` and use a `--all` option to control whether dedupe runs. Keeping one script is easier to maintain.
 
-## Phase 1: check-local.sh 수정 및 package.json 스크립트 추가
+## Phase 1: Update check-local.sh and package.json
 
-### Changes Required:
+### Changes Required
 
-#### 1. `scripts/check-local.sh` 수정
+#### 1. Update `scripts/check-local.sh`
 
 **File**: `scripts/check-local.sh`
-**Changes**: `--all` 플래그 추가. 플래그 없으면 pre-commit 체크만, `--all`이면 dedupe 포함.
+**Changes**: Add a `--all` flag. Without the flag, run only pre-commit checks. With `--all`, include dedupe.
 
 ```bash
 #!/usr/bin/env bash
@@ -130,36 +132,38 @@ fi
 echo "All checks passed."
 ```
 
-#### 2. `package.json` scripts 수정
+#### 2. Update package.json scripts
 
 **File**: `package.json`
-**Changes**: `check:all` 스크립트 추가
+**Changes**: Add a `check:all` script.
 
 ```json
 "check": "./scripts/check-local.sh",
-"check:all": "./scripts/check-local.sh --all",
+"check:all": "./scripts/check-local.sh --all"
 ```
 
-### Success Criteria:
+### Success Criteria
 
-#### Automated Verification:
-- [x] `npm run check` 실행 시 lint, knip, test만 실행되고 dedupe는 건너뜀 확인
-- [x] `npm run check:all` 실행 시 lint, knip, test, dedupe 모두 실행 확인
-- [x] 파일을 stage한 상태에서 `npm run check` 성공
+#### Automated Verification
 
-#### Manual Verification:
-- [ ] 스크립트 출력에서 `==> dedupe`가 `check`에서는 안 나오고 `check:all`에서만 나오는지 확인
+- [x] `npm run check` runs lint, knip, and test, and skips dedupe.
+- [x] `npm run check:all` runs lint, knip, test, and dedupe.
+- [x] `npm run check` succeeds with a staged file.
+
+#### Manual Verification
+
+- [ ] Confirm the output includes `==> dedupe` only for `check:all`, not for `check`.
 
 ---
 
-## Phase 2: CI 워크플로우 수정
+## Phase 2: Update CI Workflow
 
-### Changes Required:
+### Changes Required
 
-#### 1. `.github/workflows/check.yml` 수정
+#### 1. Update `.github/workflows/check.yml`
 
 **File**: `.github/workflows/check.yml`
-**Changes**: step에 주석으로 pre/post 구분 추가, 구조적 일관성 유지
+**Changes**: Add comments that mark pre-commit and post-commit groups while preserving the existing structure.
 
 ```yaml
       # --- Pre-commit checks (safe with staged changes) ---
@@ -189,53 +193,57 @@ echo "All checks passed."
         continue-on-error: true
 ```
 
-### Success Criteria:
+### Success Criteria
 
-#### Automated Verification:
-- [x] CI YAML 문법 유효성: `yamllint .github/workflows/check.yml` 또는 GitHub Actions 트리거 확인
+#### Automated Verification
 
-#### Manual Verification:
-- [ ] PR 생성 후 CI가 정상적으로 모든 체크를 실행하는지 확인
+- [x] CI YAML syntax is valid, either through `yamllint .github/workflows/check.yml` or a GitHub Actions trigger.
+
+#### Manual Verification
+
+- [ ] After opening a PR, confirm CI runs all checks normally.
 
 ---
 
-## Phase 3: CLAUDE.md 추가
+## Phase 3: Add CLAUDE.md
 
-### Changes Required:
+### Changes Required
 
-#### 1. `CLAUDE.md` 생성
+#### 1. Create `CLAUDE.md`
 
 **File**: `CLAUDE.md`
-**Changes**: AI agent를 위한 프로젝트 가이드 작성. 체크 명령어 구분을 명시.
+**Changes**: Add project guidance for AI agents and document the distinction between check commands.
 
 ```markdown
 # English Punch App
 
 ## Check Commands
 
-- `npm run check` — 커밋 전에 실행. lint + knip + test. Staged 변경이 있어도 안전.
-- `npm run check:all` — 커밋 후 또는 clean tree에서 실행. 위 항목 + dedupe 체크 포함. CI에서 실행되는 전체 범위.
+- `npm run check` - run before committing. It runs lint + knip + test and is safe with staged changes.
+- `npm run check:all` - run after committing or from a clean tree. It includes the above checks plus dedupe and matches the full CI scope.
 
-### 개별 실행
+### Individual Commands
 
-- `npm run lint` — ESLint
-- `npm run knip` — 미사용 코드/의존성 감지
-- `npm run test` — Vitest 단위 테스트
+- `npm run lint` - ESLint
+- `npm run knip` - detect unused code and dependencies
+- `npm run test` - Vitest unit tests
 ```
 
-### Success Criteria:
+### Success Criteria
 
-#### Automated Verification:
-- [x] `CLAUDE.md` 파일 존재 확인
+#### Automated Verification
 
-#### Manual Verification:
-- [ ] AI agent가 `npm run check`와 `npm run check:all`의 차이를 이해하고 적절히 사용하는지 확인
+- [x] `CLAUDE.md` exists.
+
+#### Manual Verification
+
+- [ ] Confirm AI agents understand the difference between `npm run check` and `npm run check:all` and use them appropriately.
 
 ---
 
 ## References
 
 - Research: `thoughts/shared/research/2026-02-07-npm-run-check.md`
-- `scripts/check-local.sh` — 현재 체크 스크립트
-- `.github/workflows/check.yml` — CI 워크플로우
-- `package.json:21` — check 스크립트 정의
+- `scripts/check-local.sh` - current check script
+- `.github/workflows/check.yml` - CI workflow
+- `package.json:21` - check script definition

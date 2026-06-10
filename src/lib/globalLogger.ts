@@ -31,11 +31,11 @@ const canError = currentLevel <= ERROR_LEVEL;
 
 /**
  *
- * 실험적으로 사용해보고 있는 Logger 입니다. 가장 좋은 로깅 방법을 찾는 중
+ * Experimental logger while the project settles on the best logging approach.
  *
- * - 1차: 단순 console.log
- * - 2차: getDefaultLogWithId
- * - 3차: DetailedLoggerModuleService
+ * - First pass: simple console.log
+ * - Second pass: getDefaultLogWithId
+ * - Third pass: DetailedLoggerModuleService
  */
 class DetailedLoggerModuleService {
   private durationCache_;

@@ -234,7 +234,7 @@ function StudyCardContent({
     >
       <Popover.Anchor virtualRef={selectionAnchorRef} />
       <div className="relative w-full overflow-hidden border-y border-gray-200 bg-white">
-        {/* 카드 헤더 */}
+        {/* Card header */}
         <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
           <div className="flex items-center">
             <div className="flex items-center gap-3">
@@ -253,7 +253,7 @@ function StudyCardContent({
           </div>
         </div>
 
-        {/* 카드 본문 */}
+        {/* Card body */}
         <div
           ref={selectionContainerRef}
           onMouseUp={handleSelectionEvent}
@@ -261,7 +261,7 @@ function StudyCardContent({
           onTouchEnd={handleSelectionEvent}
           className="px-6 py-8"
         >
-          {/* 문제 */}
+          {/* Question */}
           <div className="mb-6">
             <h2 className="mb-2 text-sm font-medium text-gray-500">
               {t("studyCard.sections.question")}
@@ -271,7 +271,7 @@ function StudyCardContent({
             </p>
           </div>
 
-          {/* 힌트 */}
+          {/* Hint */}
           {card.hint && !showAnswer && (
             <div className="mb-6">
               <h3 className="mb-2 text-sm font-medium text-gray-500">
@@ -281,7 +281,7 @@ function StudyCardContent({
             </div>
           )}
 
-          {/* 답 영역 */}
+          {/* Answer area */}
           {!showAnswer ? (
             <div className="text-center">
               <Button
@@ -294,7 +294,7 @@ function StudyCardContent({
             </div>
           ) : (
             <div className="space-y-6">
-              {/* 정답 */}
+              {/* Answer */}
               <div>
                 <h3 className="mb-2 text-sm font-medium text-gray-500">
                   {t("studyCard.sections.answer")}
@@ -304,7 +304,7 @@ function StudyCardContent({
                 </p>
               </div>
 
-              {/* 설명 */}
+              {/* Explanation */}
               {card.explanation && (
                 <div>
                   <h3 className="mb-2 text-sm font-medium text-gray-500">
@@ -314,7 +314,7 @@ function StudyCardContent({
                 </div>
               )}
 
-              {/* 평가 버튼들 */}
+              {/* Rating buttons */}
               <div className="pt-4">
                 <h3 className="mb-4 text-center text-sm font-medium text-gray-500">
                   {t("studyCard.ratingPrompt")}
@@ -410,7 +410,7 @@ function StudyCardContent({
                   </div>
                 )}
 
-                {/* 평가 가이드 */}
+                {/* Rating guide */}
                 <div className="mt-6 rounded-lg bg-gray-50 p-4">
                   <h4 className="mb-2 text-sm font-medium text-gray-700">
                     {t("ratings.guide.title")}
@@ -427,7 +427,7 @@ function StudyCardContent({
           )}
         </div>
 
-        {/* 로딩 오버레이 */}
+        {/* Loading overlay */}
         {isLoading && <Spinner size="lg" wrapper="overlay" />}
       </div>
 

@@ -1,35 +1,35 @@
-# English Punch 🥊
+# English Punch
 
-영어 학습을 위한 간격 반복 학습(Spaced Repetition) 앱
+A spaced-repetition app for learning English.
 
-## 개요
+## Overview
 
-English Punch는 [FSRS (Free Spaced Repetition Scheduler)](https://github.com/open-spaced-repetition/ts-fsrs) 알고리즘 기반의 영어 학습 애플리케이션입니다. 매일 복싱 도장에 가듯이 꾸준히 영어를 학습하자는 의미에서 "Punch"라는 이름을 붙였습니다.
+English Punch is an English learning app built on the [FSRS (Free Spaced Repetition Scheduler)](https://github.com/open-spaced-repetition/ts-fsrs) algorithm. The name "Punch" reflects the idea of practicing English consistently, like going to a boxing gym every day.
 
-웹 앱뿐만 아니라 **`ep` CLI**와 **MCP 서버**를 함께 제공하여, Claude Code 같은 LLM 에이전트가 대화 맥락에서 곧바로 카드를 추가하고 복습을 돌릴 수 있도록 설계되었습니다.
+The project includes the web app, the **`ep` CLI**, and an **MCP server**. It is designed so LLM agents such as Claude Code can add cards and run reviews directly from conversation context.
 
-## 카드 형식
+## Card Format
 
-빈칸 채우기 형식의 실용적인 영어 문장 학습:
+Cards use practical fill-in-the-blank English sentences:
 
+```text
+Question: I'd like to ___ a table for two at 7 pm. (book in advance)
+Answer: reserve
 ```
-문제: I'd like to ___ a table for two at 7 pm. (book in advance)
-정답: reserve
-```
 
-## 프로젝트 구조
+## Project Structure
 
-pnpm workspace + Turborepo 기반 모노레포입니다.
+This is a pnpm workspace monorepo orchestrated with Turborepo.
 
-- **`.` (루트)** — 웹 앱 (Vite + React + TanStack Router + Convex)
-- **`cli/`** — `ep` Go CLI (Cobra + Viper + Convex HTTP)
-- **`mcp-server/`** — MCP 서버 (Claude Code / 기타 MCP 클라이언트용)
+- **`.` (root)** - web app (Vite + React + TanStack Router + Convex)
+- **`cli/`** - `ep` Go CLI (Cobra + Viper + Convex HTTP)
+- **`mcp-server/`** - MCP server for Claude Code and other MCP clients
 
 ### `ep` CLI
 
-- **1순위 사용자는 Claude Code skill**이며, 사람 터미널 사용자는 부수적입니다.
-- 모든 커맨드가 `--json` 플래그, 결정적 에러 토큰, 멱등성, 자기기술형 `--help`를 제공합니다. 자세한 설계 원칙은 [`docs/cli-llm-as-caller.md`](docs/cli-llm-as-caller.md) 참고.
-- Homebrew 설치 (formula는 본 저장소의 `Formula/` 디렉터리에 있어 tap URL을 명시해야 합니다):
+- The primary user is the Claude Code skill; human terminal use is secondary.
+- Every command provides a `--json` flag, deterministic error tokens, idempotent behavior, and self-describing `--help` output. See [`docs/cli-llm-as-caller.md`](docs/cli-llm-as-caller.md) for the design principles.
+- Homebrew install. The formula lives in this repository's `Formula/` directory, so the tap URL must be explicit:
 
   ```bash
   brew tap englishpunch/cli https://github.com/englishpunch/english-punch-app
@@ -39,106 +39,105 @@ pnpm workspace + Turborepo 기반 모노레포입니다.
 
 ### Claude Code Skill
 
-- `english-punch` skill이 `ep` CLI를 호출해 다음을 수행합니다:
-  - 대화 도중 마주친 낯선 어휘를 플래시카드로 즉시 캡처
-  - 대화 맥락에서 문제/힌트/해설 자동 생성
-  - FSRS 기반 스케줄링으로 복습 세션을 엔드 투 엔드로 진행
-- skill 본문은 [`skills/english-punch/SKILL.md`](skills/english-punch/SKILL.md)에 있으며, [Vercel Labs `skills` CLI](https://github.com/vercel-labs/skills)를 통해 Claude Code · Cursor · Cline · Continue 등 40+ 에이전트에 동일한 방식으로 설치할 수 있습니다:
+- The `english-punch` skill is a thin public wrapper that documents only the minimum `ep` CLI workflow.
+- Command behavior should use the installed CLI help output, `ep --help` and `ep <command> --help`, as the source of truth.
+- Learning policy such as card sentence style, vocabulary level, and correction style belongs in user-specific skills or project configuration.
+- The skill body is in [`skills/english-punch/SKILL.md`](skills/english-punch/SKILL.md). It can be installed for Claude Code, Cursor, Cline, Continue, and 40+ other agents through the [Vercel Labs `skills` CLI](https://github.com/vercel-labs/skills):
 
   ```bash
   npx -y skills add englishpunch/english-punch-app --global --yes
   ```
 
-  플래그 의미:
+  Flag meanings:
 
-  - `npx -y` — `skills` 패키지 설치 프롬프트를 자동으로 수락합니다.
-  - `--global` (`-g`) — 현재 프로젝트뿐 아니라 사용자 수준으로 설치하여 모든 Claude Code 세션에서 곧바로 사용할 수 있게 합니다.
-  - `--yes` (`-y`) — `skills` CLI 자체의 확인 프롬프트를 모두 건너뜁니다.
+  - `npx -y` automatically accepts the package install prompt for `skills`.
+  - `--global` (`-g`) installs the skill at the user level, so it is available in every Claude Code session, not only this project.
+  - `--yes` (`-y`) skips confirmation prompts from the `skills` CLI itself.
 
-  설치 후 Claude Code 세션에서 `english-punch` skill이 자동 노출되며, 별도 등록이나 API 키가 필요 없습니다. 업데이트는 같은 명령을 다시 실행하면 됩니다.
+  After installation, the `english-punch` skill is exposed automatically in Claude Code sessions. No separate registration or API key is required. Run the same command again to update it.
 
-## 기술 스택
+## Tech Stack
 
 ### Frontend
 
-- **React 19** + **Vite** — UI 및 번들러
-- **TanStack Router** — 타입 안전 라우팅
-- **Tailwind CSS v4** — 스타일링
-- **i18next** — 다국어 지원
+- **React 19** + **Vite** - UI and bundling
+- **TanStack Router** - type-safe routing
+- **Tailwind CSS v4** - styling
+- **i18next** - localization
 
 ### Backend
 
-- **Convex** — 리액티브 백엔드 플랫폼 (실시간 DB, 서버리스 함수, WebSocket)
-- **@convex-dev/auth** — 인증
+- **Convex** - reactive backend platform with realtime database, serverless functions, and WebSocket support
+- **@convex-dev/auth** - authentication
 
 ### CLI / MCP
 
-- **Go + Cobra + Viper** — `ep` CLI
-- **@modelcontextprotocol/sdk** — MCP 서버
+- **Go + Cobra + Viper** - `ep` CLI
+- **@modelcontextprotocol/sdk** - MCP server
 
-### 학습 알고리즘
+### Learning Algorithm
 
-- **[ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)** — TypeScript FSRS 구현
+- **[ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)** - TypeScript FSRS implementation
 
-### 도구 체인
+### Toolchain
 
-- **pnpm** (필수 — `npm`, `yarn` 사용 금지) + **Turborepo** — 모노레포 오케스트레이션
-- **Vitest** — 단위 테스트
+- **pnpm** (required; do not use `npm` or `yarn`) + **Turborepo** - monorepo orchestration
+- **Vitest** - unit tests
 - **ESLint** + **Prettier** + **Knip**
 
-## 설치 및 실행
+## Install and Run
 
 ```bash
-# 저장소 클론
+# Clone the repository
 git clone git@github.com:englishpunch/english-punch-app.git
 cd english-punch-app
 
-# 의존성 설치 (반드시 pnpm)
+# Install dependencies. pnpm is required.
 pnpm install
 
-# 개발 서버 실행 (웹 + Convex 백엔드)
+# Start the development servers for the web app and Convex backend.
 pnpm run dev
 ```
 
-## 환경 설정
+## Environment Setup
 
-### 1. Convex 프로젝트 설정
+### 1. Configure Convex
 
-Convex 개발 환경을 초기화합니다:
+Initialize the Convex development environment:
 
 ```bash
 npx convex dev
 ```
 
-이 명령어가 Convex 계정 로그인과 새 프로젝트 생성을 자동으로 처리합니다.
+This command handles Convex account login and new project creation automatically.
 
-### 2. 환경 변수 설정
+### 2. Configure Environment Variables
 
-`.env.local` 파일을 만들고 아래 값을 설정합니다:
+Create `.env.local` and set the following value:
 
 ```env
-# Convex 설정 (npx convex dev 실행 시 자동 생성됨)
+# Convex config. Generated automatically when running npx convex dev.
 VITE_CONVEX_URL=https://your-project.convex.cloud
 ```
 
-## 검증 명령어
+## Verification Commands
 
-- `pnpm run check` — lint + knip + test (커밋 전 실행)
-- `pnpm run check:all` — 위 항목 + dedupe 체크 (CI 전체 범위)
-- `cd cli && ~/go/bin/golangci-lint run` — Go CLI push 전 필수 체크
+- `pnpm run check` - lint + knip + test; run before committing
+- `pnpm run check:all` - the above plus dedupe checks; matches the full CI scope
+- `cd cli && ~/go/bin/golangci-lint run` - required before pushing Go CLI changes
 
-## 기여하기
+## Contributing
 
-프로젝트에 기여하고 싶으시다면 Pull Request를 보내주세요. 모든 기여를 환영합니다!
+Pull requests are welcome. The repository is kept in English so contributors from around the world can participate.
 
-## 라이선스
+## License
 
 [MIT License](LICENSE)
 
-## 참고 자료
+## References
 
-- [`ep` CLI 설계 원칙](docs/cli-llm-as-caller.md)
-- [FSRS 알고리즘 설명](https://github.com/open-spaced-repetition/fsrs4anki/wiki/ABC-of-FSRS)
-- [ts-fsrs 라이브러리](https://github.com/open-spaced-repetition/ts-fsrs)
-- [Convex 공식 문서](https://docs.convex.dev/)
-- [Convex Auth 가이드](https://docs.convex.dev/auth)
+- [`ep` CLI design principles](docs/cli-llm-as-caller.md)
+- [FSRS algorithm overview](https://github.com/open-spaced-repetition/fsrs4anki/wiki/ABC-of-FSRS)
+- [ts-fsrs library](https://github.com/open-spaced-repetition/ts-fsrs)
+- [Convex docs](https://docs.convex.dev/)
+- [Convex Auth guide](https://docs.convex.dev/auth)

@@ -1,6 +1,6 @@
 #!/bin/bash
-# humanlayer/humanlayer 레포의 .claude 폴더를 로컬로 동기화
-# 기존 로컬 전용 파일은 삭제하지 않음
+# Sync the .claude folder from the humanlayer/humanlayer repository locally.
+# Do not delete existing local-only files.
 
 REPO="humanlayer/humanlayer"
 BASE=".claude"
@@ -20,12 +20,12 @@ sync_dir() {
   done
 }
 
-# 루트 파일 동기화 (settings.json 제외)
+# Sync root files, excluding settings.json.
 for item in $(gh api "repos/$REPO/contents/$BASE" --jq '.[] | select(.type=="file") | select(.name!="settings.json") | .name'); do
   sync_file "$BASE/$item" "$BASE/$item"
 done
 
-# 하위 디렉토리 동기화
+# Sync subdirectories.
 for dir in $(gh api "repos/$REPO/contents/$BASE" --jq '.[] | select(.type=="dir") | .name'); do
   sync_dir "$dir"
 done

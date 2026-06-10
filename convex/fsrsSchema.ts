@@ -3,63 +3,63 @@ import { v } from "convex/values";
 import { Rating, State } from "ts-fsrs";
 
 /**
- * FSRS (Free Spaced Repetition Scheduler) 알고리즘을 지원하는
- * 영어 학습 앱을 위한 스키마 정의
- * ts-fsrs API 호환
+ * Schema definitions for an English-learning app backed by
+ * the FSRS (Free Spaced Repetition Scheduler) algorithm.
+ * Compatible with the ts-fsrs API.
  */
 export const learningTables = {
   /**
-   * 사용자 프로필 확장 - FSRS 파라미터 및 학습 설정
-   * (기존 users 테이블과 통합됨)
+   * User profile extension with FSRS parameters and study settings.
+   * Integrated with the existing users table.
    */
   userSettings: defineTable({
     userId: v.id("users"),
 
-    // FSRS 알고리즘 파라미터 (ts-fsrs FSRSParameters 인터페이스 맞춤)
+    // FSRS algorithm parameters aligned with the ts-fsrs FSRSParameters interface.
     fsrsParameters: v.object({
-      // 기본 FSRS 파라미터
-      w: v.array(v.number()), // 가중치 배열
-      request_retention: v.number(), // 목표 기억률 (기본: 0.9)
-      maximum_interval: v.number(), // 최대 복습 간격 (일)
-      enable_fuzz: v.boolean(), // 복습 간격 퍼징 활성화
+      // Base FSRS parameters.
+      w: v.array(v.number()), // Weight array.
+      request_retention: v.number(), // Target retention, default 0.9.
+      maximum_interval: v.number(), // Maximum review interval in days.
+      enable_fuzz: v.boolean(), // Enable review interval fuzzing.
 
-      // Short-term 학습 설정
-      enable_short_term: v.boolean(), // 단기 학습 단계 활성화
-      learning_steps: v.array(v.string()), // 학습 단계 (e.g., ["1m", "10m"])
-      relearning_steps: v.array(v.string()), // 재학습 단계
+      // Short-term learning settings.
+      enable_short_term: v.boolean(), // Enable short-term learning steps.
+      learning_steps: v.array(v.string()), // Learning steps, e.g. ["1m", "10m"].
+      relearning_steps: v.array(v.string()), // Relearning steps.
     }),
 
-    // 학습 설정
-    dailyNewCards: v.number(), // 일일 새 카드 수
-    dailyReviewCards: v.number(), // 일일 복습 카드 수
-    timezone: v.string(), // 사용자 시간대
+    // Study settings.
+    dailyNewCards: v.number(), // New cards per day.
+    dailyReviewCards: v.number(), // Review cards per day.
+    timezone: v.string(), // User timezone.
 
-    // 통계
+    // Statistics.
     totalReviews: v.number(),
     currentStreak: v.number(),
     longestStreak: v.number(),
-    lastReviewDate: v.optional(v.string()), // ISO 날짜 문자열
+    lastReviewDate: v.optional(v.string()), // ISO date string.
   }).index("by_user", ["userId"]),
 
   /**
-   * 학습 샌드백 (카드 그룹)
+   * Study bag, which is a card group.
    */
   bags: defineTable({
     userId: v.id("users"),
     name: v.string(),
     description: v.optional(v.string()),
 
-    // 샌드백 설정
+    // Bag settings.
     isActive: v.boolean(),
     sortOrder: v.number(),
 
-    // 통계
+    // Statistics.
     totalCards: v.number(),
     newCards: v.number(),
     learningCards: v.number(),
     reviewCards: v.number(),
 
-    // 메타데이터
+    // Metadata.
     tags: v.array(v.string()),
     lastModified: v.string(),
     deletedAt: v.optional(v.number()),
@@ -69,32 +69,32 @@ export const learningTables = {
     .index("by_user_and_deleted_at", ["userId", "deletedAt"]),
 
   /**
-   * 학습 카드 (ts-fsrs Card 인터페이스 완전 호환)
+   * Study card, fully compatible with the ts-fsrs Card interface.
    */
   cards: defineTable({
     userId: v.id("users"),
     bagId: v.id("bags"),
 
-    // 카드 콘텐츠 (빈칸 채우기 형식)
+    // Card content in fill-in-the-blank format.
     question: v.string(), // "I'd like to ___ a table for two at 7 pm."
     answer: v.string(), // "reserve"
     hint: v.optional(v.string()), // "book in advance"
-    explanation: v.optional(v.string()), // 추가 설명
-    context: v.optional(v.string()), // "친구에게 조언하는 상황" - 생성 시 사용한 맥락
-    sourceWord: v.optional(v.string()), // "예약하다" - 원본 한국어 표현 (다중 표현 생성 시)
-    expression: v.optional(v.string()), // "reserve" - 생성된 영어 표현 (다중 표현 생성 시)
+    explanation: v.optional(v.string()), // Additional explanation.
+    context: v.optional(v.string()), // Generation context, such as "advising a friend".
+    sourceWord: v.optional(v.string()), // Original source expression for multi-expression generation.
+    expression: v.optional(v.string()), // Generated English expression for multi-expression generation.
 
-    // FSRS 스케줄링 데이터 (ts-fsrs Card 인터페이스 완전 매칭)
-    due: v.number(), // 다음 복습 예정일 (timestamp, Date로 변환 가능)
-    stability: v.number(), // 기억 안정성
-    difficulty: v.number(), // 카드 난이도
-    elapsed_days: v.optional(v.number()), // 마지막 복습 간 경과 일수
-    scheduled_days: v.number(), // 예정된 간격
-    learning_steps: v.number(), // 현재 학습 단계
-    reps: v.number(), // 총 복습 횟수
-    lapses: v.number(), // 실패 횟수
+    // FSRS scheduling data matching the ts-fsrs Card interface.
+    due: v.number(), // Next due timestamp, convertible to Date.
+    stability: v.number(), // Memory stability.
+    difficulty: v.number(), // Card difficulty.
+    elapsed_days: v.optional(v.number()), // Days elapsed since the last review.
+    scheduled_days: v.number(), // Scheduled interval.
+    learning_steps: v.number(), // Current learning step.
+    reps: v.number(), // Total review count.
+    lapses: v.number(), // Failure count.
 
-    // FSRS 상태 (ts-fsrs State enum: 0=New, 1=Learning, 2=Review, 3=Relearning)
+    // FSRS state, matching ts-fsrs State enum: 0=New, 1=Learning, 2=Review, 3=Relearning.
     state: v.union(
       v.literal(0), // New
       v.literal(1), // Learning
@@ -102,22 +102,22 @@ export const learningTables = {
       v.literal(3) // Relearning
     ),
 
-    // 마지막 복습 정보
-    last_review: v.optional(v.number()), // 마지막 복습일 (timestamp)
+    // Last review information.
+    last_review: v.optional(v.number()), // Last review timestamp.
 
-    // 메타데이터
+    // Metadata.
     tags: v.array(v.string()),
-    source: v.optional(v.string()), // 카드 출처
-    suspended: v.boolean(), // 일시 중지 여부
+    source: v.optional(v.string()), // Card source.
+    suspended: v.boolean(), // Whether the card is suspended.
     deletedAt: v.optional(v.number()),
   })
     .index("by_user", ["userId"])
     .index("by_bag", ["bagId"])
     .index("by_user_and_deleted_at", ["userId", "deletedAt"])
     .index("by_bag_and_deleted_at", ["bagId", "deletedAt"])
-    .index("by_due", ["due"]) // 전체 due 날짜 순 정렬
-    .index("by_user_and_due", ["userId", "due"]) // 사용자별 due 날짜 순
-    .index("by_bag_and_due", ["bagId", "due"]) // 샌드백별 due 날짜 순
+    .index("by_due", ["due"]) // Sort all cards by due date.
+    .index("by_user_and_due", ["userId", "due"]) // Sort each user's cards by due date.
+    .index("by_bag_and_due", ["bagId", "due"]) // Sort each bag's cards by due date.
     .index("by_user_bag_deleted_suspended_due", [
       "userId",
       "bagId",
@@ -129,51 +129,51 @@ export const learningTables = {
     .index("by_user_and_state", ["userId", "state"])
     .index("by_bag_and_state", ["bagId", "state"])
     .index("by_user_and_learning_steps", ["userId", "learning_steps"])
-    .index("by_due_and_suspended", ["due", "suspended"]) // due 날짜 + 정지 상태
+    .index("by_due_and_suspended", ["due", "suspended"]) // Due date plus suspended state.
     .searchIndex("search_answer", {
       searchField: "answer",
       filterFields: ["bagId", "userId", "deletedAt"],
     }),
 
   /**
-   * 복습 로그 (ts-fsrs ReviewLog 인터페이스 완전 호환)
+   * Review log, fully compatible with the ts-fsrs ReviewLog interface.
    */
   reviewLogs: defineTable({
     userId: v.id("users"),
     cardId: v.id("cards"),
 
-    // 복습 정보 (ts-fsrs Rating enum: 0=Manual, 1=Again, 2=Hard, 3=Good, 4=Easy)
+    // Review information, matching ts-fsrs Rating enum: 0=Manual, 1=Again, 2=Hard, 3=Good, 4=Easy.
     rating: v.union(
-      v.literal(Rating.Manual), // Manual (사용되지 않음, Grade에서 제외)
+      v.literal(Rating.Manual), // Manual, unused and excluded from Grade.
       v.literal(Rating.Again), // Again
       v.literal(Rating.Hard), // Hard
       v.literal(Rating.Good), // Good
       v.literal(Rating.Easy) // Easy
     ),
 
-    // ts-fsrs ReviewLog 인터페이스 매칭
+    // Matches the ts-fsrs ReviewLog interface.
     state: v.union(
       v.literal(State.New), // New
       v.literal(State.Learning), // Learning
       v.literal(State.Review), // Review
       v.literal(State.Relearning) // Relearning
     ),
-    due: v.number(), // 예정되었던 복습일 (timestamp)
-    stability: v.number(), // 복습 전 안정성
-    difficulty: v.number(), // 복습 전 난이도
-    scheduled_days: v.number(), // 예정되었던 간격
-    learning_steps: v.number(), // 학습 단계
-    review: v.number(), // 복습 시간 (timestamp)
-    elapsed_days: v.optional(v.number()), // 이번 복습에서 경과 일수
-    last_elapsed_days: v.optional(v.number()), // 이전 복습 간격
+    due: v.number(), // Previously scheduled review timestamp.
+    stability: v.number(), // Stability before review.
+    difficulty: v.number(), // Difficulty before review.
+    scheduled_days: v.number(), // Previously scheduled interval.
+    learning_steps: v.number(), // Learning step.
+    review: v.number(), // Review timestamp.
+    elapsed_days: v.optional(v.number()), // Elapsed days for this review.
+    last_elapsed_days: v.optional(v.number()), // Previous review interval.
 
-    // 학습 시간 및 세션 정보 (추가 필드)
-    duration: v.number(), // 응답 시간 (밀리초)
-    sessionId: v.optional(v.string()), // 학습 세션 ID
+    // Study time and session information, as additional fields.
+    duration: v.number(), // Response time in milliseconds.
+    sessionId: v.optional(v.string()), // Study session ID.
     reviewType: v.union(
-      v.literal("manual"), // 수동 복습
-      v.literal("scheduled"), // 예정된 복습
-      v.literal("cramming") // 벼락치기
+      v.literal("manual"), // Manual review.
+      v.literal("scheduled"), // Scheduled review.
+      v.literal("cramming") // Cramming review.
     ),
   })
     .index("by_card", ["cardId"])
@@ -183,10 +183,10 @@ export const learningTables = {
     .index("by_rating", ["rating"]),
 
   /**
-   * 사용자 활동 이벤트.
+   * User activity events.
    *
-   * `reviewLogs`는 완료된 FSRS 리뷰 원장으로 유지하고, 이 테이블은
-   * Activity 탭에서 보여줄 행동 타임라인과 reveal 기반 heatmap을 담당한다.
+   * `reviewLogs` remains the ledger of completed FSRS reviews. This table owns
+   * the behavior timeline and reveal-based heatmap shown in the Activity tab.
    */
   activities: defineTable({
     userId: v.id("users"),
@@ -213,16 +213,15 @@ export const learningTables = {
     .index("by_attempt", ["attemptId"]),
 
   /**
-   * 진행 중인 복습 시도 (stateless CLI review flow 용)
+   * In-progress review attempt for the stateless CLI review flow.
    *
-   * 사용자당 최대 1개 행. 존재 여부와 `revealTime`의 유무로
-   * 생명주기를 표현한다:
-   *   row 없음           → 진행 중인 복습 없음
-   *   row 있음, reveal X → 문제 제시됨, 답 숨김
-   *   row 있음, reveal O → 답 공개됨, 평가 대기
+   * At most one row per user. Presence plus `revealTime` expresses lifecycle:
+   *   no row             -> no in-progress review
+   *   row, no revealTime -> question shown, answer hidden
+   *   row with revealTime -> answer revealed, waiting for rating
    *
-   * 평가(`rateReview`) 또는 포기(`abandonReview`) 시 행 삭제.
-   * append-only인 reviewLogs 스키마를 건드리지 않기 위한 전용 테이블.
+   * Delete the row on rating (`rateReview`) or abandon (`abandonReview`).
+   * This dedicated table avoids changing the append-only reviewLogs schema.
    */
   pendingReviews: defineTable({
     userId: v.id("users"),
@@ -233,69 +232,69 @@ export const learningTables = {
   }).index("by_user", ["userId"]),
 
   /**
-   * 학습 세션
+   * Study session.
    */
   sessions: defineTable({
     userId: v.id("users"),
     bagId: v.optional(v.id("bags")), // Which bag this session is for
 
-    // 세션 정보
-    startTime: v.string(), // 시작 시간
-    endTime: v.optional(v.string()), // 종료 시간
+    // Session information.
+    startTime: v.string(), // Start time.
+    endTime: v.optional(v.string()), // End time.
 
     // Ordered card IDs for this session (shuffled once at session start)
     cardIds: v.optional(v.array(v.id("cards"))),
 
-    // 세션 통계
+    // Session statistics.
     cardsReviewed: v.number(),
     cardsNew: v.number(),
     cardsLearning: v.number(),
     cardsRelearning: v.number(),
 
-    // 정답률 (Rating 기준)
+    // Accuracy counts by Rating.
     manualCount: v.number(), // Manual (0)
     againCount: v.number(), // Again (1)
     hardCount: v.number(), // Hard (2)
     goodCount: v.number(), // Good (3)
     easyCount: v.number(), // Easy (4)
 
-    // 평균 데이터
-    averageDuration: v.number(), // 평균 응답 시간
-    averageDifficulty: v.number(), // 평균 난이도
+    // Average data.
+    averageDuration: v.number(), // Average response time.
+    averageDifficulty: v.number(), // Average difficulty.
 
-    // 세션 타입
+    // Session type.
     sessionType: v.union(
-      v.literal("daily"), // 일일 학습
-      v.literal("custom"), // 커스텀 학습
-      v.literal("cramming") // 벼락치기
+      v.literal("daily"), // Daily study.
+      v.literal("custom"), // Custom study.
+      v.literal("cramming") // Cramming.
     ),
   })
     .index("by_user", ["userId"])
     .index("by_user_and_date", ["userId", "startTime"]),
 
   /**
-   * 사용자 통계 (집계 데이터)
+   * User statistics as aggregate data.
    */
   dailyStats: defineTable({
     userId: v.id("users"),
-    date: v.string(), // 날짜 (YYYY-MM-DD)
+    date: v.string(), // Date in YYYY-MM-DD format.
 
-    // 일일 통계
+    // Daily statistics.
     cardsReviewed: v.number(),
     cardsNew: v.number(),
     cardsLearning: v.number(),
     cardsRelearning: v.number(),
 
-    // 시간 통계
-    totalStudyTime: v.number(), // 총 학습 시간 (밀리초)
-    averageAnswerTime: v.number(), // 평균 응답 시간
+    // Time statistics.
+    totalStudyTime: v.number(), // Total study time in milliseconds.
+    averageAnswerTime: v.number(), // Average response time.
 
-    // 성과 지표
-    retention: v.number(), // 기억률
+    // Performance metrics.
+    retention: v.number(), // Retention rate.
     correctAnswers: v.number(),
     totalAnswers: v.number(),
 
-    // Rating 분포 (ts-fsrs Rating enum 맞춤)
+    // Rating distribution aligned with the ts-fsrs Rating enum.
     manualCount: v.number(), // Manual (0)
     againCount: v.number(), // Again (1)
     hardCount: v.number(), // Hard (2)
@@ -306,28 +305,28 @@ export const learningTables = {
     .index("by_user_and_date", ["userId", "date"]),
 
   /**
-   * 카드 템플릿 (미리 만들어진 카드들)
+   * Card templates, prebuilt cards.
    */
   cardTemplates: defineTable({
-    // 템플릿 정보
-    category: v.string(), // "일상회화", "비즈니스", "여행" 등
+    // Template information.
+    category: v.string(), // For example "daily conversation", "business", or "travel".
     level: v.union(
       v.literal("beginner"),
       v.literal("intermediate"),
       v.literal("advanced")
     ),
 
-    // 카드 콘텐츠
+    // Card content.
     question: v.string(),
     answer: v.string(),
     hint: v.optional(v.string()),
     explanation: v.optional(v.string()),
 
-    // 메타데이터
+    // Metadata.
     tags: v.array(v.string()),
     source: v.optional(v.string()),
-    popularity: v.number(), // 인기도
-    difficulty: v.number(), // 평균 난이도
+    popularity: v.number(), // Popularity.
+    difficulty: v.number(), // Average difficulty.
   })
     .index("by_category", ["category"])
     .index("by_level", ["level"])

@@ -26,8 +26,8 @@ type ReviewCardResult = {
 const logger = getGlobalLogger();
 
 /**
- * FSRS 알고리즘을 사용한 카드 복습 처리
- * TODO: userId를 args에서 제거하고, 인증된 사용자 정보에서 가져오도록 변경
+ * Process card reviews with the FSRS algorithm.
+ * TODO: Remove userId from args and derive it from the authenticated user.
  */
 export const reviewCardHandler = async (
   ctx: MutationCtx,
@@ -90,15 +90,15 @@ export const reviewCardHandler = async (
             : "Easy",
   });
 
-  // ts-fsrs 인스턴스 생성 (파라미터 타입 안전성 보장)
+  // Create a ts-fsrs instance with typed step parameters.
   const fsrsParams = {
     ...userSettings.fsrsParameters,
-    learning_steps: userSettings.fsrsParameters.learning_steps as Steps, // Steps 타입으로 캐스팅
-    relearning_steps: userSettings.fsrsParameters.relearning_steps as Steps, // Steps 타입으로 캐스팅
+    learning_steps: userSettings.fsrsParameters.learning_steps as Steps, // Cast to Steps.
+    relearning_steps: userSettings.fsrsParameters.relearning_steps as Steps, // Cast to Steps.
   };
   const f = fsrs(fsrsParams);
 
-  // 현재 카드를 ts-fsrs Card 형식으로 변환
+  // Convert the current card to the ts-fsrs Card shape.
   const fsrsCard = {
     due: new Date(card.due),
     stability: card.stability,
@@ -112,7 +112,7 @@ export const reviewCardHandler = async (
     elapsed_days: previousElapsedDays,
   };
 
-  // ts-fsrs로 다음 상태 계산 (Rating을 Grade로 변환, Manual=0 제외)
+  // Calculate the next state with ts-fsrs. Ratings map to grades, excluding Manual=0.
   const grade = args.rating; // 1=Again, 2=Hard, 3=Good, 4=Easy
   const recordLogItem = f.next(fsrsCard, now, grade);
 
@@ -133,7 +133,7 @@ export const reviewCardHandler = async (
     log: recordLogItem.log,
   });
 
-  // 카드 업데이트
+  // Update the card.
   await ctx.db.patch("cards", args.cardId, {
     due: recordLogItem.card.due.getTime(),
     stability: recordLogItem.card.stability,
@@ -147,7 +147,7 @@ export const reviewCardHandler = async (
     elapsed_days: recordLogItem.card.elapsed_days,
   });
 
-  // lapses 변화 추적
+  // Track lapse changes.
   const lapsesChanged = recordLogItem.card.lapses > card.lapses;
   const repsIncreased = recordLogItem.card.reps > card.reps;
 
@@ -188,7 +188,7 @@ export const reviewCardHandler = async (
     });
   }
 
-  // ReviewLog 생성
+  // Create the ReviewLog.
   const reviewLog = await ctx.db.insert("reviewLogs", {
     userId: args.userId,
     cardId: args.cardId,
@@ -265,7 +265,7 @@ export const reviewCard = mutation({
     userId: v.id("users"),
     cardId: v.id("cards"),
     rating: v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4)), // Again, Hard, Good, Easy
-    duration: v.number(), // 응답 시간 (밀리초)
+    duration: v.number(), // Response time in milliseconds.
     sessionId: v.optional(v.string()),
     attemptId: v.optional(v.string()),
     source: v.optional(v.union(v.literal("web"), v.literal("cli"))),
@@ -281,7 +281,7 @@ export const reviewCard = mutation({
 });
 
 /**
- * 최근 리뷰 로그 조회 (activity 화면용)
+ * Get recent review logs for the Activity screen.
  */
 export const getRecentReviewLogs = query({
   args: {
@@ -329,7 +329,7 @@ export const getRecentReviewLogs = query({
 });
 
 /**
- * 사용자 설정 조회
+ * Get user settings.
  */
 export const getUserSettings = query({
   args: {

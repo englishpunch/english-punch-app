@@ -45,7 +45,7 @@ When I type a full English sentence:
 1. **Naturalness verdict** — ✅ Natural / ⚠️ Slightly off / ❌ Unnatural
 2. **Corrected version** — With one preceding context sentence that fits naturally
 3. **What changed & why** — One bullet per fix. Be specific (e.g., "article missing before countable noun" not just "grammar")
-4. **Korean-speaker note** — If the error is a common L1 interference pattern, flag it briefly (e.g., "This is a common direct translation from Korean ~하는 것")
+4. **Korean-speaker note** — If the error is a common L1 interference pattern, flag it briefly (e.g., "This is a common direct translation from Korean nominalized phrasing")
 
 #### 4. Korean Input (sentence or phrase)
 

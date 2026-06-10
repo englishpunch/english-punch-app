@@ -33,7 +33,7 @@ const logger = getGlobalLogger();
 
 type CardPromptVersion = "v1" | "v2";
 
-// TODO: South Korean 을 인자로 빼기
+// TODO: Make the learner locale configurable.
 const systemInstructionPart = {
   role: `
 ### Role
@@ -47,7 +47,7 @@ You are an expert English linguist specialized in creating high-quality vocabula
   hint: `- hint: A simple definition or synonym under 12 words. Do not include the answer.`,
   explanation: `- explanation: total 10-70w; Specify scenario suitability(exclude situation description); differentiation - Contrast at least 2 synonyms (nuance/tone/intensity).`,
   finalAnswer: `- finalAnswer: Only if you changed the input form, provide the updated form here.`,
-  contextAwareness: `Context Awareness: If a context/situation is provided (e.g., "친구에게 조언하는 상황", "회의에서 제안하는 말투"), use it consistently across all generated content`,
+  contextAwareness: `Context Awareness: If a context/situation is provided (e.g., "advising a friend", "making a suggestion in a meeting"), use it consistently across all generated content`,
 };
 
 /**
@@ -113,7 +113,7 @@ const buildPrompt = (answer: string, context?: string): string => {
 const requireSingleBlank = (question: string) => {
   const blankCount = question.match(/___/g)?.length ?? 0;
   if (blankCount !== 1) {
-    throw new Error("질문에는 ___ 빈칸이 정확히 한 번 포함되어야 합니다.");
+    throw new Error("The question must contain exactly one ___ blank.");
   }
 };
 
@@ -138,7 +138,7 @@ export const generateCardDraft = action({
     const runId =
       "ai:generateCardDraft:" + Math.random().toString(36).slice(2, 8);
     if (!answer) {
-      throw new Error("정답을 입력해주세요.");
+      throw new Error("Please enter the answer.");
     }
 
     requireApiKey();
@@ -180,7 +180,7 @@ export const generateCardDraft = action({
     });
 
     if (!response.text) {
-      throw new Error("Gemini 응답이 비어있습니다.");
+      throw new Error("Gemini returned an empty response.");
     }
 
     const cardResponse = cardSchema.parse(JSON.parse(response.text));
@@ -211,17 +211,17 @@ export const generateCardDraft = action({
 
 const requireInputs = (question: string, answer: string) => {
   if (!question.trim()) {
-    throw new Error("질문을 입력해주세요.");
+    throw new Error("Please enter the question.");
   }
   if (!answer.trim()) {
-    throw new Error("정답을 입력해주세요.");
+    throw new Error("Please enter the answer.");
   }
 };
 
 const requireApiKey = () => {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("GEMINI_API_KEY가 설정되지 않았습니다.");
+    throw new Error("GEMINI_API_KEY is not configured.");
   }
   return apiKey;
 };
@@ -296,7 +296,7 @@ export const regenerateHintAndExplanation = action({
     });
 
     if (!response.text) {
-      throw new Error("Gemini 응답이 비어있습니다.");
+      throw new Error("Gemini returned an empty response.");
     }
 
     const result = hintAndExplanationSchema.parse(JSON.parse(response.text));
@@ -344,7 +344,7 @@ export const generateExpressionCandidates = action({
       Math.random().toString(36).slice(2, 8);
 
     if (!input) {
-      throw new Error("표현을 입력해주세요.");
+      throw new Error("Please enter an expression.");
     }
 
     requireApiKey();
@@ -384,7 +384,7 @@ export const generateExpressionCandidates = action({
     });
 
     if (!response.text) {
-      throw new Error("Gemini 응답이 비어있습니다.");
+      throw new Error("Gemini returned an empty response.");
     }
 
     const result = expressionCandidatesSchema.parse(JSON.parse(response.text));

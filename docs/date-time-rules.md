@@ -2,9 +2,9 @@
 
 ## Why
 
-- 날짜 포맷이 `Intl`, `toLocale*`, `toISOString().slice(...)`, 개별 `dayjs` import로 흩어지면 timezone 기준이 불명확해진다.
-- Activity heatmap처럼 사용자 기준 날짜가 중요한 기능에서는 UTC date와 local date가 하루 어긋날 수 있다.
-- 날짜 처리 규칙은 표시 포맷, calendar arithmetic, timezone 변환의 기준을 코드 전체에서 동일하게 만든다.
+- If date formatting is split across `Intl`, `toLocale*`, `toISOString().slice(...)`, and ad hoc `dayjs` imports, the timezone basis becomes unclear.
+- In user-local features such as the Activity heatmap, UTC dates and local dates can drift by one day.
+- These rules keep display formatting, calendar arithmetic, and timezone conversion consistent across the codebase.
 
 ## Rules
 
@@ -47,10 +47,10 @@ dayjs(timestamp).tz(timezone).format(DATE_FORMAT);
 ```ts
 import dayjs from "dayjs";
 
-new Intl.DateTimeFormat("ko-KR").format(date);
-date.toLocaleDateString("ko-KR");
-date.toLocaleTimeString("ko-KR");
-date.toLocaleString("ko-KR");
+new Intl.DateTimeFormat("en-US").format(date);
+date.toLocaleDateString("en-US");
+date.toLocaleTimeString("en-US");
+date.toLocaleString("en-US");
 date.toISOString().slice(0, 10);
 ```
 

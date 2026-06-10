@@ -5,66 +5,70 @@ status: completed
 topic: Unify spinner/loading indicators into a single Spinner component
 ---
 
-# 스피너 통일 구현 계획
+# Spinner Unification Implementation Plan
 
 ## Overview
 
-코드베이스 전반에 산재된 스피너/로딩 인디케이터를 하나의 `Spinner` 컴포넌트로 통일한다. 현재 10개 파일에서 2가지 유형(Loader2, CSS border), 4가지 사이즈, 3가지 색상, 4가지 래핑 패턴이 제각각 사용되고 있다. 기존 Button/Input 컴포넌트와 동일한 CVA 패턴으로 `Spinner` 컴포넌트를 만들고, 모든 사용처를 교체한다.
+Unify spinner and loading indicators spread across the codebase into a single `Spinner` component. The current code uses two spinner types (Loader2 and CSS border), four sizes, three color patterns, and four wrapper patterns across 10 files. Create a `Spinner` component using the same CVA pattern as the existing Button/Input components, then replace all call sites.
 
 ## Current State Analysis
 
-- 전용 Spinner 컴포넌트 없음 — 모든 곳에서 인라인으로 Loader2 또는 CSS border를 직접 사용
-- Loader2 사용: 8개 파일 / CSS border spinner: 2개 파일
-- 사이즈 4종 (h-4, h-6, h-8, h-10), 색상 3종, aria-hidden 있고 없고 불일치
-- Button.tsx만 `loading` prop을 통한 통합 로딩 UI를 제공 중
+- No dedicated Spinner component exists; pages use inline Loader2 or CSS border spinners directly.
+- Loader2 is used in 8 files; CSS border spinner is used in 2 files.
+- There are 4 sizes (`h-4`, `h-6`, `h-8`, `h-10`), 3 color patterns, and inconsistent `aria-hidden` usage.
+- Only Button.tsx provides integrated loading UI through the `loading` prop.
 
-### Key Discoveries:
-- `src/components/Button.tsx` — CVA 기반 variant 시스템, `buttonVariants.ts` 분리 패턴
-- `src/components/Input.tsx` — 동일 패턴, `inputVariants.ts` 분리
-- `src/lib/utils.ts` — `cn()` 유틸리티 (clsx + twMerge)
-- 컴포넌트 내보내기: barrel export 없이 직접 import
-- `src/components/ui/` 디렉토리 없음 — 모든 컴포넌트가 `src/components/`에 flat하게 존재
+### Key Discoveries
+
+- `src/components/Button.tsx` uses a CVA-based variant system and the separated `buttonVariants.ts` pattern.
+- `src/components/Input.tsx` follows the same pattern with `inputVariants.ts`.
+- `src/lib/utils.ts` provides the `cn()` utility through clsx + twMerge.
+- Components are imported directly without barrel exports.
+- There is no `src/components/ui/` directory; components live flat under `src/components/`.
 
 ## Desired End State
 
-- `<Spinner />` 컴포넌트 하나로 모든 로딩 인디케이터 통일
-- 사이즈 3단계: `sm` (16px), `md` (24px), `lg` (40px)
-- 색상 일관: `text-primary-600` (기본)
-- `aria-hidden` 항상 포함
-- 페이지 레벨 센터링은 래퍼 variant로 제공
-- CSS border spinner 완전 제거, Loader2로 통일
+- One `<Spinner />` component owns all loading indicators.
+- Sizes are normalized to 3 levels: `sm` (16px), `md` (24px), and `lg` (40px).
+- Color is consistent: `text-primary-600` by default.
+- `aria-hidden` is always present.
+- Page-level centering is available through a wrapper variant.
+- CSS border spinners are removed completely; Loader2 is the single spinner icon.
 
-### 검증 방법:
-- `npx tsc --noEmit` 타입 에러 없음
-- `npm run lint` 린트 통과
-- Loader2 직접 사용이 Spinner 컴포넌트와 Button.tsx에만 존재
-- CSS border spinner (`border-b-2.*animate-spin`) 코드베이스에서 완전 제거
-- 앱에서 각 페이지 로딩 상태 육안 확인
+### Verification
 
-## What We're NOT Doing
+- `npx tsc --noEmit` has no type errors.
+- `npm run lint` passes.
+- Direct Loader2 usage remains only in Spinner and Button.tsx.
+- CSS border spinner pattern (`border-b-2.*animate-spin`) is removed from the codebase.
+- Loading states are visually checked in the app.
 
-- Skeleton/Placeholder UI 도입하지 않음
-- Button.tsx의 내장 스피너는 변경하지 않음 (이미 잘 작동 중)
-- 새로운 디자인 시스템 디렉토리(ui/) 생성하지 않음
-- 애니메이션 커스터마이징하지 않음 (기존 `animate-spin` 유지)
+## What We're Not Doing
+
+- Introducing skeleton or placeholder UI.
+- Changing Button.tsx's built-in spinner, because it already works well.
+- Creating a new design-system directory such as `ui/`.
+- Customizing animation; keep the existing `animate-spin`.
 
 ## Implementation Approach
 
-1. `Spinner` 컴포넌트를 기존 Button/Input과 동일한 CVA 패턴으로 생성
-2. 10개 파일을 순차적으로 교체 (래핑 패턴 포함)
-3. 불필요한 Loader2 import 제거
+1. Create a `Spinner` component with the same CVA pattern used by Button/Input.
+2. Replace 10 call sites sequentially, including wrapper patterns.
+3. Remove unnecessary Loader2 imports.
 
 ---
 
-## Phase 1: Spinner 컴포넌트 생성
+## Phase 1: Create Spinner Component
 
 ### Overview
-CVA 기반 `Spinner` 컴포넌트를 만든다. 사이즈 variant와 래핑 variant를 제공하여 인라인부터 풀스크린까지 커버한다.
 
-### Changes Required:
+Create a CVA-based `Spinner` component. Provide size variants and wrapper variants so it covers inline use through fullscreen loading.
 
-#### 1. Spinner 컴포넌트 생성
-**File**: `src/components/Spinner.tsx` (신규)
+### Changes Required
+
+#### 1. Create Spinner Component
+
+**File**: `src/components/Spinner.tsx` (new)
 
 ```tsx
 import { Loader2 } from "lucide-react";
@@ -127,28 +131,33 @@ export function Spinner({
 }
 ```
 
-### Success Criteria:
+### Success Criteria
 
-#### Automated Verification:
-- [x] `npx tsc --noEmit` — 타입 에러 없음
-- [x] `npm run lint` — 린트 통과
+#### Automated Verification
 
-#### Manual Verification:
-- [x] 없음 (Phase 2에서 교체 후 확인)
+- [x] `npx tsc --noEmit` - no type errors
+- [x] `npm run lint` - lint passes
+
+#### Manual Verification
+
+- [x] None for Phase 1; verify after replacements in Phase 2.
 
 ---
 
-## Phase 2: 전체 사용처 교체
+## Phase 2: Replace All Usages
 
 ### Overview
-10개 파일에서 인라인 스피너를 `<Spinner />` 컴포넌트로 교체한다. Button.tsx는 내장 스피너이므로 변경하지 않는다.
 
-### Changes Required:
+Replace inline spinners in 10 files with `<Spinner />`. Do not change Button.tsx because it owns its built-in spinner.
 
-#### 1. App.tsx — 풀스크린 로딩
+### Changes Required
+
+#### 1. App.tsx - Fullscreen Loading
+
 **File**: `src/App.tsx`
 
 Before:
+
 ```tsx
 import { Loader2 } from "lucide-react";
 // ...
@@ -158,17 +167,21 @@ import { Loader2 } from "lucide-react";
 ```
 
 After:
+
 ```tsx
 import { Spinner } from "./components/Spinner";
 // ...
 <Spinner size="lg" wrapper="fullscreen" data-testid="global-loader" />
 ```
-- `Loader2` import 제거
 
-#### 2. ActivityPage.tsx — 페이지 로딩
+- Remove the `Loader2` import.
+
+#### 2. ActivityPage.tsx - Page Loading
+
 **File**: `src/components/ActivityPage.tsx`
 
 Before:
+
 ```tsx
 <div className="flex items-center justify-center py-12">
   <Loader2 className="text-primary-600 h-6 w-6 animate-spin" aria-hidden />
@@ -176,15 +189,19 @@ Before:
 ```
 
 After:
+
 ```tsx
 <Spinner wrapper="page" />
 ```
-- `Loader2` import 제거, `Spinner` import 추가
 
-#### 3. ProfilePage.tsx — 페이지 로딩
+- Remove the `Loader2` import and add the `Spinner` import.
+
+#### 3. ProfilePage.tsx - Page Loading
+
 **File**: `src/components/ProfilePage.tsx`
 
 Before:
+
 ```tsx
 <div className="flex items-center justify-center py-12">
   <Loader2 className="text-primary-600 h-6 w-6 animate-spin" aria-hidden />
@@ -192,15 +209,19 @@ Before:
 ```
 
 After:
+
 ```tsx
 <Spinner wrapper="page" />
 ```
-- `Loader2` import 제거, `Spinner` import 추가
 
-#### 4. CardEditPage.tsx — 페이지 로딩
+- Remove the `Loader2` import and add the `Spinner` import.
+
+#### 4. CardEditPage.tsx - Page Loading
+
 **File**: `src/components/CardEditPage.tsx`
 
 Before:
+
 ```tsx
 <div className="flex items-center justify-center py-12">
   <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -208,16 +229,20 @@ Before:
 ```
 
 After:
+
 ```tsx
 <Spinner wrapper="page" />
 ```
-- `text-gray-400`는 의도적 구분이 아니므로 기본 primary 색상으로 통일
-- `Loader2` import에서 제거 (`ArrowLeft`만 남김), `Spinner` import 추가
 
-#### 5. FSRSStudySession.tsx — 페이지 로딩
+- `text-gray-400` is not an intentional visual distinction, so normalize it to the default primary color.
+- Remove `Loader2` from the import list and add `Spinner`.
+
+#### 5. FSRSStudySession.tsx - Page Loading
+
 **File**: `src/components/FSRSStudySession.tsx`
 
 Before:
+
 ```tsx
 <div className="flex items-center justify-center py-12">
   <Loader2 className="text-primary-600 h-6 w-6 animate-spin" aria-hidden />
@@ -225,15 +250,19 @@ Before:
 ```
 
 After:
+
 ```tsx
 <Spinner wrapper="page" />
 ```
-- `Loader2` import 제거 (`FileText`만 남김), `Spinner` import 추가
 
-#### 6. BagDetailPage.tsx — 인라인 로딩
+- Remove the `Loader2` import and add the `Spinner` import.
+
+#### 6. BagDetailPage.tsx - Inline Loading
+
 **File**: `src/components/BagDetailPage.tsx`
 
 Before:
+
 ```tsx
 <span className="flex items-center gap-2 text-gray-500">
   <Loader2 className="h-4 w-4 animate-spin" />
@@ -242,19 +271,23 @@ Before:
 ```
 
 After:
+
 ```tsx
 <span className="flex items-center gap-2 text-gray-500">
   <Spinner size="sm" />
   {t("bagDetail.loadingMore")}
 </span>
 ```
-- 인라인이므로 wrapper 없이 `sm` 사이즈로 사용
-- `Loader2` import에서 제거, `Spinner` import 추가
 
-#### 7. StudyCard.tsx — 오버레이 로딩
+- Inline use does not need a wrapper; use size `sm`.
+- Remove `Loader2` and add `Spinner`.
+
+#### 7. StudyCard.tsx - Overlay Loading
+
 **File**: `src/components/StudyCard.tsx`
 
 Before:
+
 ```tsx
 <div className="bg-opacity-75 absolute inset-0 flex items-center justify-center bg-white">
   <Loader2 className="text-primary-600 h-10 w-10 animate-spin" />
@@ -262,15 +295,19 @@ Before:
 ```
 
 After:
+
 ```tsx
 <Spinner size="lg" wrapper="overlay" />
 ```
-- `Loader2` import 제거, `Spinner` import 추가
 
-#### 8. BagManager.tsx — CSS border spinner 제거
+- Remove `Loader2` and add `Spinner`.
+
+#### 8. BagManager.tsx - Remove CSS Border Spinner
+
 **File**: `src/components/BagManager.tsx`
 
 Before:
+
 ```tsx
 <div className="flex items-center justify-center py-12">
   <div className="border-primary-500 h-8 w-8 animate-spin rounded-full border-b-2"></div>
@@ -278,15 +315,19 @@ Before:
 ```
 
 After:
+
 ```tsx
 <Spinner wrapper="page" />
 ```
-- CSS border spinner 완전 제거, `Spinner` import 추가
 
-#### 9. BagStats.tsx — CSS border spinner 제거
+- Remove the CSS border spinner completely and add the `Spinner` import.
+
+#### 9. BagStats.tsx - Remove CSS Border Spinner
+
 **File**: `src/components/BagStats.tsx`
 
 Before:
+
 ```tsx
 <div className="flex min-h-[400px] items-center justify-center">
   <div className="border-primary-500 h-8 w-8 animate-spin rounded-full border-b-2"></div>
@@ -294,36 +335,40 @@ Before:
 ```
 
 After:
+
 ```tsx
 <Spinner wrapper="page" />
 ```
-- CSS border spinner 완전 제거, `Spinner` import 추가
-- 기존 `min-h-[400px]`은 BagStats 특유의 레이아웃 높이였으므로, 필요 시 감싸는 div 유지 가능
 
-### Success Criteria:
+- Remove the CSS border spinner completely and add the `Spinner` import.
+- Keep an outer div if the `min-h-[400px]` layout is still needed for BagStats.
 
-#### Automated Verification:
-- [x] `npx tsc --noEmit` — 타입 에러 없음
-- [x] `npm run lint` — 린트 통과
-- [x] Loader2 직접 사용이 `Spinner.tsx`와 `Button.tsx`에만 존재하는지 grep 확인
-- [x] `border-b-2.*animate-spin` 패턴이 코드베이스에서 완전 제거되었는지 grep 확인
+### Success Criteria
 
-#### Manual Verification:
-- [x] App.tsx: 초기 로딩 시 풀스크린 스피너 정상 표시
-- [x] ActivityPage: 활동 페이지 로딩 시 스피너 정상 표시
-- [x] ProfilePage: 프로필 페이지 로딩 시 스피너 정상 표시
-- [x] CardEditPage: 카드 편집 페이지 로딩 시 스피너 정상 표시
-- [x] FSRSStudySession: 학습 세션 로딩 시 스피너 정상 표시
-- [x] BagDetailPage: "더 불러오기" 인라인 스피너 정상 표시
-- [x] StudyCard: 카드 전환 시 오버레이 스피너 정상 표시
-- [x] BagManager: 가방 목록 로딩 시 스피너 정상 표시
-- [x] BagStats: 통계 로딩 시 스피너 정상 표시
+#### Automated Verification
 
-**Implementation Note**: Phase 1 완료 후 바로 Phase 2 진행 가능. Phase 2 완료 후 전체 수동 확인 필요.
+- [x] `npx tsc --noEmit` - no type errors
+- [x] `npm run lint` - lint passes
+- [x] Confirm direct Loader2 usage remains only in `Spinner.tsx` and `Button.tsx`.
+- [x] Confirm `border-b-2.*animate-spin` is removed from the codebase.
+
+#### Manual Verification
+
+- [x] App.tsx: fullscreen spinner renders during initial loading.
+- [x] ActivityPage: spinner renders while Activity is loading.
+- [x] ProfilePage: spinner renders while Profile is loading.
+- [x] CardEditPage: spinner renders while Card Edit is loading.
+- [x] FSRSStudySession: spinner renders while the study session is loading.
+- [x] BagDetailPage: inline spinner renders for "Load more".
+- [x] StudyCard: overlay spinner renders while switching cards.
+- [x] BagManager: spinner renders while the bag list is loading.
+- [x] BagStats: spinner renders while stats are loading.
+
+**Implementation Note**: Phase 2 can start immediately after Phase 1. After Phase 2, perform a full manual check.
 
 ---
 
 ## References
 
-- 연구 문서: `thoughts/shared/research/2026-02-07-spinner-unification.md`
-- 기존 패턴 참조: `src/components/Button.tsx`, `src/components/buttonVariants.ts`
+- Research document: `thoughts/shared/research/2026-02-07-spinner-unification.md`
+- Existing patterns: `src/components/Button.tsx`, `src/components/buttonVariants.ts`
