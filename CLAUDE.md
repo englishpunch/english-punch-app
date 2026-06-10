@@ -51,6 +51,15 @@ scripts/update-convex-rules.sh --force
 - `pnpm run check` — 커밋 전에 실행. lint + knip + test. Staged 변경이 있어도 안전.
 - `pnpm run check:all` — 커밋 후 또는 clean tree에서 실행. 위 항목 + dedupe 체크 포함. CI에서 실행되는 전체 범위.
 
+## Work Tracking
+
+- 모든 작업은 최신 `main` 기준에서 시작한다. 작업 전 `git status -sb`, `git fetch origin --tags`, `git pull --ff-only origin main` 순서로 확인하되, 미커밋 변경이 있으면 덮어쓰지 말고 먼저 범위를 확인한다.
+- 모든 코드/문서 변경은 GitHub Issue와 연결한다. 관련 이슈가 없으면 작업 전에 새 이슈를 만든다.
+- 작업 중인 이슈에는 작업자를 assignee로 지정한다.
+- 이슈 본문은 간단히 작성한다. 직접적인 코드 reference나 파일/라인 링크를 넣지 말고, `Direction`, `As-is`, `To-be` 중심으로 문제와 해결 방향만 남긴다.
+- 모든 커밋 메시지는 GitHub Issue 번호를 포함한다. 예: `feat: add card filters #67`.
+- 커밋 메시지로 이슈를 자동 종료하지 않는다. `Closes #67`, `Fixes #67`, `Resolves #67` 같은 키워드는 사용하지 않는다. 이슈 종료는 수동으로 처리하거나 별도 점검 skill/workflow에서 일괄 확인한다.
+
 ### Push 후 CI 확인
 
 - CI는 로컬 `pnpm run check`보다 넓은 범위(`pnpm run check:all` 상당)를 실행하므로, push 직후 실패가 늦게 드러날 수 있다.
