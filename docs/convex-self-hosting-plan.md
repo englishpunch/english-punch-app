@@ -1,48 +1,80 @@
-# Convex Self-Hosting Plan
+# Convex Self-Hosting Runbook
 
 Created: 2026-05-08
-Last updated: 2026-05-09
+Last updated: 2026-06-24
 
-## Goals
+## Current State
 
-- Run both the frontend and the self-hosted Convex backend on a Mac mini.
-- Use Cloudflare Tunnel to expose the frontend and Convex API/site origins through external HTTPS domains.
-- Keep the dashboard accessible only inside Tailscale by default.
-- Export data from the existing Convex Cloud dev deployment `strong-otter-914` as a snapshot ZIP, then import it into the self-hosted deployment.
-- Run all repository commands with `pnpm`.
-
-## Current Baseline
-
-- Updated repository Convex packages: `convex@1.38.0`, `@convex-dev/auth@0.0.92`, `@convex-dev/eslint-plugin@2.0.0`.
-- Source deployment: `dev:strong-otter-914`.
-- This app uses the Convex Auth Password provider.
-- The only required Convex runtime app secret in the current code is `GEMINI_API_KEY`.
-- The current frontend code reads only `VITE_CONVEX_URL`.
+- Active Convex deployment: `https://ep-convex.echoja.com`.
+- Active Convex site origin: `https://ep-convex-site.echoja.com`.
+- Active frontend origin: `https://ep.echoja.com`.
+- The old Convex Cloud dev deployment `dev:strong-otter-914` was migrated on 2026-06-24 and is no longer part of normal development, testing, deployment, or rollback.
+- This app uses the Convex Auth Password provider with manual self-hosted Auth keys.
+- The frontend code reads `VITE_CONVEX_URL`; `VITE_CONVEX_SITE_URL` is tracked for consistency.
 
 ## Domains
 
 - `ep.echoja.com`: frontend static app, Mac mini `localhost:4173`
 - `ep-convex.echoja.com`: Convex backend/API, Mac mini `localhost:3210`
 - `ep-convex-site.echoja.com`: Convex HTTP actions/Auth routes, Mac mini `localhost:3211`
-- dashboard: `http://<mac-mini-tailscale-name>:6791` from Tailscale
+- dashboard: `http://127.0.0.1:6791` on the Mac mini, or `http://<mac-mini-tailscale-name>:6791` from Tailscale
 
 ## Local Files
 
-Do not commit sensitive files, even if they live inside the repository. `.env.convex-*` files are ignored; examples stay tracked.
+Do not commit sensitive files, even if they live inside the repository.
 
-- `.env.convex-cloud-export`: selects the Convex Cloud source
-- `.env.convex-selfhost`: selects the self-hosted Convex target
-- Frontend build env belongs in shell env or local `.env.local`.
-- Docker backend env belongs outside the repository at `~/services/english-punch-convex/.env`.
+- `.env.local`: frontend development/build URLs
+- `.env.convex-selfhost`: Convex CLI target for the self-hosted deployment
+- `.env.convex-runtime`: local-only runtime secrets to set inside Convex
+- `~/services/english-punch-convex/.env`: Docker backend env outside the repository
+
+Do not set `CONVEX_DEPLOYMENT` in repository env files. That variable selects a Convex Cloud deployment and conflicts with the self-hosted target.
 
 ```sh
-cp .env.convex-cloud-export.example .env.convex-cloud-export
 cp .env.convex-selfhost.example .env.convex-selfhost
+touch .env.convex-runtime
 ```
 
-## Environment Responsibilities
+`.env.local`:
 
-### Docker Backend Env
+```env
+VITE_CONVEX_URL=https://ep-convex.echoja.com
+VITE_CONVEX_SITE_URL=https://ep-convex-site.echoja.com
+```
+
+`.env.convex-selfhost`:
+
+```sh
+CONVEX_SELF_HOSTED_URL=https://ep-convex.echoja.com
+CONVEX_SELF_HOSTED_ADMIN_KEY='<generated admin key>'
+```
+
+## Dashboard Admin Key
+
+The dashboard password is the self-hosted admin key from `.env.convex-selfhost`. Paste the full `CONVEX_SELF_HOSTED_ADMIN_KEY` value without the surrounding quotes.
+
+To copy the exact key without printing it:
+
+```sh
+( set -a; source .env.convex-selfhost; set +a; printf '%s' "$CONVEX_SELF_HOSTED_ADMIN_KEY" | pbcopy )
+```
+
+To verify the key without printing it:
+
+```sh
+(
+  set -a
+  source .env.convex-selfhost
+  set +a
+  curl -fsS \
+    -H "Authorization: Convex $CONVEX_SELF_HOSTED_ADMIN_KEY" \
+    "$CONVEX_SELF_HOSTED_URL/api/check_admin_key" >/dev/null
+)
+```
+
+If the dashboard reports `BadAdminKey`, clear site data/localStorage for `127.0.0.1:6791` and paste the key again. The most common causes are copying the quotes or using an older generated key.
+
+## Docker Backend Env
 
 `~/services/english-punch-convex/.env`:
 
@@ -54,93 +86,35 @@ CONVEX_CLOUD_ORIGIN=https://ep-convex.echoja.com
 CONVEX_SITE_ORIGIN=https://ep-convex-site.echoja.com
 NEXT_PUBLIC_DEPLOYMENT_URL=https://ep-convex.echoja.com
 
+FRONTEND_PORT=4173
+FRONTEND_DIST=/Users/echoja/works/english-punch-app/dist
+
 REDACT_LOGS_TO_CLIENT=true
 DISABLE_BEACON=true
 ```
 
-### Convex CLI Target Env
-
-`.env.convex-cloud-export`:
+Start or restart the stack:
 
 ```sh
-CONVEX_DEPLOYMENT=dev:strong-otter-914
-```
-
-`.env.convex-selfhost`:
-
-```sh
-CONVEX_SELF_HOSTED_URL=https://ep-convex.echoja.com
-CONVEX_SELF_HOSTED_ADMIN_KEY=<generated admin key>
-```
-
-### Convex Runtime Env
-
-These are server-side environment variables set inside the self-hosted deployment.
-
-- `GEMINI_API_KEY`: used by `convex/ai.ts`.
-- `SITE_URL`: frontend origin. After self-hosting, this is `https://ep.echoja.com`.
-- `JWT_PRIVATE_KEY`, `JWKS`: Convex Auth manual setup keys.
-
-`CONVEX_SITE_URL` is used as the issuer domain in `convex/auth.config.ts`. Keep it aligned with the self-hosted backend's `CONVEX_SITE_ORIGIN=https://ep-convex-site.echoja.com`.
-
-### Frontend Build Env
-
-Required only when building the frontend on the Mac mini.
-
-```sh
-VITE_CONVEX_URL=https://ep-convex.echoja.com
-```
-
-`VITE_CONVEX_SITE_URL` currently has no code usage.
-
-### CLI/MCP Client Env
-
-Go CLI:
-
-```sh
-export EP_CONVEX_URL=https://ep-convex.echoja.com
-```
-
-MCP server:
-
-```sh
-export CONVEX_URL=https://ep-convex.echoja.com
-export CONVEX_USER_EMAIL=<email>
-export CONVEX_USER_PASSWORD=<password>
-```
-
-## 1. Start Convex
-
-Run this on the Mac mini.
-
-```sh
-mkdir -p ~/services/english-punch-convex
 cd ~/services/english-punch-convex
-curl -O https://raw.githubusercontent.com/get-convex/convex-backend/main/self-hosted/docker/docker-compose.yml
-```
-
-After writing `~/services/english-punch-convex/.env`, start the service.
-
-```sh
 docker compose up -d
 docker compose ps
+```
+
+Generate a new admin key only if the instance secret changes:
+
+```sh
 docker compose exec backend ./generate_admin_key.sh
 ```
 
-Put the generated admin key into the repository-local `.env.convex-selfhost` file.
+## Cloudflare Tunnel
 
-## 2. Cloudflare Tunnel
+This Mac mini runs cloudflared through `~/Library/LaunchAgents/com.cloudflare.cloudflared.plist`, not the Homebrew service.
 
-Add the frontend and Convex entries to the ingress section in `/Users/echoja/.cloudflared/config.yml`.
+Required ingress entries in `/Users/echoja/.cloudflared/config.yml`:
 
 ```yaml
 ingress:
-  - hostname: happy.echoja.com
-    service: http://localhost:37291
-  - hostname: pds.echoja.com
-    service: http://localhost:3000
-  - hostname: "*.pds.echoja.com"
-    service: http://localhost:3000
   - hostname: ep.echoja.com
     service: http://localhost:4173
   - hostname: ep-convex.echoja.com
@@ -150,100 +124,150 @@ ingress:
   - service: http_status:404
 ```
 
-DNS routes:
+Restart cloudflared after config changes:
 
 ```sh
-cloudflared tunnel route dns 2521553e-c23b-4708-9625-50a9fd65fb49 ep.echoja.com
-cloudflared tunnel route dns 2521553e-c23b-4708-9625-50a9fd65fb49 ep-convex.echoja.com
-cloudflared tunnel route dns 2521553e-c23b-4708-9625-50a9fd65fb49 ep-convex-site.echoja.com
-brew services restart cloudflared
+launchctl kickstart -k "gui/$(id -u)/com.cloudflare.cloudflared"
 ```
 
-Health check:
+## Convex Runtime Env
+
+These are server-side environment variables set inside the self-hosted deployment.
+
+- `GEMINI_API_KEY`: used by `convex/ai.ts`
+- `SITE_URL`: `https://ep.echoja.com`
+- `JWT_PRIVATE_KEY`, `JWKS`: Convex Auth manual setup keys
+
+`CONVEX_SITE_URL` is used as the issuer domain in `convex/auth.config.ts`. Keep it aligned with `CONVEX_SITE_ORIGIN=https://ep-convex-site.echoja.com`.
+
+Generate fresh Convex Auth keys if creating a new instance:
 
 ```sh
-curl https://ep-convex-site.echoja.com/health
+node - <<'NODE' >> .env.convex-runtime
+const { generateKeyPairSync } = require("node:crypto");
+const { privateKey, publicKey } = generateKeyPairSync("rsa", {
+  modulusLength: 2048,
+  publicExponent: 0x10001,
+  privateKeyEncoding: { type: "pkcs8", format: "pem" },
+  publicKeyEncoding: { format: "jwk" },
+});
+const escapedPrivateKey = privateKey.trimEnd().replace(/\n/g, " ");
+const jwks = JSON.stringify({ keys: [{ use: "sig", ...publicKey }] });
+process.stdout.write(`JWT_PRIVATE_KEY="${escapedPrivateKey}"\n`);
+process.stdout.write(`JWKS='${jwks}'\n`);
+NODE
 ```
 
-## 3. Code Deploy and Runtime Env
+Set runtime env values:
 
-With the current Convex CLI, select the self-hosted target through `.env.convex-selfhost`.
+```sh
+(
+  set -a
+  source .env.convex-selfhost
+  source .env.convex-runtime
+  set +a
+  GEMINI_TMP=$(mktemp)
+  JWT_TMP=$(mktemp)
+  JWKS_TMP=$(mktemp)
+  trap 'rm -f "$GEMINI_TMP" "$JWT_TMP" "$JWKS_TMP"' EXIT
+  printf '%s' "$GEMINI_API_KEY" > "$GEMINI_TMP"
+  printf '%s' "$JWT_PRIVATE_KEY" > "$JWT_TMP"
+  printf '%s' "$JWKS" > "$JWKS_TMP"
+  pnpm exec convex env set SITE_URL https://ep.echoja.com
+  pnpm exec convex env set GEMINI_API_KEY --from-file "$GEMINI_TMP"
+  pnpm exec convex env set JWT_PRIVATE_KEY --from-file "$JWT_TMP"
+  pnpm exec convex env set JWKS --from-file "$JWKS_TMP"
+)
+```
+
+Do not run `pnpm exec convex env list` in shared logs after setting secrets; it prints values, not only names.
+
+## Development Flow
+
+Install dependencies:
 
 ```sh
 pnpm install --frozen-lockfile
+```
+
+Start local frontend development plus Convex code watch:
+
+```sh
+pnpm run dev
+```
+
+`pnpm run dev` runs:
+
+- `vite` for the local frontend development server
+- `convex dev --env-file .env.convex-selfhost` for the shared self-hosted backend
+
+Backend schema/functions are pushed to the self-hosted deployment during development. Treat this as a shared dev/prod backend until a separate self-hosted staging instance exists.
+
+## Test Flow
+
+Run focused checks while editing:
+
+```sh
+pnpm test
+pnpm lint
+cd cli && go test ./...
+pnpm --filter @english-punch/mcp-server build
+```
+
+Run the repository check before committing:
+
+```sh
+pnpm run check
+```
+
+Use `pnpm run check:all` for the broader CI-equivalent local check.
+
+## Deploy Flow
+
+Deploy Convex functions/schema:
+
+```sh
 pnpm exec convex deploy --env-file .env.convex-selfhost
 ```
 
-Check Cloud dev env names:
+Build the frontend:
 
 ```sh
-pnpm exec convex env --env-file .env.convex-cloud-export list
+pnpm build
 ```
 
-Set self-hosted runtime env:
+The Docker Compose stack serves `dist/` through Caddy:
 
-```sh
-pnpm exec convex env --env-file .env.convex-selfhost set SITE_URL https://ep.echoja.com
-pnpm exec convex env --env-file .env.convex-selfhost set GEMINI_API_KEY "$GEMINI_API_KEY"
-pnpm exec convex env --env-file .env.convex-selfhost set JWT_PRIVATE_KEY "$JWT_PRIVATE_KEY"
-pnpm exec convex env --env-file .env.convex-selfhost set JWKS "$JWKS"
-pnpm exec convex env --env-file .env.convex-selfhost list
+```caddy
+:80 {
+  root * /srv
+  try_files {path} /index.html
+  file_server
+}
 ```
 
-## 4. Data Migration
+Compose service:
 
-Store snapshots outside the repository.
-
-```sh
-mkdir -p ~/Backups/english-punch/convex
-BACKUP_DIR=~/Backups/english-punch/convex
-TODAY=$(date +%Y-%m-%d)
-SNAPSHOT="$BACKUP_DIR/cloud-final-$TODAY.zip"
-
-pnpm exec convex export \
-  --env-file .env.convex-cloud-export \
-  --include-file-storage \
-  --path "$SNAPSHOT"
-
-zipinfo -1 "$SNAPSHOT" | head
+```yaml
+frontend:
+  image: caddy:2-alpine
+  restart: unless-stopped
+  ports:
+    - "127.0.0.1:${FRONTEND_PORT:-4173}:80"
+  volumes:
+    - "${FRONTEND_DIST:-/Users/echoja/works/english-punch-app/dist}:/srv:ro"
+    - ./Caddyfile:/etc/caddy/Caddyfile:ro
 ```
 
-Import into the self-hosted target.
+After every frontend rebuild, Caddy serves the updated `dist/` contents through the bind mount.
 
-```sh
-pnpm exec convex import \
-  --env-file .env.convex-selfhost \
-  --replace-all \
-  -y \
-  "$SNAPSHOT"
-```
-
-`--replace-all` makes the entire target deployment match the snapshot. Do not run it against the Cloud source.
-
-## 5. Frontend Hosting
-
-Build on the Mac mini.
-
-```sh
-VITE_CONVEX_URL=https://ep-convex.echoja.com pnpm build
-```
-
-For the first production run, serve `dist/` from a static server on `127.0.0.1:4173`. With Caddy:
-
-```sh
-caddy file-server --listen 127.0.0.1:4173 --root dist
-```
-
-Until this is pinned as a launchd service, manually confirm that the frontend, Docker, and cloudflared are all running.
-
-## 6. Verification
+## Verification
 
 ```sh
 curl https://ep-convex-site.echoja.com/health
 curl -I https://ep.echoja.com
-pnpm exec convex data --env-file .env.convex-selfhost
-pnpm exec convex data --env-file .env.convex-selfhost users --limit 5
-pnpm exec convex data --env-file .env.convex-selfhost authAccounts --limit 5
+( set -a; source .env.convex-selfhost; set +a; pnpm exec convex data users --limit 5 )
+( set -a; source .env.convex-selfhost; set +a; pnpm exec convex data authAccounts --limit 5 )
 ```
 
 Verify in the browser:
@@ -255,20 +279,7 @@ Verify in the browser:
 - Generate a Gemini card draft.
 - Confirm that the Go CLI and MCP server point to `https://ep-convex.echoja.com`.
 
-## 7. Cutover
-
-1. Start Convex Docker.
-2. Connect `ep.echoja.com`, `ep-convex.echoja.com`, and `ep-convex-site.echoja.com` through Cloudflare Tunnel.
-3. Deploy code to self-hosted Convex.
-4. Set self-hosted Convex runtime env.
-5. Export the final snapshot from Cloud dev.
-6. Import into self-hosted Convex with `--replace-all`.
-7. Build the frontend with `VITE_CONVEX_URL=https://ep-convex.echoja.com` and deploy it to the static server.
-8. Verify key workflows at `https://ep.echoja.com`.
-9. Switch CLI/MCP client env to the self-hosted URL.
-10. Keep the Cloud deployment as a rollback candidate for a few days.
-
-## 8. Backup and Rollback
+## Backup and Restore
 
 Production backup:
 
@@ -276,24 +287,48 @@ Production backup:
 BACKUP_DIR=~/Backups/english-punch/convex
 TODAY=$(date +%Y-%m-%d)
 
-pnpm exec convex export \
-  --env-file .env.convex-selfhost \
-  --include-file-storage \
-  --path "$BACKUP_DIR/selfhost-$TODAY.zip"
+(
+  set -a
+  source .env.convex-selfhost
+  set +a
+  pnpm exec convex export \
+    --include-file-storage \
+    --path "$BACKUP_DIR/selfhost-$TODAY.zip"
+)
 ```
 
-Rollback:
+Restore the last known-good self-hosted snapshot:
 
-- Frontend problem: restore the `ep.echoja.com` static server to the previous build.
-- Convex cutover problem: rebuild the frontend with the previous Cloud URL and use the Cloud deployment.
-- Self-hosted data problem: import the last known-good `selfhost-YYYY-MM-DD.zip` into the self-hosted target with `--replace-all`.
+```sh
+(
+  set -a
+  source .env.convex-selfhost
+  set +a
+  pnpm exec convex import \
+    --replace-all \
+    -y \
+    "$BACKUP_DIR/selfhost-YYYY-MM-DD.zip"
+)
+```
+
+`--replace-all` makes the entire target deployment match the snapshot. Do not run it unless you intentionally want to replace the current self-hosted data.
+
+## Historical Cutover Record
+
+- Cloud dev source: `dev:strong-otter-914`
+- Final Cloud snapshot: `~/Backups/english-punch/convex/cloud-final-2026-06-24.zip`
+- Sanitized import snapshot: `~/Backups/english-punch/convex/cloud-final-2026-06-24-no-component-storage.zip`
+- Import result: 13,789 documents
+- Verified counts after import: `activities=2672`, `authAccounts=56`, `bags=4`, `cards=2031`, `reviewLogs=1362`, `users=56`
+
+The sanitized snapshot removed only the empty `_components/dueCardsByBag/_storage/documents.jsonl` entry after the first import failed with a component `_file_storage` table ID conflict.
 
 ## Future Hardening
 
 - Pin Docker image tags and write an upgrade runbook.
-- Register the frontend static server as a launchd service.
-- Confirm that Docker, cloudflared, and the frontend start automatically after a Mac mini reboot.
+- Confirm Docker and cloudflared restart automatically after a Mac mini reboot.
 - Replicate snapshot ZIP files to an external disk or encrypted remote backup.
+- Add a separate self-hosted staging deployment if backend changes need isolation from production data.
 - Consider S3/R2 storage when file storage usage appears.
 
 ## References

@@ -13,14 +13,14 @@ func TestLoad_Defaults(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load error: %v", err)
 	}
-	if cfg.ConvexURL != "https://strong-otter-914.convex.cloud" {
+	if cfg.ConvexURL != "https://ep-convex.echoja.com" {
 		t.Errorf("ConvexURL = %q, want default", cfg.ConvexURL)
 	}
 }
 
 func TestLoad_ConfigFile(t *testing.T) {
 	dir := t.TempDir()
-	content := []byte("convex_url: https://custom.convex.cloud\n")
+	content := []byte("convex_url: https://custom.example.test\n")
 	if err := os.WriteFile(filepath.Join(dir, "config.yaml"), content, 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -29,20 +29,20 @@ func TestLoad_ConfigFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Load error: %v", err)
 	}
-	if cfg.ConvexURL != "https://custom.convex.cloud" {
+	if cfg.ConvexURL != "https://custom.example.test" {
 		t.Errorf("ConvexURL = %q, want custom URL", cfg.ConvexURL)
 	}
 }
 
 func TestLoad_EnvOverride(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("EP_CONVEX_URL", "https://env.convex.cloud")
+	t.Setenv("EP_CONVEX_URL", "https://env.example.test")
 
 	cfg, err := Load(dir)
 	if err != nil {
 		t.Fatalf("Load error: %v", err)
 	}
-	if cfg.ConvexURL != "https://env.convex.cloud" {
+	if cfg.ConvexURL != "https://env.example.test" {
 		t.Errorf("ConvexURL = %q, want env override", cfg.ConvexURL)
 	}
 }
@@ -51,7 +51,7 @@ func TestSave_RoundTrip(t *testing.T) {
 	dir := t.TempDir()
 
 	in := &Config{
-		ConvexURL:    "https://custom.convex.cloud",
+		ConvexURL:    "https://custom.example.test",
 		DefaultBagID: "bag_abc123",
 	}
 	if err := Save(dir, in); err != nil {
@@ -73,10 +73,10 @@ func TestSave_RoundTrip(t *testing.T) {
 func TestSave_UnsetDefaultBag(t *testing.T) {
 	dir := t.TempDir()
 
-	if err := Save(dir, &Config{ConvexURL: "https://x.convex.cloud", DefaultBagID: "bag_1"}); err != nil {
+	if err := Save(dir, &Config{ConvexURL: "https://x.example.test", DefaultBagID: "bag_1"}); err != nil {
 		t.Fatalf("Save error: %v", err)
 	}
-	if err := Save(dir, &Config{ConvexURL: "https://x.convex.cloud", DefaultBagID: ""}); err != nil {
+	if err := Save(dir, &Config{ConvexURL: "https://x.example.test", DefaultBagID: ""}); err != nil {
 		t.Fatalf("Save error (unset): %v", err)
 	}
 

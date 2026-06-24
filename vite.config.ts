@@ -23,6 +23,9 @@ export default defineConfig(async () => ({
     port: 1420,
     strictPort: true,
   },
+  preview: {
+    allowedHosts: ["ep.echoja.com"],
+  },
   resolve: {
     alias: {
       // Allow absolute imports from the `src` directory

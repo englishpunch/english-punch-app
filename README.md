@@ -95,7 +95,7 @@ cd english-punch-app
 # Install dependencies. pnpm is required.
 pnpm install
 
-# Start the development servers for the web app and Convex backend.
+# Start the development servers for the web app and self-hosted Convex backend.
 pnpm run dev
 ```
 
@@ -103,22 +103,27 @@ pnpm run dev
 
 ### 1. Configure Convex
 
-Initialize the Convex development environment:
+This repository uses the self-hosted Convex deployment at
+`https://ep-convex.echoja.com`. Do not initialize a new Convex Cloud dev
+deployment for normal development.
 
-```bash
-npx convex dev
-```
-
-This command handles Convex account login and new project creation automatically.
+Create `.env.convex-selfhost` from `.env.convex-selfhost.example` and fill in
+the generated self-hosted admin key.
 
 ### 2. Configure Environment Variables
 
 Create `.env.local` and set the following value:
 
 ```env
-# Convex config. Generated automatically when running npx convex dev.
-VITE_CONVEX_URL=https://your-project.convex.cloud
+VITE_CONVEX_URL=https://ep-convex.echoja.com
+VITE_CONVEX_SITE_URL=https://ep-convex-site.echoja.com
 ```
+
+`pnpm run dev` runs Vite and `convex dev --env-file .env.convex-selfhost` in
+parallel. Backend changes are pushed to the shared self-hosted deployment.
+
+The Convex dashboard is available on the Mac mini/Tailscale network at
+`http://127.0.0.1:6791`.
 
 ## Verification Commands
 

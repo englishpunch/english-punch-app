@@ -2,8 +2,7 @@ import { ConvexHttpClient } from "convex/browser";
 import type { GenericId } from "convex/values";
 import { api } from "./convex-generated/api.js";
 
-const CONVEX_URL =
-  process.env.CONVEX_URL ?? "https://strong-otter-914.convex.cloud";
+const CONVEX_URL = process.env.CONVEX_URL ?? "https://ep-convex.echoja.com";
 
 let cachedClient: ConvexHttpClient | null = null;
 let cachedUserId: GenericId<"users"> | null = null;

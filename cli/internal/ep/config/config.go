@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultConvexURL = "https://strong-otter-914.convex.cloud"
+	defaultConvexURL = "https://ep-convex.echoja.com"
 	configFileName   = "config"
 	configFileType   = "yaml"
 	appDirName       = "english-punch"
