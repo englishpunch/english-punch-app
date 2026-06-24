@@ -11,7 +11,7 @@ export default {
           const raw = parsed.raw ?? "";
           return [
             issueReferencePattern.test(raw),
-            "commit message must include a GitHub issue reference like #67",
+            "commit message must include a relevant GitHub issue reference like #67; search all open issues first, and create an issue if none matches",
           ];
         },
         "issue-closing-keyword-forbidden": (parsed) => {

@@ -54,10 +54,9 @@ scripts/update-convex-rules.sh --force
 ## Work Tracking
 
 - Start every task from the latest `main`. Before work, run `git status -sb` to inspect uncommitted changes, then from `main` run `git fetch origin --tags` and `git pull --ff-only`. If uncommitted changes exist, inspect their scope before doing anything that could overwrite them.
-- Connect every code or documentation change to a GitHub Issue. If no related issue exists, create one before starting work.
-- Assign the working issue to the person doing the work.
+- Connect every code or documentation change to a relevant GitHub Issue. Before creating a new issue, review the full open issue list, not only a narrow keyword search. If none clearly matches, create one before starting work and assign it to the person doing the work.
 - Keep issue bodies simple. Do not include direct code references, file links, or line links. Use `Direction`, `As-is`, and `To-be` to describe the problem and intended direction. If `To-be` is not clear yet, do not invent a solution; add the `TBD` label to the GitHub Issue.
-- Every commit message must include a GitHub Issue number. Example: `feat: add card filters #67`.
+- Every commit message must include the relevant GitHub Issue number. Example: `feat: add card filters #67`. Do not reference an unrelated nearby issue just to satisfy commitlint.
 - Do not auto-close issues from commit messages. Avoid keywords such as `Closes #67`, `Fixes #67`, and `Resolves #67`. Close issues manually or through a separate audit skill/workflow.
 
 ### Check CI After Push
