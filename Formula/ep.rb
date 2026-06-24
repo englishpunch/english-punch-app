@@ -5,13 +5,13 @@
 class Ep < Formula
   desc "CLI for English Punch flashcard app"
   homepage "https://github.com/englishpunch/english-punch-app"
-  version "0.3.4"
+  version "0.3.5"
   license "MIT"
   depends_on :macos
 
   if Hardware::CPU.intel?
-    url "https://github.com/englishpunch/english-punch-app/releases/download/v0.3.4/ep_darwin_amd64.tar.gz"
-    sha256 "2e2b932c7035f61aa2194ebab1bba28a634bd67a0a74755f9c87f0f29b89ee01"
+    url "https://github.com/englishpunch/english-punch-app/releases/download/v0.3.5/ep_darwin_amd64.tar.gz"
+    sha256 "dfe2559408519bb80f3a683c788fd440d9395bbe18c3b4b7e755de021b8f5237"
 
     define_method(:install) do
       bin.install "ep"
@@ -19,8 +19,8 @@ class Ep < Formula
     end
   end
   if Hardware::CPU.arm?
-    url "https://github.com/englishpunch/english-punch-app/releases/download/v0.3.4/ep_darwin_arm64.tar.gz"
-    sha256 "6b288fcf1ab28867b3423971110ef2a7fa3b04078f27445611e16107df59ed62"
+    url "https://github.com/englishpunch/english-punch-app/releases/download/v0.3.5/ep_darwin_arm64.tar.gz"
+    sha256 "1c8a305de6a553c2b1084714f8c685cf1e59971f998404e65699d3c38a4d4d98"
 
     define_method(:install) do
       bin.install "ep"
