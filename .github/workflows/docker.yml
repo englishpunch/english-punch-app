@@ -66,11 +66,11 @@ jobs:
       - name: Check infra GitHub App configuration
         id: infra-app-config
         env:
-          INFRA_APP_ID: ${{ vars.INFRA_APP_ID }}
+          INFRA_APP_CLIENT_ID: ${{ vars.INFRA_APP_CLIENT_ID }}
           INFRA_APP_PRIVATE_KEY: ${{ secrets.INFRA_APP_PRIVATE_KEY }}
         run: |
-          if [ -z "$INFRA_APP_ID" ]; then
-            echo "::notice::Skipping infra PR because INFRA_APP_ID repository variable is not configured."
+          if [ -z "$INFRA_APP_CLIENT_ID" ]; then
+            echo "::notice::Skipping infra PR because INFRA_APP_CLIENT_ID repository variable is not configured."
             echo "configured=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -86,7 +86,7 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
-          app-id: ${{ vars.INFRA_APP_ID }}
+          client-id: ${{ vars.INFRA_APP_CLIENT_ID }}
           private-key: ${{ secrets.INFRA_APP_PRIVATE_KEY }}
           owner: echoja
           repositories: infra
