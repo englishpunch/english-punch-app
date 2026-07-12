@@ -18,6 +18,9 @@ dist-ssr
 .mcp.json
 *.local
 
+# Throwaway sentence-image workflow prototype
+prototypes/sentence-image-workflow/.poc-data/
+
 # Turborepo
 .turbo
 
