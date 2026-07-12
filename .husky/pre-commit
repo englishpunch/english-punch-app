@@ -7,6 +7,8 @@
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 
+"$REPO_ROOT/scripts/require-current-upstream.sh"
+
 if [ "${THOUGHTS_SKIP:-}" != "1" ]; then
   for script in validate-filenames validate-frontmatter; do
     VALIDATE_SCRIPT="$REPO_ROOT/scripts/$script"
