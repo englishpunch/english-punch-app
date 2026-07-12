@@ -64,20 +64,25 @@ jobs:
       contents: read
     steps:
       - name: Check infra GitHub App configuration
+        id: infra-app-config
         env:
           INFRA_APP_ID: ${{ vars.INFRA_APP_ID }}
           INFRA_APP_PRIVATE_KEY: ${{ secrets.INFRA_APP_PRIVATE_KEY }}
         run: |
           if [ -z "$INFRA_APP_ID" ]; then
-            echo "INFRA_APP_ID repository variable is required." >&2
-            exit 1
+            echo "::notice::Skipping infra PR because INFRA_APP_ID repository variable is not configured."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
           if [ -z "$INFRA_APP_PRIVATE_KEY" ]; then
-            echo "INFRA_APP_PRIVATE_KEY repository secret is required." >&2
-            exit 1
+            echo "::notice::Skipping infra PR because INFRA_APP_PRIVATE_KEY repository secret is not configured."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Create infra GitHub App token
+        if: steps.infra-app-config.outputs.configured == 'true'
         id: app-token
         uses: actions/create-github-app-token@v3
         with:
@@ -89,6 +94,7 @@ jobs:
           permission-pull-requests: write
 
       - name: Checkout infra
+        if: steps.infra-app-config.outputs.configured == 'true'
         uses: actions/checkout@v6
         with:
           repository: echoja/infra
@@ -97,10 +103,12 @@ jobs:
           persist-credentials: false
 
       - name: Resolve image tag
+        if: steps.infra-app-config.outputs.configured == 'true'
         id: image
         run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
 
       - name: Configure Git as app bot
+        if: steps.infra-app-config.outputs.configured == 'true'
         working-directory: infra
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
@@ -112,6 +120,7 @@ jobs:
           gh auth setup-git
 
       - name: Update English Punch image tag
+        if: steps.infra-app-config.outputs.configured == 'true'
         working-directory: infra
         env:
           IMAGE_TAG: ${{ steps.image.outputs.tag }}
@@ -155,6 +164,7 @@ jobs:
           PY
 
       - name: Open infra image update PR
+        if: steps.infra-app-config.outputs.configured == 'true'
         working-directory: infra
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
