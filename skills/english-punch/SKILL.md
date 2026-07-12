@@ -57,7 +57,7 @@ Before using card, bag, or review commands:
   `ep config --help`, and `ep doctor --help`.
 - For review sessions, start with `ep review --help`. If the installed
   CLI does not support the requested review workflow, direct the user to
-  the web app at `https://englishpunch.vercel.app/`.
+  the web app at `https://ep.echoja.com/`.
 
 Use mutations such as create, replace, delete, reserve, or rate only
 after the user clearly asks for that change. Inspect existing data with

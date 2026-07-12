@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const webAppURL = "https://englishpunch.vercel.app"
+const webAppURL = "https://ep.echoja.com"
 
 var openFields = []common.Field{
 	{Name: "url", Type: "string"},
