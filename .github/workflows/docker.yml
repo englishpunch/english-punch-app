@@ -55,3 +55,125 @@ jobs:
           build-args: |
             VITE_CONVEX_URL=${{ env.VITE_CONVEX_URL }}
             VITE_CONVEX_SITE_URL=${{ env.VITE_CONVEX_SITE_URL }}
+
+  update-infra:
+    needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Check infra GitHub App configuration
+        env:
+          INFRA_APP_ID: ${{ vars.INFRA_APP_ID }}
+          INFRA_APP_PRIVATE_KEY: ${{ secrets.INFRA_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "$INFRA_APP_ID" ]; then
+            echo "INFRA_APP_ID repository variable is required." >&2
+            exit 1
+          fi
+          if [ -z "$INFRA_APP_PRIVATE_KEY" ]; then
+            echo "INFRA_APP_PRIVATE_KEY repository secret is required." >&2
+            exit 1
+          fi
+
+      - name: Create infra GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ vars.INFRA_APP_ID }}
+          private-key: ${{ secrets.INFRA_APP_PRIVATE_KEY }}
+          owner: echoja
+          repositories: infra
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: Checkout infra
+        uses: actions/checkout@v6
+        with:
+          repository: echoja/infra
+          token: ${{ steps.app-token.outputs.token }}
+          path: infra
+          persist-credentials: false
+
+      - name: Resolve image tag
+        id: image
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Configure Git as app bot
+        working-directory: infra
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+        run: |
+          user_id="$(gh api "/users/${APP_SLUG}[bot]" --jq .id)"
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
+          gh auth setup-git
+
+      - name: Update English Punch image tag
+        working-directory: infra
+        env:
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          path = Path("apps/english-punch/values.yaml")
+          lines = path.read_text().splitlines(keepends=True)
+
+          in_frontend = False
+          in_frontend_image = False
+          changed = False
+          next_lines = []
+
+          for line in lines:
+              stripped = line.strip()
+
+              if line.startswith("frontend:"):
+                  in_frontend = True
+                  in_frontend_image = False
+              elif in_frontend and line and not line.startswith((" ", "\n")):
+                  in_frontend = False
+                  in_frontend_image = False
+
+              if in_frontend and stripped == "image:":
+                  in_frontend_image = True
+              elif in_frontend_image and stripped.startswith("tag:"):
+                  indent = line[: len(line) - len(line.lstrip())]
+                  line = f"{indent}tag: {os.environ['IMAGE_TAG']}\n"
+                  changed = True
+                  in_frontend_image = False
+
+              next_lines.append(line)
+
+          if not changed:
+              raise SystemExit("frontend.image.tag not found in apps/english-punch/values.yaml")
+
+          path.write_text("".join(next_lines))
+          PY
+
+      - name: Open infra image update PR
+        working-directory: infra
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          BRANCH: bot/update-english-punch-${{ github.sha }}
+          IMAGE_TAG: ${{ steps.image.outputs.tag }}
+        run: |
+          if git diff --quiet -- apps/english-punch/values.yaml; then
+            echo "Infra already uses ${IMAGE_TAG}; skipping PR."
+            exit 0
+          fi
+
+          git checkout -b "$BRANCH"
+          git add apps/english-punch/values.yaml
+          git commit -m "Update English Punch image to ${IMAGE_TAG}"
+          git push origin "$BRANCH"
+
+          gh pr create \
+            --repo echoja/infra \
+            --base main \
+            --head "$BRANCH" \
+            --title "Update English Punch image to ${IMAGE_TAG}" \
+            --body "Updates English Punch frontend image to \`${IMAGE_TAG}\` after englishpunch/english-punch-app@${{ github.sha }}."
