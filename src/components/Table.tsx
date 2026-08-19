@@ -16,9 +16,16 @@ const tableWrapperVariants = cva(
 type TableWrapperProps = ComponentProps<"div"> &
   VariantProps<typeof tableWrapperVariants>;
 
-export function TableWrapper({ className, ...props }: TableWrapperProps) {
+export function TableWrapper({
+  className,
+  edgeToEdge,
+  ...props
+}: TableWrapperProps) {
   return (
-    <div className={cn(tableWrapperVariants(props), className)} {...props} />
+    <div
+      className={cn(tableWrapperVariants({ edgeToEdge }), className)}
+      {...props}
+    />
   );
 }
 

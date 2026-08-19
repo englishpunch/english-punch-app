@@ -81,7 +81,7 @@ export default function MobileShell({ children }: MobileShellProps) {
   const screenTitle = t(tabConfig[activeTab].titleKey);
 
   return (
-    <div className="min-h-screen pb-[calc(5rem+env(safe-area-inset-bottom))]">
+    <div className="min-h-screen pb-[calc(var(--shell-bottom-nav-height)+env(safe-area-inset-bottom))] [--shell-bottom-nav-height:5rem] [--shell-header-height:2.8125rem]">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white/90 px-2 py-1 backdrop-blur">
         <Button
           variant="ghost"

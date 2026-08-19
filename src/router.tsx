@@ -60,6 +60,8 @@ const plansBagDetailRoute = createRoute({
   validateSearch: zodValidator(
     z.object({
       search: fallback(z.string().optional(), ""),
+      sortBy: fallback(z.enum(["due", "created"]), "due").default("due"),
+      sortDirection: fallback(z.enum(["asc", "desc"]), "desc").default("desc"),
     })
   ),
 });

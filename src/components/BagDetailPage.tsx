@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
@@ -15,10 +15,17 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Spinner } from "./Spinner";
 import useIsMock from "@/hooks/useIsMock";
-import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
+import {
+  useNavigate,
+  useParams,
+  useRouterState,
+  useSearch,
+} from "@tanstack/react-router";
 import {
   createColumnHelper,
   flexRender,
@@ -28,6 +35,7 @@ import {
   getFilteredRowModel,
   type SortingState,
   type ColumnFiltersState,
+  type OnChangeFn,
 } from "@tanstack/react-table";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -62,12 +70,49 @@ export default function BagDetailPage() {
   const timezone = userSettings?.timezone ?? "Asia/Seoul";
   const navigate = useNavigate();
   const searchParams = useSearch({ from: "/plans/$bagId" });
+  const rawSearch = useRouterState({
+    select: (state) => state.location.searchStr,
+  });
   const searchQuery = searchParams.search || "";
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "_creationTime", desc: true },
-  ]);
-  const activeSort = sorting[0] ?? { id: "_creationTime", desc: true };
+  const sorting = useMemo<SortingState>(
+    () => [
+      {
+        id: searchParams.sortBy === "due" ? "due" : "_creationTime",
+        desc: searchParams.sortDirection === "desc",
+      },
+    ],
+    [searchParams.sortBy, searchParams.sortDirection]
+  );
+  const [answersVisible, setAnswersVisible] = useState(true);
+  const activeSort = sorting[0] ?? { id: "due", desc: true };
   const sortBy: "due" | "created" = activeSort.id === "due" ? "due" : "created";
+
+  useEffect(() => {
+    const rawSearchParams = new URLSearchParams(rawSearch);
+    if (
+      rawSearchParams.get("sortBy") === searchParams.sortBy &&
+      rawSearchParams.get("sortDirection") === searchParams.sortDirection
+    ) {
+      return;
+    }
+
+    void navigate({
+      to: "/plans/$bagId",
+      params: { bagId },
+      search: (previous) => ({
+        ...previous,
+        sortBy: searchParams.sortBy,
+        sortDirection: searchParams.sortDirection,
+      }),
+      replace: true,
+    });
+  }, [
+    bagId,
+    navigate,
+    rawSearch,
+    searchParams.sortBy,
+    searchParams.sortDirection,
+  ]);
 
   // Get bag info
   const bagsArgs = isMock
@@ -162,10 +207,40 @@ export default function BagDetailPage() {
         minSize: 320,
       }),
       columnHelper.accessor("answer", {
-        header: t("bagDetail.tableHeaders.answer"),
+        header: () => (
+          <div className="flex items-center justify-between gap-2">
+            <span>{t("bagDetail.tableHeaders.answer")}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="-my-2 h-8 w-8 shrink-0 p-0 text-gray-600 after:absolute after:-inset-1.5 after:content-['']"
+              onClick={() => setAnswersVisible((visible) => !visible)}
+              aria-label={t(
+                answersVisible
+                  ? "bagDetail.hideAnswersAria"
+                  : "bagDetail.showAnswersAria"
+              )}
+            >
+              {answersVisible ? (
+                <EyeOff className="h-4 w-4" aria-hidden />
+              ) : (
+                <Eye className="h-4 w-4" aria-hidden />
+              )}
+            </Button>
+          </div>
+        ),
         enableSorting: false,
         cell: (info) => (
-          <div className="font-semibold text-gray-900">{info.getValue()}</div>
+          <div
+            className={cn(
+              "font-semibold text-gray-900 transition-opacity duration-200 ease-out motion-reduce:transition-none",
+              answersVisible ? "opacity-100" : "opacity-0"
+            )}
+            aria-hidden={!answersVisible}
+          >
+            {info.getValue()}
+          </div>
         ),
         size: 190,
         minSize: 180,
@@ -231,8 +306,24 @@ export default function BagDetailPage() {
         size: 96,
       }),
     ],
-    [bag, isMock, navigate, t, timezone]
+    [answersVisible, bag, isMock, navigate, t, timezone]
   );
+
+  const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
+    const nextSorting =
+      typeof updater === "function" ? updater(sorting) : updater;
+    const nextSort = nextSorting[0] ?? { id: "due", desc: true };
+    void navigate({
+      to: "/plans/$bagId",
+      params: { bagId },
+      search: (previous) => ({
+        ...previous,
+        sortBy: nextSort.id === "due" ? "due" : "created",
+        sortDirection: nextSort.desc ? "desc" : "asc",
+      }),
+      replace: true,
+    });
+  };
 
   // TanStack Table intentionally returns non-memoizable functions here.
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -243,7 +334,7 @@ export default function BagDetailPage() {
       sorting,
       columnFilters,
     },
-    onSortingChange: setSorting,
+    onSortingChange: handleSortingChange,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -277,7 +368,10 @@ export default function BagDetailPage() {
     void navigate({
       to: "/plans/$bagId",
       params: { bagId },
-      search: { search: nextSearch },
+      search: (previous) => ({
+        ...previous,
+        search: nextSearch || undefined,
+      }),
     });
   };
 
@@ -311,7 +405,7 @@ export default function BagDetailPage() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="grid h-[calc(100dvh-var(--shell-header-height)-var(--shell-bottom-nav-height)-env(safe-area-inset-bottom))] min-h-0 grid-rows-[auto_auto_minmax(0,1fr)_auto] gap-4 overflow-hidden">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Button
@@ -342,33 +436,36 @@ export default function BagDetailPage() {
         </div>
       </div>
 
-      <form
-        key={`${bagId}-${searchQuery}`}
-        className="flex flex-col gap-2 sm:flex-row sm:items-center"
-        onSubmit={handleSearchSubmit}
-      >
-        <div className="relative flex-1">
-          <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
-          <Input
-            name="search"
-            type="text"
-            placeholder={t("bagDetail.searchPlaceholder")}
-            defaultValue={searchQuery}
-            padding="icon"
-          />
-        </div>
-        <Button type="submit" variant="secondary" className="gap-2">
-          <Search className="h-4 w-4" aria-hidden />
-          {t("common.actions.search")}
-        </Button>
-      </form>
-      {searchQuery && (
-        <p className="mt-2 text-xs text-gray-500">
-          {t("bagDetail.searchNotice")}
-        </p>
-      )}
+      <div className="space-y-2">
+        <form
+          key={`${bagId}-${searchQuery}`}
+          className="flex flex-col gap-2 sm:flex-row sm:items-center"
+          onSubmit={handleSearchSubmit}
+        >
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              name="search"
+              type="text"
+              placeholder={t("bagDetail.searchPlaceholder")}
+              defaultValue={searchQuery}
+              padding="icon"
+            />
+          </div>
+          <Button type="submit" variant="secondary" className="gap-2">
+            <Search className="h-4 w-4" aria-hidden />
+            {t("common.actions.search")}
+          </Button>
+        </form>
+        {searchQuery && (
+          <p className="text-xs text-gray-500">{t("bagDetail.searchNotice")}</p>
+        )}
+      </div>
 
-      <TableWrapper edgeToEdge className="relative">
+      <TableWrapper
+        edgeToEdge
+        className="relative min-h-0 min-w-0 overflow-auto overscroll-contain"
+      >
         <Table>
           <THead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -377,9 +474,11 @@ export default function BagDetailPage() {
                   <Th
                     key={header.id}
                     className={cn(
+                      "sticky top-0 z-10 bg-gray-50 shadow-[inset_0_-1px_0_0_var(--color-gray-200)]",
                       header.column.id === "actions" &&
                         "w-px px-2 text-right whitespace-nowrap"
                     )}
+                    scope="col"
                     style={{
                       width: header.getSize(),
                       minWidth: header.column.columnDef.minSize,
