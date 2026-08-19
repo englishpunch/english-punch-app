@@ -8,6 +8,11 @@ import i18n from "./i18n";
 
 const convex = getConvexClient();
 
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  window.location.reload();
+});
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <I18nextProvider i18n={i18n}>
