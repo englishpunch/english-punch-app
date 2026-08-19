@@ -48,7 +48,7 @@ run_and_capture "test" env CI=true pnpm run test
 
 # --- Post-commit checks (require clean working tree) ---
 if [[ "${run_all}" == "true" ]]; then
-  run_and_capture "dedupe" bash -c "pnpm dedupe && git diff --exit-code pnpm-lock.yaml"
+  run_and_capture "dedupe" pnpm dedupe --check
 fi
 
 set -e

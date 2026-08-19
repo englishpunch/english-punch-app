@@ -69,9 +69,7 @@ jobs:
       # --- Post-commit checks (require clean working tree) ---
       - name: package dedupe
         id: dedupe
-        run: |
-          pnpm dedupe
-          git diff --exit-code
+        run: pnpm dedupe --check
         continue-on-error: true
 
       - name: Fail job if any step failed
@@ -94,7 +92,7 @@ jobs:
           check_step "lint" "${{ steps.lint.outcome }}" "pnpm run lint"
           check_step "knip" "${{ steps.knip.outcome }}" "pnpm run knip"
           check_step "test" "${{ steps.test.outcome }}" "CI=true pnpm run test"
-          check_step "dedupe" "${{ steps.dedupe.outcome }}" "pnpm dedupe && git diff --exit-code"
+          check_step "dedupe" "${{ steps.dedupe.outcome }}" "pnpm dedupe --check"
 
           if [ "$failed" -eq 1 ]; then
             run_url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
