@@ -159,6 +159,7 @@ export default function BagDetailPage() {
           </div>
         ),
         size: 460,
+        minSize: 320,
       }),
       columnHelper.accessor("answer", {
         header: t("bagDetail.tableHeaders.answer"),
@@ -167,6 +168,7 @@ export default function BagDetailPage() {
           <div className="font-semibold text-gray-900">{info.getValue()}</div>
         ),
         size: 190,
+        minSize: 180,
       }),
       columnHelper.accessor("due", {
         header: t("bagDetail.tableHeaders.nextReview"),
@@ -366,7 +368,7 @@ export default function BagDetailPage() {
         </p>
       )}
 
-      <TableWrapper edgeToEdge>
+      <TableWrapper edgeToEdge className="relative">
         <Table>
           <THead>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -378,7 +380,10 @@ export default function BagDetailPage() {
                       header.column.id === "actions" &&
                         "w-px px-2 text-right whitespace-nowrap"
                     )}
-                    style={{ width: header.getSize() }}
+                    style={{
+                      width: header.getSize(),
+                      minWidth: header.column.columnDef.minSize,
+                    }}
                     aria-sort={
                       header.column.getCanSort()
                         ? header.column.getIsSorted() === "asc"
@@ -447,7 +452,10 @@ export default function BagDetailPage() {
                         cell.column.id === "actions" &&
                           "w-px px-2 text-right whitespace-nowrap"
                       )}
-                      style={{ width: cell.column.getSize() }}
+                      style={{
+                        width: cell.column.getSize(),
+                        minWidth: cell.column.columnDef.minSize,
+                      }}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
