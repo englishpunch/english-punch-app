@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import {
   optimisticallyUpdateValueInPaginatedQuery,
   useMutation,
@@ -26,12 +26,7 @@ import {
 import { Spinner } from "./Spinner";
 import { Switch } from "./Switch";
 import useIsMock from "@/hooks/useIsMock";
-import {
-  useNavigate,
-  useParams,
-  useRouterState,
-  useSearch,
-} from "@tanstack/react-router";
+import { useNavigate, useParams, useSearch } from "@tanstack/react-router";
 import {
   createColumnHelper,
   flexRender,
@@ -78,9 +73,6 @@ export default function BagDetailPage() {
   const timezone = userSettings?.timezone ?? "Asia/Seoul";
   const navigate = useNavigate();
   const searchParams = useSearch({ from: "/plans/$bagId" });
-  const rawSearch = useRouterState({
-    select: (state) => state.location.searchStr,
-  });
   const searchQuery = searchParams.search || "";
   const sorting = useMemo<SortingState>(
     () => [
@@ -94,33 +86,6 @@ export default function BagDetailPage() {
   const [answersVisible, setAnswersVisible] = useState(true);
   const activeSort = sorting[0] ?? BAG_CARD_SORT_DEFAULTS.table;
   const sortBy: "due" | "created" = activeSort.id === "due" ? "due" : "created";
-
-  useEffect(() => {
-    const rawSearchParams = new URLSearchParams(rawSearch);
-    if (
-      rawSearchParams.get("sortBy") === searchParams.sortBy &&
-      rawSearchParams.get("sortDirection") === searchParams.sortDirection
-    ) {
-      return;
-    }
-
-    void navigate({
-      to: "/plans/$bagId",
-      params: { bagId },
-      search: (previous) => ({
-        ...previous,
-        sortBy: searchParams.sortBy,
-        sortDirection: searchParams.sortDirection,
-      }),
-      replace: true,
-    });
-  }, [
-    bagId,
-    navigate,
-    rawSearch,
-    searchParams.sortBy,
-    searchParams.sortDirection,
-  ]);
 
   // Get bag info
   const bagsArgs = isMock

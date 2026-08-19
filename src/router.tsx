@@ -4,6 +4,7 @@ import {
   createRoute,
   createRouter,
   Navigate,
+  redirect,
 } from "@tanstack/react-router";
 import {
   ActivityRoute,
@@ -71,6 +72,26 @@ const plansBagDetailRoute = createRoute({
       ).default(BAG_CARD_SORT_DEFAULTS.sortDirection),
     })
   ),
+  beforeLoad: ({ location, params, search }) => {
+    const rawSearch = new URLSearchParams(location.searchStr);
+    if (
+      rawSearch.get("sortBy") === search.sortBy &&
+      rawSearch.get("sortDirection") === search.sortDirection
+    ) {
+      return;
+    }
+
+    return redirect({
+      to: "/plans/$bagId",
+      params: { bagId: params.bagId },
+      search: {
+        ...location.search,
+        sortBy: search.sortBy,
+        sortDirection: search.sortDirection,
+      },
+      replace: true,
+    });
+  },
 });
 
 const cardAddRoute = createRoute({
@@ -116,11 +137,15 @@ const routeTree = rootRoute.addChildren([
   clubRoute,
 ]);
 
-export const router = createRouter({
-  routeTree,
-  history: createHashHistory(),
-  defaultPreload: "intent",
-});
+export function createAppRouter(history = createHashHistory()) {
+  return createRouter({
+    routeTree,
+    history,
+    defaultPreload: "intent",
+  });
+}
+
+export const router = createAppRouter();
 
 declare module "@tanstack/react-router" {
   interface Register {
