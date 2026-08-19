@@ -7,7 +7,6 @@ import BagListPage from "./components/BagListPage";
 import BagDetailPage from "./components/BagDetailPage";
 import CardAddPage from "./components/CardAddPage";
 import CardEditPage from "./components/CardEditPage";
-import BatchCardCreationPage from "./components/BatchCardCreationPage";
 import ProfilePage from "./components/ProfilePage";
 import { useTranslation } from "react-i18next";
 
@@ -37,10 +36,6 @@ export function CardAddRoute() {
 
 export function CardEditRoute() {
   return <CardEditPage />;
-}
-
-export function BatchCardCreationRoute() {
-  return <BatchCardCreationPage />;
 }
 
 export function ActivityRoute() {

@@ -126,6 +126,12 @@ export const learningTables = {
       "due",
     ])
     .index("by_bag_deleted_user", ["bagId", "deletedAt", "userId"])
+    .index("by_user_and_bag_and_deleted_at_and_due", [
+      "userId",
+      "bagId",
+      "deletedAt",
+      "due",
+    ])
     .index("by_user_and_state", ["userId", "state"])
     .index("by_bag_and_state", ["bagId", "state"])
     .index("by_user_and_learning_steps", ["userId", "learning_steps"])

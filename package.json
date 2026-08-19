@@ -26,7 +26,6 @@
   "dependencies": {
     "@convex-dev/auth": "^0.0.93",
     "@google/genai": "^2.8.0",
-    "@radix-ui/react-popover": "^1.1.16",
     "@radix-ui/react-slot": "^1.2.5",
     "@radix-ui/react-tooltip": "^1.2.9",
     "@tanstack/react-router": "^1.170.15",

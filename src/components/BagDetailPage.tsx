@@ -12,7 +12,6 @@ import {
   Edit2,
   ArrowLeft,
   Search,
-  Sparkles,
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
@@ -33,13 +32,14 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { dayjs, DATE_FORMAT } from "@/lib/dayjs";
+import { dayjs, DATE_FORMAT, DATETIME_FORMAT } from "@/lib/dayjs";
 
 type Card = {
   _id: Id<"cards">;
   _creationTime: number;
   question: string;
   answer: string;
+  due: number;
   hint?: string;
   explanation?: string;
   context?: string;
@@ -47,15 +47,27 @@ type Card = {
   expression?: string;
 };
 
+const columnHelper = createColumnHelper<Card>();
+
 export default function BagDetailPage() {
   const { t } = useTranslation();
   const { bagId } = useParams({ from: "/plans/$bagId" });
   const isMock = useIsMock();
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
+  const userSettings = useQuery(
+    api.fsrs.getUserSettings,
+    userId ? { userId } : "skip"
+  );
+  const timezone = userSettings?.timezone ?? "Asia/Seoul";
   const navigate = useNavigate();
   const searchParams = useSearch({ from: "/plans/$bagId" });
   const searchQuery = searchParams.search || "";
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "_creationTime", desc: true },
+  ]);
+  const activeSort = sorting[0] ?? { id: "_creationTime", desc: true };
+  const sortBy: "due" | "created" = activeSort.id === "due" ? "due" : "created";
 
   // Get bag info
   const bagsArgs = isMock
@@ -88,11 +100,15 @@ export default function BagDetailPage() {
   const paginatedCardsArgs =
     isMock || !userId || !bag
       ? "skip"
-      : {
-          bagId: bag._id,
-          userId,
-          ...(searchQuery ? { search: searchQuery } : {}),
-        };
+      : searchQuery
+        ? { bagId: bag._id, search: searchQuery }
+        : {
+            bagId: bag._id,
+            sortBy,
+            sortDirection: activeSort.desc
+              ? ("desc" as const)
+              : ("asc" as const),
+          };
 
   const {
     results: paginatedCards,
@@ -114,6 +130,7 @@ export default function BagDetailPage() {
       _creationTime: Date.now() - i * 1000,
       question: t("mock.question", { number: i + 1 }),
       answer: t("mock.answer", { number: i + 1 }),
+      due: Date.now() + i * 60 * 60 * 1000,
       hint: t("mock.hint", { number: i + 1 }),
       explanation: t("mock.explanation", { number: i + 1 }),
     }));
@@ -124,9 +141,6 @@ export default function BagDetailPage() {
     [paginatedCards, isMock, mockCards]
   );
 
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "_creationTime", desc: true },
-  ]);
   const columnFilters = useMemo<ColumnFiltersState>(() => {
     if (!isMock || !searchQuery) {
       return [];
@@ -134,33 +148,41 @@ export default function BagDetailPage() {
     return [{ id: "answer", value: searchQuery }];
   }, [isMock, searchQuery]);
 
-  const columnHelper = createColumnHelper<Card>();
-
   const columns = useMemo(
     () => [
+      columnHelper.accessor("question", {
+        header: t("bagDetail.tableHeaders.question"),
+        enableSorting: false,
+        cell: (info) => (
+          <div className="leading-5 break-words text-gray-700">
+            {info.getValue()}
+          </div>
+        ),
+        size: 460,
+      }),
       columnHelper.accessor("answer", {
         header: t("bagDetail.tableHeaders.answer"),
+        enableSorting: false,
         cell: (info) => (
           <div className="font-semibold text-gray-900">{info.getValue()}</div>
         ),
-        size: 200,
+        size: 190,
       }),
-      columnHelper.accessor("question", {
-        header: t("bagDetail.tableHeaders.question"),
-        cell: (info) => {
-          const question = info.getValue();
-          const truncated =
-            question.length > 80 ? question.slice(0, 80) + "..." : question;
-          return <div className="text-sm text-gray-600">{truncated}</div>;
-        },
-        size: 400,
+      columnHelper.accessor("due", {
+        header: t("bagDetail.tableHeaders.nextReview"),
+        cell: (info) => (
+          <div className="text-xs whitespace-nowrap text-gray-500">
+            {dayjs(info.getValue()).tz(timezone).format(DATETIME_FORMAT)}
+          </div>
+        ),
+        size: 150,
       }),
       columnHelper.accessor("_creationTime", {
         header: t("bagDetail.tableHeaders.created"),
         cell: (info) => {
           return (
             <div className="text-xs text-gray-500">
-              {dayjs(info.getValue()).format(DATE_FORMAT)}
+              {dayjs(info.getValue()).tz(timezone).format(DATE_FORMAT)}
             </div>
           );
         },
@@ -168,15 +190,18 @@ export default function BagDetailPage() {
       }),
       columnHelper.display({
         id: "actions",
-        header: t("bagDetail.tableHeaders.actions"),
+        header: () => (
+          <span className="sr-only">{t("bagDetail.tableHeaders.actions")}</span>
+        ),
         enableSorting: false,
         cell: (info) => {
           const card = info.row.original;
           return (
-            <div className="flex justify-end gap-2">
+            <div className="flex justify-end gap-1">
               <Button
                 size="sm"
                 variant="secondary"
+                className="h-11 w-11 p-0"
                 onClick={() =>
                   void navigate({
                     to: "/plans/$bagId/cards/$cardId/edit",
@@ -191,6 +216,7 @@ export default function BagDetailPage() {
               <Button
                 size="sm"
                 variant="ghost"
+                className="h-11 w-11 p-0"
                 onClick={() => setPendingDeleteCard(card)}
                 disabled={isMock || !bag}
                 aria-label={t("bagDetail.deleteAria", { id: card._id })}
@@ -200,10 +226,10 @@ export default function BagDetailPage() {
             </div>
           );
         },
-        size: 120,
+        size: 96,
       }),
     ],
-    [bag, columnHelper, isMock, navigate, setPendingDeleteCard, t]
+    [bag, isMock, navigate, t, timezone]
   );
 
   // TanStack Table intentionally returns non-memoizable functions here.
@@ -219,6 +245,9 @@ export default function BagDetailPage() {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    manualSorting: !isMock,
+    enableSorting: isMock || !searchQuery,
+    enableSortingRemoval: false,
   });
 
   const rows = table.getRowModel().rows;
@@ -296,22 +325,6 @@ export default function BagDetailPage() {
         <div className="flex gap-2">
           <Button
             size="sm"
-            variant="secondary"
-            className="gap-2"
-            onClick={() =>
-              void navigate({
-                to: "/plans/$bagId/cards/batch",
-                params: { bagId },
-              })
-            }
-            disabled={isMock}
-            aria-label={t("bagDetail.multiCreateAria")}
-          >
-            <Sparkles className="h-4 w-4" aria-hidden />{" "}
-            {t("bagDetail.multiCreate")}
-          </Button>
-          <Button
-            size="sm"
             className="gap-2"
             onClick={() =>
               void navigate({
@@ -362,7 +375,8 @@ export default function BagDetailPage() {
                   <Th
                     key={header.id}
                     className={cn(
-                      header.column.id === "actions" && "text-right"
+                      header.column.id === "actions" &&
+                        "w-px px-2 text-right whitespace-nowrap"
                     )}
                     style={{ width: header.getSize() }}
                     aria-sort={
@@ -397,7 +411,7 @@ export default function BagDetailPage() {
                           <ChevronDown className="h-3.5 w-3.5" aria-hidden />
                         ) : (
                           <ChevronsUpDown
-                            className="h-3.5 w-3.5 text-gray-400 opacity-0 transition group-hover:opacity-100"
+                            className="h-3.5 w-3.5 text-gray-400"
                             aria-hidden
                           />
                         )}
@@ -430,7 +444,8 @@ export default function BagDetailPage() {
                     <Td
                       key={cell.id}
                       className={cn(
-                        cell.column.id === "actions" && "text-right"
+                        cell.column.id === "actions" &&
+                          "w-px px-2 text-right whitespace-nowrap"
                       )}
                       style={{ width: cell.column.getSize() }}
                     >

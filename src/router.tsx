@@ -13,7 +13,6 @@ import {
   PlansBagDetailRoute,
   CardAddRoute,
   CardEditRoute,
-  BatchCardCreationRoute,
   ProfileRoute,
   RootLayout,
   RunRoute,
@@ -77,12 +76,6 @@ const cardEditRoute = createRoute({
   component: CardEditRoute,
 });
 
-const batchCardCreationRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/plans/$bagId/cards/batch",
-  component: BatchCardCreationRoute,
-});
-
 const activityRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/activity",
@@ -109,7 +102,6 @@ const routeTree = rootRoute.addChildren([
   plansBagDetailRoute,
   cardAddRoute,
   cardEditRoute,
-  batchCardCreationRoute,
   activityRoute,
   profileRoute,
   clubRoute,

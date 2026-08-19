@@ -62,42 +62,6 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
   );
 
   server.registerTool(
-    "create-cards-batch",
-    {
-      description: "Create multiple flashcards in a bag at once",
-      inputSchema: {
-        bagId,
-        cards: z
-          .array(
-            z.object({
-              question: z.string().describe("Sentence with ___ blank"),
-              answer: z.string().describe("Word that fills the blank"),
-              hint: z.string().optional().describe("Clue under 12 words"),
-              explanation: z
-                .string()
-                .optional()
-                .describe("10-70 words explaining usage"),
-              context: z.string().optional().describe("Additional context"),
-              sourceWord: z.string().optional().describe("Source word"),
-              expression: z.string().optional().describe("Expression"),
-            })
-          )
-          .describe("Array of cards to create"),
-      },
-    },
-    async ({ bagId, cards }) => {
-      const result = await client.mutation(api.learning.createCardsBatch, {
-        bagId,
-        userId: getUserId(),
-        cards,
-      });
-      return {
-        content: [{ type: "text", text: `Created ${result.length} cards.` }],
-      };
-    }
-  );
-
-  server.registerTool(
     "get-card",
     {
       description: "Get full details of a specific card",

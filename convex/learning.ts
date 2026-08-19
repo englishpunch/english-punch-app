@@ -726,31 +726,59 @@ export const getCard = query({
 export const getBagCardsPaginated = query({
   args: {
     bagId: v.id("bags"),
-    userId: v.id("users"),
+    // Accepted for compatibility with older CLI and MCP clients. Authorization
+    // still comes from the authenticated identity below.
+    userId: v.optional(v.id("users")),
     paginationOpts: paginationOptsValidator,
     search: v.optional(v.string()),
+    sortBy: v.optional(v.union(v.literal("due"), v.literal("created"))),
+    sortDirection: v.optional(v.union(v.literal("asc"), v.literal("desc"))),
   },
   handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
+    }
+
     const searchQuery = args.search?.trim();
-    const query = searchQuery
-      ? ctx.db
+    const sortBy = args.sortBy ?? "created";
+    const sortDirection = args.sortDirection ?? "desc";
+
+    const query = (() => {
+      if (searchQuery) {
+        return ctx.db
           .query("cards")
           .withSearchIndex("search_answer", (q) =>
             q
               .search("answer", searchQuery)
               .eq("bagId", args.bagId)
-              .eq("userId", args.userId)
+              .eq("userId", userId)
               .eq("deletedAt", undefined)
-          )
-      : ctx.db
+          );
+      }
+
+      if (sortBy === "due") {
+        return ctx.db
           .query("cards")
-          .withIndex("by_bag_deleted_user", (q) =>
+          .withIndex("by_user_and_bag_and_deleted_at_and_due", (q) =>
             q
+              .eq("userId", userId)
               .eq("bagId", args.bagId)
               .eq("deletedAt", undefined)
-              .eq("userId", args.userId)
           )
-          .order("desc");
+          .order(sortDirection);
+      }
+
+      return ctx.db
+        .query("cards")
+        .withIndex("by_bag_deleted_user", (q) =>
+          q
+            .eq("bagId", args.bagId)
+            .eq("deletedAt", undefined)
+            .eq("userId", userId)
+        )
+        .order(sortDirection);
+    })();
     const result = await query.paginate(args.paginationOpts);
 
     return {
@@ -760,6 +788,7 @@ export const getBagCardsPaginated = query({
         _creationTime: c._creationTime,
         question: c.question,
         answer: c.answer,
+        due: c.due,
         hint: c.hint,
         explanation: c.explanation,
         context: c.context,
@@ -947,57 +976,5 @@ export const deleteCard = mutation({
       lastModified: new Date(deletedAt).toISOString(),
     });
     return null;
-  },
-});
-
-/** Create cards in bulk for multiple expressions. */
-export const createCardsBatch = mutation({
-  args: {
-    bagId: v.id("bags"),
-    userId: v.id("users"),
-    cards: v.array(
-      v.object({
-        question: v.string(),
-        answer: v.string(),
-        hint: v.optional(v.string()),
-        explanation: v.optional(v.string()),
-        context: v.optional(v.string()),
-        sourceWord: v.optional(v.string()),
-        expression: v.optional(v.string()),
-      })
-    ),
-  },
-  handler: async (ctx, args) => {
-    const now = Date.now();
-    const cardIds = [];
-
-    for (const cardData of args.cards) {
-      const cardId = await ctx.db.insert("cards", {
-        bagId: args.bagId,
-        userId: args.userId,
-        question: cardData.question,
-        answer: cardData.answer,
-        hint: cardData.hint,
-        explanation: cardData.explanation,
-        context: cardData.context,
-        sourceWord: cardData.sourceWord,
-        expression: cardData.expression,
-        tags: [],
-        source: "multi-expression",
-        ...initialSchedule(now),
-      });
-      cardIds.push(cardId);
-    }
-
-    const bag = await ctx.db.get("bags", args.bagId);
-    if (bag && bag.deletedAt === undefined) {
-      await ctx.db.patch("bags", args.bagId, {
-        totalCards: bag.totalCards + args.cards.length,
-        newCards: bag.newCards + args.cards.length,
-        lastModified: new Date(now).toISOString(),
-      });
-    }
-
-    return cardIds;
   },
 });
