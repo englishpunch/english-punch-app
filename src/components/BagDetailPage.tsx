@@ -1,5 +1,10 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { useMutation, useQuery, usePaginatedQuery } from "convex/react";
+import {
+  optimisticallyUpdateValueInPaginatedQuery,
+  useMutation,
+  useQuery,
+  usePaginatedQuery,
+} from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import { Button } from "./Button";
@@ -19,6 +24,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { Spinner } from "./Spinner";
+import { Switch } from "./Switch";
 import useIsMock from "@/hooks/useIsMock";
 import {
   useNavigate,
@@ -41,6 +47,7 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { dayjs, DATE_FORMAT, DATETIME_FORMAT } from "@/lib/dayjs";
+import { BAG_CARD_SORT_DEFAULTS } from "@/lib/bagCardSort";
 
 type Card = {
   _id: Id<"cards">;
@@ -53,6 +60,7 @@ type Card = {
   context?: string;
   sourceWord?: string;
   expression?: string;
+  suspended: boolean;
 };
 
 const columnHelper = createColumnHelper<Card>();
@@ -84,7 +92,7 @@ export default function BagDetailPage() {
     [searchParams.sortBy, searchParams.sortDirection]
   );
   const [answersVisible, setAnswersVisible] = useState(true);
-  const activeSort = sorting[0] ?? { id: "due", desc: true };
+  const activeSort = sorting[0] ?? BAG_CARD_SORT_DEFAULTS.table;
   const sortBy: "due" | "created" = activeSort.id === "due" ? "due" : "created";
 
   useEffect(() => {
@@ -164,6 +172,21 @@ export default function BagDetailPage() {
   });
 
   const deleteCard = useMutation(api.learning.deleteCard);
+  const setCardSuspended = useMutation(
+    api.learning.setCardSuspended
+  ).withOptimisticUpdate((localStore, args) => {
+    if (paginatedCardsArgs === "skip") {
+      return;
+    }
+
+    optimisticallyUpdateValueInPaginatedQuery(
+      localStore,
+      api.learning.getBagCardsPaginated,
+      paginatedCardsArgs,
+      (card) =>
+        card._id === args.cardId ? { ...card, suspended: args.suspended } : card
+    );
+  });
   const [pendingDeleteCard, setPendingDeleteCard] = useState<Card | null>(null);
 
   const mockCards = useMemo(() => {
@@ -178,6 +201,7 @@ export default function BagDetailPage() {
       due: Date.now() + i * 60 * 60 * 1000,
       hint: t("mock.hint", { number: i + 1 }),
       explanation: t("mock.explanation", { number: i + 1 }),
+      suspended: false,
     }));
   }, [isMock, t]);
 
@@ -245,6 +269,33 @@ export default function BagDetailPage() {
         size: 190,
         minSize: 180,
       }),
+      columnHelper.accessor("suspended", {
+        header: t("bagDetail.tableHeaders.suspended"),
+        enableSorting: false,
+        cell: (info) => {
+          const card = info.row.original;
+          const suspended = info.getValue();
+          return (
+            <Switch
+              checked={suspended}
+              onCheckedChange={(nextSuspended) => {
+                void setCardSuspended({
+                  cardId: card._id,
+                  suspended: nextSuspended,
+                }).catch(() => {
+                  toast.error(t("bagDetail.toasts.suspensionFailed"));
+                });
+              }}
+              disabled={isMock}
+              aria-label={t("bagDetail.suspendedCardAria", {
+                question: card.question,
+              })}
+            />
+          );
+        },
+        size: 104,
+        minSize: 104,
+      }),
       columnHelper.accessor("due", {
         header: t("bagDetail.tableHeaders.nextReview"),
         cell: (info) => (
@@ -306,13 +357,13 @@ export default function BagDetailPage() {
         size: 96,
       }),
     ],
-    [answersVisible, bag, isMock, navigate, t, timezone]
+    [answersVisible, bag, isMock, navigate, setCardSuspended, t, timezone]
   );
 
   const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
     const nextSorting =
       typeof updater === "function" ? updater(sorting) : updater;
-    const nextSort = nextSorting[0] ?? { id: "due", desc: true };
+    const nextSort = nextSorting[0] ?? BAG_CARD_SORT_DEFAULTS.table;
     void navigate({
       to: "/plans/$bagId",
       params: { bagId },
@@ -476,7 +527,8 @@ export default function BagDetailPage() {
                     className={cn(
                       "sticky top-0 z-10 bg-gray-50 shadow-[inset_0_-1px_0_0_var(--color-gray-200)]",
                       header.column.id === "actions" &&
-                        "w-px px-2 text-right whitespace-nowrap"
+                        "w-px px-2 text-right whitespace-nowrap",
+                      header.column.id === "suspended" && "text-center"
                     )}
                     scope="col"
                     style={{
@@ -549,7 +601,8 @@ export default function BagDetailPage() {
                       key={cell.id}
                       className={cn(
                         cell.column.id === "actions" &&
-                          "w-px px-2 text-right whitespace-nowrap"
+                          "w-px px-2 text-right whitespace-nowrap",
+                        cell.column.id === "suspended" && "text-center"
                       )}
                       style={{
                         width: cell.column.getSize(),

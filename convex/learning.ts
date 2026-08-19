@@ -384,28 +384,61 @@ export const disableCardForRun = mutation({
       throw new ConvexError("Unauthorized");
     }
 
-    const card = await ctx.db.get("cards", args.cardId);
-    if (!card || card.userId !== userId || card.deletedAt !== undefined) {
-      throw new ConvexError("Card not found");
-    }
-
-    if (card.suspended) {
-      return null;
-    }
-
-    const nowIso = new Date().toISOString();
-    await ctx.db.patch("cards", args.cardId, {
+    return setCardSuspendedHandler(ctx, {
+      cardId: args.cardId,
       suspended: true,
+      userId,
     });
+  },
+});
 
-    const bag = await ctx.db.get("bags", card.bagId);
-    if (bag && bag.userId === userId && bag.deletedAt === undefined) {
-      await ctx.db.patch("bags", card.bagId, {
-        lastModified: nowIso,
-      });
+type SetCardSuspendedHandlerArgs = {
+  cardId: Id<"cards">;
+  suspended: boolean;
+  userId: Id<"users">;
+};
+
+const setCardSuspendedHandler = async (
+  ctx: MutationCtx,
+  args: SetCardSuspendedHandlerArgs
+) => {
+  const card = await ctx.db.get("cards", args.cardId);
+  if (!card || card.userId !== args.userId || card.deletedAt !== undefined) {
+    throw new ConvexError("Card not found");
+  }
+
+  if (card.suspended === args.suspended) {
+    return null;
+  }
+
+  const nowIso = new Date().toISOString();
+  await ctx.db.patch("cards", args.cardId, {
+    suspended: args.suspended,
+  });
+
+  const bag = await ctx.db.get("bags", card.bagId);
+  if (bag && bag.userId === args.userId && bag.deletedAt === undefined) {
+    await ctx.db.patch("bags", card.bagId, {
+      lastModified: nowIso,
+    });
+  }
+
+  return null;
+};
+
+export const setCardSuspended = mutation({
+  args: {
+    cardId: v.id("cards"),
+    suspended: v.boolean(),
+  },
+  returns: v.null(),
+  handler: async (ctx, args) => {
+    const userId = await getAuthUserId(ctx);
+    if (!userId) {
+      throw new ConvexError("Unauthorized");
     }
 
-    return null;
+    return setCardSuspendedHandler(ctx, { ...args, userId });
   },
 });
 
@@ -794,6 +827,7 @@ export const getBagCardsPaginated = query({
         context: c.context,
         sourceWord: c.sourceWord,
         expression: c.expression,
+        suspended: c.suspended,
       })),
     };
   },

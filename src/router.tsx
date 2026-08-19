@@ -19,6 +19,7 @@ import {
 } from "./router-components";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
+import { BAG_CARD_SORT_DEFAULTS } from "./lib/bagCardSort";
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -60,8 +61,14 @@ const plansBagDetailRoute = createRoute({
   validateSearch: zodValidator(
     z.object({
       search: fallback(z.string().optional(), ""),
-      sortBy: fallback(z.enum(["due", "created"]), "due").default("due"),
-      sortDirection: fallback(z.enum(["asc", "desc"]), "desc").default("desc"),
+      sortBy: fallback(
+        z.enum(["due", "created"]),
+        BAG_CARD_SORT_DEFAULTS.sortBy
+      ).default(BAG_CARD_SORT_DEFAULTS.sortBy),
+      sortDirection: fallback(
+        z.enum(["asc", "desc"]),
+        BAG_CARD_SORT_DEFAULTS.sortDirection
+      ).default(BAG_CARD_SORT_DEFAULTS.sortDirection),
     })
   ),
 });

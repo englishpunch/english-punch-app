@@ -213,6 +213,7 @@ const enTranslation = {
       question: "Question",
       nextReview: "Next review",
       created: "Created",
+      suspended: "Suspended",
       actions: "Actions",
     },
     searchPlaceholder: "Search by answer...",
@@ -228,6 +229,7 @@ const enTranslation = {
     loadingMore: "Loading...",
     showAnswersAria: "Show answers",
     hideAnswersAria: "Hide answers",
+    suspendedCardAria: 'Suspended: "{{question}}"',
     addCard: "Add card",
     addCardAria: "Add card",
     editAria: "Edit {{id}}",
@@ -236,6 +238,7 @@ const enTranslation = {
     deleteConfirmDescription: "This action cannot be undone.",
     toasts: {
       deleted: "Card deleted.",
+      suspensionFailed: "Could not update the suspended state. Try again.",
     },
   },
   cardForm: {
@@ -569,6 +572,7 @@ const jaTranslation = {
       question: "質問",
       nextReview: "次回の復習",
       created: "作成日",
+      suspended: "停止中",
       actions: "操作",
     },
     searchPlaceholder: "答えで検索...",
@@ -584,6 +588,7 @@ const jaTranslation = {
     loadingMore: "読み込み中...",
     showAnswersAria: "答えを表示",
     hideAnswersAria: "答えを隠す",
+    suspendedCardAria: "停止中: 「{{question}}」",
     addCard: "カード追加",
     addCardAria: "カード追加",
     editAria: "{{id}} を編集",
@@ -592,6 +597,8 @@ const jaTranslation = {
     deleteConfirmDescription: "この操作は取り消せません。",
     toasts: {
       deleted: "カードを削除しました。",
+      suspensionFailed:
+        "停止状態を更新できませんでした。もう一度お試しください。",
     },
   },
   cardForm: {
