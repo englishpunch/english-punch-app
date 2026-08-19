@@ -21,9 +21,7 @@ import {
 } from "@/lib/dayjs";
 
 type ActivityEventType =
-  | "review_question_seen"
-  | "review_answer_revealed"
-  | "review_rated";
+  "review_question_seen" | "review_answer_revealed" | "review_rated";
 
 type ActivityPayload = Record<string, unknown>;
 

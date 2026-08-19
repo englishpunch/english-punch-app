@@ -10,9 +10,7 @@ import type { Value } from "convex/values";
 import { dayjs, DATE_FORMAT } from "../src/lib/dayjs";
 
 export type ActivityEventType =
-  | "review_question_seen"
-  | "review_answer_revealed"
-  | "review_rated";
+  "review_question_seen" | "review_answer_revealed" | "review_rated";
 
 export type ActivitySource = "web" | "cli" | "system";
 
