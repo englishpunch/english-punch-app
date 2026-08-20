@@ -24,6 +24,17 @@ export default function FSRSStudySession({
 
   const userId = loggedInUser?._id;
   const [isReviewing, setIsReviewing] = useState(false);
+  const [dueCountAsOf, setDueCountAsOf] = useState(() => Date.now());
+
+  useEffect(() => {
+    const refreshDueCount = () => setDueCountAsOf(Date.now());
+    const intervalId = window.setInterval(refreshDueCount, 60_000);
+    document.addEventListener("visibilitychange", refreshDueCount);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refreshDueCount);
+    };
+  }, []);
 
   // Convex queries and mutations.
   const dueCard = useQuery(api.learning.getOneDueCard, {
@@ -38,6 +49,7 @@ export default function FSRSStudySession({
 
   const dueCardCount = useQuery(api.learning.getDueCardCount, {
     bagId,
+    now: dueCountAsOf,
   });
   const dueCardCountDisplay =
     typeof dueCardCount === "number" && dueCardCount > 100

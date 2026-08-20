@@ -5,14 +5,6 @@ import { api } from "./convex-generated/api.js";
 const CONVEX_URL = process.env.CONVEX_URL ?? "https://ep-convex.echoja.com";
 
 let cachedClient: ConvexHttpClient | null = null;
-let cachedUserId: GenericId<"users"> | null = null;
-
-export function getUserId(): GenericId<"users"> {
-  if (!cachedUserId) {
-    throw new Error("getUserId() called before authentication.");
-  }
-  return cachedUserId;
-}
 
 export async function getConvexClient(): Promise<ConvexHttpClient> {
   if (cachedClient) {
@@ -50,8 +42,24 @@ export async function getConvexClient(): Promise<ConvexHttpClient> {
   if (!user) {
     throw new Error("Authentication succeeded but user not found.");
   }
-  cachedUserId = user._id;
-
   cachedClient = client;
   return client;
+}
+
+export async function getConvexClientForAccessToken(
+  convexUrl: string,
+  token: string
+): Promise<{
+  client: ConvexHttpClient;
+  userId: GenericId<"users">;
+}> {
+  const client = new ConvexHttpClient(convexUrl);
+  client.setAuth(token);
+
+  const user = await client.query(api.auth.loggedInUser);
+  if (!user) {
+    throw new Error("Access token does not identify an English Punch user");
+  }
+
+  return { client, userId: user._id };
 }

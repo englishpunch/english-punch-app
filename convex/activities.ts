@@ -8,6 +8,7 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import type { Value } from "convex/values";
 import { dayjs, DATE_FORMAT } from "../src/lib/dayjs";
+import { requireAuthenticatedUserId } from "./authUser";
 
 export type ActivityEventType =
   "review_question_seen" | "review_answer_revealed" | "review_rated";
@@ -140,7 +141,7 @@ export async function logReviewRated(
 
 export const logReviewQuestionSeenFromWeb = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     cardId: v.id("cards"),
     attemptId: v.string(),
     dedupeKey: v.string(),
@@ -150,13 +151,14 @@ export const logReviewQuestionSeenFromWeb = mutation({
     activityId: v.optional(v.id("activities")),
   }),
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const card = await ctx.db.get("cards", args.cardId);
-    if (!card || card.userId !== args.userId || card.deletedAt !== undefined) {
+    if (!card || card.userId !== userId || card.deletedAt !== undefined) {
       return { ok: false };
     }
 
     const activityId = await logReviewQuestionSeen(ctx, {
-      userId: args.userId,
+      userId,
       cardId: card._id,
       bagId: card.bagId,
       source: "web",
@@ -174,7 +176,7 @@ export const logReviewQuestionSeenFromWeb = mutation({
 
 export const logReviewAnswerRevealedFromWeb = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     cardId: v.id("cards"),
     attemptId: v.string(),
     dedupeKey: v.string(),
@@ -185,13 +187,14 @@ export const logReviewAnswerRevealedFromWeb = mutation({
     activityId: v.optional(v.id("activities")),
   }),
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const card = await ctx.db.get("cards", args.cardId);
-    if (!card || card.userId !== args.userId || card.deletedAt !== undefined) {
+    if (!card || card.userId !== userId || card.deletedAt !== undefined) {
       return { ok: false };
     }
 
     const activityId = await logReviewAnswerRevealed(ctx, {
-      userId: args.userId,
+      userId,
       cardId: card._id,
       bagId: card.bagId,
       source: "web",
@@ -211,7 +214,7 @@ export const logReviewAnswerRevealedFromWeb = mutation({
 
 export const getActivityHeatmap = query({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     fromDate: v.optional(v.string()),
     toDate: v.optional(v.string()),
   },
@@ -235,7 +238,8 @@ export const getActivityHeatmap = query({
     ),
   }),
   handler: async (ctx, args) => {
-    const timezone = await getUserTimezone(ctx, args.userId);
+    const userId = await requireAuthenticatedUserId(ctx);
+    const timezone = await getUserTimezone(ctx, userId);
     const toDate =
       args.toDate ?? dayjs(Date.now()).tz(timezone).format(DATE_FORMAT);
     const fromDate =
@@ -251,7 +255,7 @@ export const getActivityHeatmap = query({
       .query("activities")
       .withIndex("by_user_date_time", (q) =>
         q
-          .eq("userId", args.userId)
+          .eq("userId", userId)
           .gte("localDate", startDate)
           .lte("localDate", endDate)
       )
@@ -308,7 +312,7 @@ export const getActivityHeatmap = query({
 
 export const getActivitiesByDate = query({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     localDate: v.string(),
   },
   returns: v.object({
@@ -334,10 +338,11 @@ export const getActivitiesByDate = query({
     ),
   }),
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const activities = await ctx.db
       .query("activities")
       .withIndex("by_user_date_time", (q) =>
-        q.eq("userId", args.userId).eq("localDate", args.localDate)
+        q.eq("userId", userId).eq("localDate", args.localDate)
       )
       .order("desc")
       .collect();

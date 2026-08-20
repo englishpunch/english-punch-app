@@ -7,6 +7,7 @@ import { Spinner } from "./components/Spinner";
 import { RouterProvider } from "@tanstack/react-router";
 import { router } from "./router";
 import AuthPage from "./components/AuthPage";
+import OAuthConsentPage from "./components/OAuthConsentPage";
 
 export default function App() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
@@ -24,6 +25,10 @@ export default function App() {
         <Toaster />
       </>
     );
+  }
+
+  if (window.location.pathname === "/oauth/authorize") {
+    return <OAuthConsentPage />;
   }
 
   return (

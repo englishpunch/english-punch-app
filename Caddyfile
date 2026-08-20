@@ -2,6 +2,9 @@
 	root * /srv
 	encode zstd gzip
 
+	@oauth_json path /.well-known/oauth-authorization-server /.well-known/openid-configuration /oauth/jwks
+	header @oauth_json Content-Type "application/json; charset=utf-8"
+
 	handle /assets/* {
 		header Cache-Control "public, max-age=31536000, immutable"
 		file_server

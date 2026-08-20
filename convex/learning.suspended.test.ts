@@ -1,6 +1,7 @@
 // @vitest-environment edge-runtime
 /// <reference types="vite/client" />
 
+import aggregateTest from "@convex-dev/aggregate/test";
 import { convexTest } from "convex-test";
 import { describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
@@ -10,6 +11,7 @@ const modules = import.meta.glob("./**/*.ts");
 
 const setupCard = async (suspended = false) => {
   const t = convexTest(schema, modules);
+  aggregateTest.register(t, "dueCards");
   const ids = await t.run(async (ctx) => {
     const userId = await ctx.db.insert("users", {});
     const otherUserId = await ctx.db.insert("users", {});

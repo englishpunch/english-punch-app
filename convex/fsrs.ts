@@ -4,6 +4,8 @@ import { v } from "convex/values";
 import { fsrs, Steps } from "ts-fsrs";
 import { getGlobalLogger } from "../src/lib/globalLogger";
 import { logReviewRated, type ActivitySource } from "./activities";
+import { requireAuthenticatedUserId } from "./authUser";
+import { trackUpdatedCard } from "./cardAggregate";
 
 type ReviewCardArgs = {
   userId: Id<"users">;
@@ -146,6 +148,7 @@ export const reviewCardHandler = async (
     last_review: recordLogItem.card.last_review?.getTime(),
     elapsed_days: recordLogItem.card.elapsed_days,
   });
+  await trackUpdatedCard(ctx, card);
 
   // Track lapse changes.
   const lapsesChanged = recordLogItem.card.lapses > card.lapses;
@@ -262,7 +265,7 @@ export const reviewCardHandler = async (
 
 export const reviewCard = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     cardId: v.id("cards"),
     rating: v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4)), // Again, Hard, Good, Easy
     duration: v.number(), // Response time in milliseconds.
@@ -277,7 +280,10 @@ export const reviewCard = mutation({
     newStability: v.number(),
     newDifficulty: v.number(),
   }),
-  handler: reviewCardHandler,
+  handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    return await reviewCardHandler(ctx, { ...args, userId });
+  },
 });
 
 /**
@@ -285,7 +291,7 @@ export const reviewCard = mutation({
  */
 export const getRecentReviewLogs = query({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     limit: v.optional(v.number()),
   },
   returns: v.array(
@@ -300,11 +306,12 @@ export const getRecentReviewLogs = query({
     })
   ),
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const limit = args.limit ?? 50;
 
     const logs = await ctx.db
       .query("reviewLogs")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .order("desc")
       .take(limit);
 
@@ -333,7 +340,7 @@ export const getRecentReviewLogs = query({
  */
 export const getUserSettings = query({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
   },
   returns: v.union(
     v.null(),
@@ -355,10 +362,11 @@ export const getUserSettings = query({
       longestStreak: v.number(),
     })
   ),
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const settings = await ctx.db
       .query("userSettings")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
     if (!settings) {

@@ -11,7 +11,8 @@ permissions:
   packages: write
 
 env:
-  IMAGE_NAME: ghcr.io/englishpunch/english-punch-app
+  FRONTEND_IMAGE_NAME: ghcr.io/englishpunch/english-punch-app
+  MCP_IMAGE_NAME: ghcr.io/englishpunch/english-punch-mcp
   VITE_CONVEX_URL: https://ep-convex.echoja.com
   VITE_CONVEX_SITE_URL: https://ep-convex-site.echoja.com
 
@@ -35,30 +36,51 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker metadata
-        id: meta
+      - name: Frontend Docker metadata
+        id: frontend-meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.IMAGE_NAME }}
+          images: ${{ env.FRONTEND_IMAGE_NAME }}
           tags: |
             type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
             type=sha,prefix=sha-
 
-      - name: Build and push
+      - name: Build and push frontend
         uses: docker/build-push-action@v6
         with:
           context: .
           platforms: linux/amd64,linux/arm64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.frontend-meta.outputs.tags }}
+          labels: ${{ steps.frontend-meta.outputs.labels }}
           build-args: |
             VITE_CONVEX_URL=${{ env.VITE_CONVEX_URL }}
             VITE_CONVEX_SITE_URL=${{ env.VITE_CONVEX_SITE_URL }}
 
+      - name: MCP Docker metadata
+        id: mcp-meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.MCP_IMAGE_NAME }}
+          tags: |
+            type=raw,value=main,enable=${{ github.ref == 'refs/heads/main' }}
+            type=sha,prefix=sha-
+
+      - name: Build and push MCP server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: mcp-server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.mcp-meta.outputs.tags }}
+          labels: ${{ steps.mcp-meta.outputs.labels }}
+
   update-infra:
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch') &&
+      github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -93,6 +115,12 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
 
+      - name: Checkout app deployment scripts
+        if: steps.infra-app-config.outputs.configured == 'true'
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
       - name: Checkout infra
         if: steps.infra-app-config.outputs.configured == 'true'
         uses: actions/checkout@v6
@@ -119,49 +147,15 @@ jobs:
           git config user.email "${user_id}+${APP_SLUG}[bot]@users.noreply.github.com"
           gh auth setup-git
 
-      - name: Update English Punch image tag
+      - name: Update English Punch image tags
         if: steps.infra-app-config.outputs.configured == 'true'
         working-directory: infra
         env:
           IMAGE_TAG: ${{ steps.image.outputs.tag }}
-        run: |
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          path = Path("apps/english-punch/values.yaml")
-          lines = path.read_text().splitlines(keepends=True)
-
-          in_frontend = False
-          in_frontend_image = False
-          changed = False
-          next_lines = []
-
-          for line in lines:
-              stripped = line.strip()
-
-              if line.startswith("frontend:"):
-                  in_frontend = True
-                  in_frontend_image = False
-              elif in_frontend and line and not line.startswith((" ", "\n")):
-                  in_frontend = False
-                  in_frontend_image = False
-
-              if in_frontend and stripped == "image:":
-                  in_frontend_image = True
-              elif in_frontend_image and stripped.startswith("tag:"):
-                  indent = line[: len(line) - len(line.lstrip())]
-                  line = f"{indent}tag: {os.environ['IMAGE_TAG']}\n"
-                  changed = True
-                  in_frontend_image = False
-
-              next_lines.append(line)
-
-          if not changed:
-              raise SystemExit("frontend.image.tag not found in apps/english-punch/values.yaml")
-
-          path.write_text("".join(next_lines))
-          PY
+        run: >-
+          node ../scripts/update-infra-images.mjs
+          apps/english-punch/values.yaml
+          "$IMAGE_TAG"
 
       - name: Open infra image update PR
         if: steps.infra-app-config.outputs.configured == 'true'
@@ -178,12 +172,12 @@ jobs:
 
           git checkout -b "$BRANCH"
           git add apps/english-punch/values.yaml
-          git commit -m "Update English Punch image to ${IMAGE_TAG}"
+          git commit -m "Update English Punch images to ${IMAGE_TAG}"
           git push origin "$BRANCH"
 
           gh pr create \
             --repo echoja/infra \
             --base main \
             --head "$BRANCH" \
-            --title "Update English Punch image to ${IMAGE_TAG}" \
-            --body "Updates English Punch frontend image to \`${IMAGE_TAG}\` after englishpunch/english-punch-app@${{ github.sha }}."
+            --title "Update English Punch images to ${IMAGE_TAG}" \
+            --body "Updates the English Punch frontend and MCP images to \`${IMAGE_TAG}\` after englishpunch/english-punch-app@${{ github.sha }}."

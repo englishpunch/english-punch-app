@@ -47,6 +47,7 @@ describe("replaceCardContentAndResetScheduleHandler", () => {
     };
 
     const ctx = {
+      runMutation: vi.fn().mockResolvedValue(null),
       db: {
         get: vi.fn(
           async (table: "cards" | "bags", id: Id<"cards"> | Id<"bags">) => {

@@ -2,143 +2,50 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ConvexHttpClient } from "convex/browser";
 import { z } from "zod";
 import { api } from "../convex-generated/api.js";
-import { getUserId } from "../convex-client.js";
+import { resultContent } from "./result.js";
 import { bagId, cardId } from "./schema.js";
 
-export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
-  server.registerTool(
-    "create-card",
-    {
-      description:
-        "Create a flashcard in a bag. Question should have ___ blank, answer fills it.",
-      inputSchema: {
-        bagId,
-        question: z
-          .string()
-          .describe(
-            'Sentence with ___ blank, e.g. "I\'d like to ___ a table for two"'
-          ),
-        answer: z
-          .string()
-          .describe('Word that fills the blank, e.g. "reserve"'),
-        hint: z
-          .string()
-          .optional()
-          .describe('Clue under 12 words, e.g. "book in advance"'),
-        explanation: z
-          .string()
-          .optional()
-          .describe("10-70 words explaining usage and contrasting synonyms"),
-        context: z.string().optional().describe("Additional context"),
-        sourceWord: z.string().optional().describe("Source word"),
-        expression: z.string().optional().describe("Expression"),
+export function registerCardTools(
+  server: McpServer,
+  client: ConvexHttpClient,
+  scopes: ReadonlySet<string>
+) {
+  if (scopes.has("cards:write")) {
+    server.registerTool(
+      "create-card",
+      {
+        title: "Create vocabulary card",
+        description:
+          "Create a vocabulary card from question and answer strings.",
+        outputSchema: {
+          cardId: z.string(),
+          answer: z.string(),
+          created: z.boolean(),
+        },
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: false,
+          idempotentHint: false,
+          openWorldHint: false,
+        },
+        inputSchema: {
+          bagId,
+          question: z.string().describe("Question text"),
+          answer: z.string().describe("Answer text"),
+          hint: z
+            .string()
+            .optional()
+            .describe('Clue under 12 words, e.g. "book in advance"'),
+          explanation: z
+            .string()
+            .optional()
+            .describe("10-70 words explaining usage and contrasting synonyms"),
+          context: z.string().optional().describe("Additional context"),
+          sourceWord: z.string().optional().describe("Source word"),
+          expression: z.string().optional().describe("Expression"),
+        },
       },
-    },
-    async ({
-      bagId,
-      question,
-      answer,
-      hint,
-      explanation,
-      context,
-      sourceWord,
-      expression,
-    }) => {
-      await client.mutation(api.learning.createCard, {
-        bagId,
-        userId: getUserId(),
-        question,
-        answer,
-        hint,
-        explanation,
-        context,
-        sourceWord,
-        expression,
-      });
-      return {
-        content: [{ type: "text", text: `Card created: "${answer}"` }],
-      };
-    }
-  );
-
-  server.registerTool(
-    "get-card",
-    {
-      description: "Get full details of a specific card",
-      inputSchema: { cardId, bagId },
-    },
-    async ({ cardId, bagId }) => {
-      const result = await client.query(api.learning.getCard, {
-        cardId,
-        bagId,
-        userId: getUserId(),
-      });
-      return {
-        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-      };
-    }
-  );
-
-  server.registerTool(
-    "list-cards",
-    {
-      description:
-        "List cards in a bag with pagination (30 per page) and optional search",
-      inputSchema: {
-        bagId,
-        search: z
-          .string()
-          .optional()
-          .describe("Search query to filter cards by answer"),
-        cursor: z
-          .string()
-          .optional()
-          .describe("Pagination cursor from previous response"),
-      },
-    },
-    async ({ bagId, search, cursor }) => {
-      const result = await client.query(api.learning.getBagCardsPaginated, {
-        bagId,
-        userId: getUserId(),
-        paginationOpts: { numItems: 30, cursor: cursor ?? null },
-        ...(search ? { search } : {}),
-      });
-      return {
-        content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
-      };
-    }
-  );
-
-  server.registerTool(
-    "update-card",
-    {
-      description:
-        "Replace a card's content and reset its FSRS schedule to the initial state",
-      inputSchema: {
-        cardId,
-        bagId,
-        question: z.string().describe("Updated sentence with ___ blank"),
-        answer: z.string().describe("Updated answer word"),
-        hint: z.string().optional().describe("Updated hint"),
-        explanation: z.string().optional().describe("Updated explanation"),
-        context: z.string().optional().describe("Updated context"),
-        sourceWord: z.string().optional().describe("Updated source word"),
-        expression: z.string().optional().describe("Updated expression"),
-      },
-    },
-    async ({
-      cardId,
-      bagId,
-      question,
-      answer,
-      hint,
-      explanation,
-      context,
-      sourceWord,
-      expression,
-    }) => {
-      await client.mutation(api.learning.replaceCardContentAndResetSchedule, {
-        cardId,
+      async ({
         bagId,
         question,
         answer,
@@ -147,32 +54,181 @@ export function registerCardTools(server: McpServer, client: ConvexHttpClient) {
         context,
         sourceWord,
         expression,
-      });
-      return {
-        content: [
+      }) => {
+        const createdCardId = await client.mutation(api.learning.createCard, {
+          bagId,
+          question,
+          answer,
+          hint,
+          explanation,
+          context,
+          sourceWord,
+          expression,
+        });
+        return resultContent({
+          cardId: createdCardId,
+          answer,
+          created: true,
+        });
+      }
+    );
+  }
+
+  if (scopes.has("cards:read")) {
+    server.registerTool(
+      "get-card",
+      {
+        title: "Get vocabulary card",
+        description: "Get the full details of one vocabulary card.",
+        inputSchema: { cardId, bagId },
+        outputSchema: { card: z.unknown() },
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async ({ cardId, bagId }) => {
+        const result = await client.query(api.learning.getCard, {
+          cardId,
+          bagId,
+        });
+        return resultContent({ card: result });
+      }
+    );
+  }
+
+  if (scopes.has("cards:read")) {
+    server.registerTool(
+      "list-cards",
+      {
+        title: "List vocabulary cards",
+        description:
+          "List vocabulary cards in a bag with pagination and optional answer search.",
+        inputSchema: {
+          bagId,
+          search: z
+            .string()
+            .optional()
+            .describe("Search query to filter cards by answer"),
+          cursor: z
+            .string()
+            .optional()
+            .describe("Pagination cursor from previous response"),
+        },
+        outputSchema: { bagId: z.string(), result: z.unknown() },
+        annotations: {
+          readOnlyHint: true,
+          destructiveHint: false,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async ({ bagId, search, cursor }) => {
+        const result = await client.query(api.learning.getBagCardsPaginated, {
+          bagId,
+          paginationOpts: { numItems: 30, cursor: cursor ?? null },
+          ...(search ? { search } : {}),
+        });
+        return resultContent({ bagId, result });
+      }
+    );
+  }
+
+  if (scopes.has("cards:write")) {
+    server.registerTool(
+      "update-card",
+      {
+        title: "Replace vocabulary card",
+        description:
+          "Replace a card's content and reset its FSRS schedule. Confirm with the user because review progress will be reset.",
+        inputSchema: {
+          cardId,
+          bagId,
+          question: z.string().describe("Updated question text"),
+          answer: z.string().describe("Updated answer text"),
+          hint: z.string().optional().describe("Updated hint"),
+          explanation: z.string().optional().describe("Updated explanation"),
+          context: z.string().optional().describe("Updated context"),
+          sourceWord: z.string().optional().describe("Updated source word"),
+          expression: z.string().optional().describe("Updated expression"),
+        },
+        outputSchema: {
+          cardId: z.string(),
+          answer: z.string(),
+          updated: z.boolean(),
+          scheduleReset: z.boolean(),
+        },
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: true,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async ({
+        cardId,
+        bagId,
+        question,
+        answer,
+        hint,
+        explanation,
+        context,
+        sourceWord,
+        expression,
+      }) => {
+        const updated = await client.mutation(
+          api.learning.replaceCardContentAndResetSchedule,
           {
-            type: "text",
-            text: `Card replaced and schedule reset: "${answer}"`,
-          },
-        ],
-      };
-    }
-  );
+            cardId,
+            bagId,
+            question,
+            answer,
+            hint,
+            explanation,
+            context,
+            sourceWord,
+            expression,
+          }
+        );
+        return resultContent({
+          cardId,
+          answer,
+          updated,
+          scheduleReset: updated,
+        });
+      }
+    );
+  }
 
-  server.registerTool(
-    "delete-card",
-    {
-      description: "Delete a card from a bag (soft delete)",
-      inputSchema: { cardId, bagId },
-    },
-    async ({ cardId, bagId }) => {
-      await client.mutation(api.learning.deleteCard, {
-        cardId,
-        bagId,
-      });
-      return {
-        content: [{ type: "text", text: "Card deleted successfully." }],
-      };
-    }
-  );
+  if (scopes.has("cards:write")) {
+    server.registerTool(
+      "delete-card",
+      {
+        title: "Delete vocabulary card",
+        description:
+          "Soft-delete a vocabulary card. Confirm with the user before calling this tool.",
+        inputSchema: { cardId, bagId },
+        outputSchema: {
+          cardId: z.string(),
+          bagId: z.string(),
+          deleted: z.boolean(),
+        },
+        annotations: {
+          readOnlyHint: false,
+          destructiveHint: true,
+          idempotentHint: true,
+          openWorldHint: false,
+        },
+      },
+      async ({ cardId, bagId }) => {
+        const deleted = await client.mutation(api.learning.deleteCard, {
+          cardId,
+          bagId,
+        });
+        return resultContent({ cardId, bagId, deleted });
+      }
+    );
+  }
 }

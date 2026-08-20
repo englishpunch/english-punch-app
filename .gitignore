@@ -16,6 +16,7 @@ node_modules
 dist
 dist-ssr
 .mcp.json
+!plugins/**/.mcp.json
 *.local
 
 # Throwaway sentence-image workflow prototype
