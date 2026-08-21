@@ -2,6 +2,8 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { reviewCardHandler } from "./fsrs";
 import { logReviewAnswerRevealed, logReviewQuestionSeen } from "./activities";
+import { requireAuthenticatedUserId } from "./authUser";
+import { countDueCards } from "./cardAggregate";
 
 /**
  * Server-side pending-review concept for the stateless CLI review
@@ -32,7 +34,7 @@ const STALE_PENDING_MS = 30 * 60 * 1000; // 30 minutes
  */
 export const startReview = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     bagId: v.id("bags"),
   },
   returns: v.union(
@@ -58,14 +60,15 @@ export const startReview = mutation({
     })
   ),
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const bag = await ctx.db.get("bags", args.bagId);
-    if (!bag || bag.userId !== args.userId || bag.deletedAt !== undefined) {
+    if (!bag || bag.userId !== userId || bag.deletedAt !== undefined) {
       return { ok: false as const, token: "BAG_NOT_FOUND" as const };
     }
 
     const existing = await ctx.db
       .query("pendingReviews")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
     const now = Date.now();
@@ -86,7 +89,7 @@ export const startReview = mutation({
       .query("cards")
       .withIndex("by_user_bag_deleted_suspended_due", (q) =>
         q
-          .eq("userId", args.userId)
+          .eq("userId", userId)
           .eq("bagId", args.bagId)
           .eq("deletedAt", undefined)
           .eq("suspended", false)
@@ -101,14 +104,14 @@ export const startReview = mutation({
     }
 
     const pendingId = await ctx.db.insert("pendingReviews", {
-      userId: args.userId,
+      userId,
       cardId: card._id,
       bagId: args.bagId,
       startTime: now,
     });
 
     await logReviewQuestionSeen(ctx, {
-      userId: args.userId,
+      userId,
       cardId: card._id,
       bagId: args.bagId,
       source: "cli",
@@ -139,7 +142,7 @@ export const startReview = mutation({
  */
 export const revealReview = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
   },
   returns: v.union(
     v.object({
@@ -156,10 +159,11 @@ export const revealReview = mutation({
       token: v.literal("NO_PENDING_REVIEW"),
     })
   ),
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const pending = await ctx.db
       .query("pendingReviews")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
     if (!pending) {
@@ -180,7 +184,7 @@ export const revealReview = mutation({
       });
 
       await logReviewAnswerRevealed(ctx, {
-        userId: args.userId,
+        userId,
         cardId: card._id,
         bagId: pending.bagId,
         source: "cli",
@@ -218,7 +222,7 @@ export const revealReview = mutation({
  */
 export const rateReview = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
     rating: v.union(v.literal(1), v.literal(2), v.literal(3), v.literal(4)),
   },
   returns: v.union(
@@ -239,9 +243,10 @@ export const rateReview = mutation({
     })
   ),
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const pending = await ctx.db
       .query("pendingReviews")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
     if (!pending) {
@@ -256,7 +261,7 @@ export const rateReview = mutation({
     const duration = now - pending.startTime;
 
     const fsrsResult = await reviewCardHandler(ctx, {
-      userId: args.userId,
+      userId,
       cardId: pending.cardId,
       rating: args.rating,
       duration,
@@ -267,24 +272,14 @@ export const rateReview = mutation({
 
     await ctx.db.delete("pendingReviews", pending._id);
 
-    const remaining = await ctx.db
-      .query("cards")
-      .withIndex("by_user_bag_deleted_suspended_due", (q) =>
-        q
-          .eq("userId", args.userId)
-          .eq("bagId", pending.bagId)
-          .eq("deletedAt", undefined)
-          .eq("suspended", false)
-          .lte("due", now)
-      )
-      .take(101);
+    const dueCount = await countDueCards(ctx, userId, pending.bagId, now);
 
     return {
       ok: true as const,
       nextReviewDate: fsrsResult.nextReviewDate,
       nextReviewTimestamp: fsrsResult.nextReviewTimestamp,
       newState: fsrsResult.newState,
-      dueCount: remaining.length,
+      dueCount,
     };
   },
 });
@@ -296,16 +291,17 @@ export const rateReview = mutation({
  */
 export const abandonReview = mutation({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
   },
   returns: v.object({
     ok: v.literal(true),
     existed: v.boolean(),
   }),
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const pending = await ctx.db
       .query("pendingReviews")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
     if (!pending) {
@@ -324,7 +320,7 @@ export const abandonReview = mutation({
  */
 export const getCurrentPendingReview = query({
   args: {
-    userId: v.id("users"),
+    userId: v.optional(v.id("users")),
   },
   returns: v.union(
     v.null(),
@@ -338,10 +334,11 @@ export const getCurrentPendingReview = query({
       revealed: v.boolean(),
     })
   ),
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const pending = await ctx.db
       .query("pendingReviews")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
     if (!pending) {

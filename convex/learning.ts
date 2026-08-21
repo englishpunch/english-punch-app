@@ -1,24 +1,38 @@
 import { paginationOptsValidator } from "convex/server";
-import { mutation, query, type MutationCtx } from "./_generated/server";
+import {
+  internalMutation,
+  mutation,
+  query,
+  type MutationCtx,
+} from "./_generated/server";
+import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import { ConvexError, v } from "convex/values";
 import { getAuthUserId } from "@convex-dev/auth/server";
+import { requireAuthenticatedUserId } from "./authUser";
+import {
+  countDueCards,
+  trackInsertedCard,
+  trackUpdatedCard,
+} from "./cardAggregate";
 
 /**
  * Create a sample bag with starter English-learning cards.
  */
 export const createSampleBag = mutation({
   args: {
-    userId: v.id("users"),
+    // Ignored compatibility field for clients deployed before OAuth hardening.
+    userId: v.optional(v.id("users")),
   },
   returns: v.id("bags"),
-  handler: async (ctx, args) => {
-    console.log("🎯 CreateSampleBag started for userId:", args.userId);
+  handler: async (ctx) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    console.log("🎯 CreateSampleBag started for userId:", userId);
 
     // Check or create user settings.
     const userSettings = await ctx.db
       .query("userSettings")
-      .withIndex("by_user", (q) => q.eq("userId", args.userId))
+      .withIndex("by_user", (q) => q.eq("userId", userId))
       .unique();
 
     if (!userSettings) {
@@ -26,7 +40,7 @@ export const createSampleBag = mutation({
 
       // Create user settings with default FSRS settings.
       const userSettingsId = await ctx.db.insert("userSettings", {
-        userId: args.userId,
+        userId,
         fsrsParameters: {
           w: [
             0.212, 1.2931, 2.3065, 8.2956, 6.4133, 0.8334, 3.0194, 0.001,
@@ -55,7 +69,7 @@ export const createSampleBag = mutation({
     // Create the sample bag.
     console.log("📦 Creating sample bag");
     const bagId = await ctx.db.insert("bags", {
-      userId: args.userId,
+      userId,
       name: "Basic English Expressions",
       description: "Practice common English expressions used in daily life.",
       isActive: true,
@@ -145,7 +159,7 @@ export const createSampleBag = mutation({
 
     for (const cardData of sampleCards) {
       const cardId = await ctx.db.insert("cards", {
-        userId: args.userId,
+        userId,
         bagId: bagId,
         question: cardData.question,
         answer: cardData.answer,
@@ -168,6 +182,7 @@ export const createSampleBag = mutation({
         source: "starter package",
         suspended: false,
       });
+      await trackInsertedCard(ctx, cardId);
       cardCount++;
       console.log(`📄 Card ${cardCount} created:`, {
         cardId,
@@ -199,7 +214,8 @@ export const createSampleBag = mutation({
  */
 export const getUserBags = query({
   args: {
-    userId: v.id("users"),
+    // Ignored compatibility field for clients deployed before OAuth hardening.
+    userId: v.optional(v.id("users")),
   },
   returns: v.array(
     v.object({
@@ -214,11 +230,12 @@ export const getUserBags = query({
       isActive: v.boolean(),
     })
   ),
-  handler: async (ctx, args) => {
+  handler: async (ctx) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const bags = await ctx.db
       .query("bags")
       .withIndex("by_user_and_deleted_at", (q) =>
-        q.eq("userId", args.userId).eq("deletedAt", undefined)
+        q.eq("userId", userId).eq("deletedAt", undefined)
       )
       .collect();
 
@@ -274,26 +291,14 @@ export const getOneDueCard = query({
 export const getDueCardCount = query({
   args: {
     bagId: v.id("bags"),
+    now: v.number(),
   },
   handler: async (ctx, args) => {
-    const nowTimestamp = Date.now();
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError("Unauthorized");
     }
-    const dueCardsList = await ctx.db
-      .query("cards")
-      .withIndex("by_user_bag_deleted_suspended_due", (q) =>
-        q
-          .eq("userId", userId)
-          .eq("bagId", args.bagId)
-          .eq("deletedAt", undefined)
-          .eq("suspended", false)
-          .lte("due", nowTimestamp)
-      )
-      .take(101);
-
-    return dueCardsList.length;
+    return await countDueCards(ctx, userId, args.bagId, args.now);
   },
 });
 
@@ -415,6 +420,7 @@ const setCardSuspendedHandler = async (
   await ctx.db.patch("cards", args.cardId, {
     suspended: args.suspended,
   });
+  await trackUpdatedCard(ctx, card);
 
   const bag = await ctx.db.get("bags", card.bagId);
   if (bag && bag.userId === args.userId && bag.deletedAt === undefined) {
@@ -488,6 +494,7 @@ export const moveCardToBag = mutation({
     await ctx.db.patch("cards", args.cardId, {
       bagId: args.targetBagId,
     });
+    await trackUpdatedCard(ctx, card);
     await ctx.db.patch("bags", card.bagId, {
       ...buildMovedBagStats(sourceBag, card.state, -1),
       lastModified: nowIso,
@@ -506,7 +513,8 @@ export const moveCardToBag = mutation({
  */
 export const getBagDetailStats = query({
   args: {
-    userId: v.id("users"),
+    // Ignored compatibility field for clients deployed before OAuth hardening.
+    userId: v.optional(v.id("users")),
     bagId: v.id("bags"),
   },
   returns: v.union(
@@ -562,9 +570,10 @@ export const getBagDetailStats = query({
     })
   ),
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     // Get bag information.
     const bag = await ctx.db.get("bags", args.bagId);
-    if (!bag || bag.userId !== args.userId || bag.deletedAt !== undefined) {
+    if (!bag || bag.userId !== userId || bag.deletedAt !== undefined) {
       return null;
     }
 
@@ -668,13 +677,15 @@ export const getBagDetailStats = query({
  */
 export const createBag = mutation({
   args: {
-    userId: v.id("users"),
+    // Ignored compatibility field for clients deployed before OAuth hardening.
+    userId: v.optional(v.id("users")),
     name: v.string(),
   },
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const nowIso = new Date().toISOString();
     const bagId = await ctx.db.insert("bags", {
-      userId: args.userId,
+      userId,
       name: args.name,
       description: undefined,
       isActive: true,
@@ -690,37 +701,77 @@ export const createBag = mutation({
   },
 });
 
-/** Delete a bag and its cards. */
-export const deleteBag = mutation({
+const DELETE_BAG_CARD_BATCH_SIZE = 25;
+
+/** Soft-delete one bounded batch of cards belonging to a deleted bag. */
+export const deleteBagCardsBatch = internalMutation({
   args: {
     bagId: v.id("bags"),
+    userId: v.id("users"),
+    deletedAt: v.number(),
   },
-  handler: async (ctx, args) => {
+  returns: v.number(),
+  handler: async (ctx, args): Promise<number> => {
     const bag = await ctx.db.get("bags", args.bagId);
-    if (!bag || bag.deletedAt !== undefined) {
-      return null;
+    if (
+      !bag ||
+      bag.userId !== args.userId ||
+      bag.deletedAt !== args.deletedAt
+    ) {
+      return 0;
     }
 
-    const deletedAt = Date.now();
     const cards = await ctx.db
       .query("cards")
       .withIndex("by_bag_and_deleted_at", (q) =>
         q.eq("bagId", args.bagId).eq("deletedAt", undefined)
       )
-      .collect();
+      .take(DELETE_BAG_CARD_BATCH_SIZE);
 
-    await Promise.all(
-      cards.map((card) =>
-        ctx.db.patch("cards", card._id, {
-          deletedAt,
-        })
-      )
-    );
+    for (const card of cards) {
+      await ctx.db.patch("cards", card._id, { deletedAt: args.deletedAt });
+      await trackUpdatedCard(ctx, card);
+    }
+
+    if (cards.length === DELETE_BAG_CARD_BATCH_SIZE) {
+      await ctx.scheduler.runAfter(0, internal.learning.deleteBagCardsBatch, {
+        bagId: args.bagId,
+        userId: args.userId,
+        deletedAt: args.deletedAt,
+      });
+    }
+
+    return cards.length;
+  },
+});
+
+/** Delete a bag and schedule its cards for bounded soft-deletion. */
+export const deleteBag = mutation({
+  args: {
+    bagId: v.id("bags"),
+  },
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    const bag = await ctx.db.get("bags", args.bagId);
+    if (!bag || bag.userId !== userId) {
+      throw new ConvexError("Bag not found");
+    }
+    if (bag.deletedAt !== undefined) {
+      return false;
+    }
+
+    const deletedAt = Date.now();
     await ctx.db.patch("bags", args.bagId, {
       deletedAt,
       lastModified: new Date(deletedAt).toISOString(),
     });
-    return null;
+    await ctx.scheduler.runAfter(0, internal.learning.deleteBagCardsBatch, {
+      bagId: args.bagId,
+      userId,
+      deletedAt,
+    });
+    return true;
   },
 });
 
@@ -729,14 +780,16 @@ export const getCard = query({
   args: {
     cardId: v.id("cards"),
     bagId: v.id("bags"),
-    userId: v.id("users"),
+    // Ignored compatibility field for clients deployed before OAuth hardening.
+    userId: v.optional(v.id("users")),
   },
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const card = await ctx.db.get("cards", args.cardId);
     if (
       !card ||
       card.bagId !== args.bagId ||
-      card.userId !== args.userId ||
+      card.userId !== userId ||
       card.deletedAt !== undefined
     ) {
       return null;
@@ -875,9 +928,18 @@ export const replaceCardContentAndResetScheduleHandler = async (
   ctx: MutationCtx,
   args: CardContentReplacementArgs
 ) => {
-  const card = await ctx.db.get("cards", args.cardId);
-  if (!card || card.bagId !== args.bagId || card.deletedAt !== undefined) {
-    return null;
+  const [card, bag] = await Promise.all([
+    ctx.db.get("cards", args.cardId),
+    ctx.db.get("bags", args.bagId),
+  ]);
+  if (
+    !card ||
+    !bag ||
+    card.bagId !== args.bagId ||
+    card.deletedAt !== undefined ||
+    bag.deletedAt !== undefined
+  ) {
+    return false;
   }
 
   const now = Date.now();
@@ -891,28 +953,27 @@ export const replaceCardContentAndResetScheduleHandler = async (
     expression: args.expression,
     ...initialSchedule(now),
   });
+  await trackUpdatedCard(ctx, card);
 
-  const bag = await ctx.db.get("bags", args.bagId);
-  if (bag && bag.deletedAt === undefined) {
-    const newCards = bag.newCards + (card.state === 0 ? 0 : 1);
-    const learningCards = bag.learningCards - (card.state === 1 ? 1 : 0);
-    const reviewCards = bag.reviewCards - (card.state === 2 ? 1 : 0);
-    await ctx.db.patch("bags", args.bagId, {
-      newCards,
-      learningCards,
-      reviewCards,
-      lastModified: new Date(now).toISOString(),
-    });
-  }
+  const newCards = bag.newCards + (card.state === 0 ? 0 : 1);
+  const learningCards = bag.learningCards - (card.state === 1 ? 1 : 0);
+  const reviewCards = bag.reviewCards - (card.state === 2 ? 1 : 0);
+  await ctx.db.patch("bags", args.bagId, {
+    newCards,
+    learningCards,
+    reviewCards,
+    lastModified: new Date(now).toISOString(),
+  });
 
-  return null;
+  return true;
 };
 
 /** Create a card. */
 export const createCard = mutation({
   args: {
     bagId: v.id("bags"),
-    userId: v.id("users"),
+    // Ignored compatibility field for clients deployed before OAuth hardening.
+    userId: v.optional(v.id("users")),
     question: v.string(),
     answer: v.string(),
     hint: v.optional(v.string()),
@@ -923,10 +984,15 @@ export const createCard = mutation({
   },
   returns: v.id("cards"),
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    const bag = await ctx.db.get("bags", args.bagId);
+    if (!bag || bag.userId !== userId || bag.deletedAt !== undefined) {
+      throw new ConvexError("Bag not found");
+    }
     const now = Date.now();
     const cardId = await ctx.db.insert("cards", {
       bagId: args.bagId,
-      userId: args.userId,
+      userId,
       question: args.question,
       answer: args.answer,
       hint: args.hint,
@@ -938,15 +1004,13 @@ export const createCard = mutation({
       source: "manual",
       ...initialSchedule(now),
     });
+    await trackInsertedCard(ctx, cardId);
 
-    const bag = await ctx.db.get("bags", args.bagId);
-    if (bag && bag.deletedAt === undefined) {
-      await ctx.db.patch("bags", args.bagId, {
-        totalCards: bag.totalCards + 1,
-        newCards: bag.newCards + 1,
-        lastModified: new Date(now).toISOString(),
-      });
-    }
+    await ctx.db.patch("bags", args.bagId, {
+      totalCards: bag.totalCards + 1,
+      newCards: bag.newCards + 1,
+      lastModified: new Date(now).toISOString(),
+    });
     return cardId;
   },
 });
@@ -954,8 +1018,26 @@ export const createCard = mutation({
 /** Replace card content and reset the FSRS schedule. */
 export const replaceCardContentAndResetSchedule = mutation({
   args: cardContentReplacementArgs,
-  returns: v.null(),
-  handler: replaceCardContentAndResetScheduleHandler,
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    const [card, bag] = await Promise.all([
+      ctx.db.get("cards", args.cardId),
+      ctx.db.get("bags", args.bagId),
+    ]);
+    if (
+      !card ||
+      !bag ||
+      card.userId !== userId ||
+      bag.userId !== userId ||
+      card.bagId !== bag._id ||
+      card.deletedAt !== undefined ||
+      bag.deletedAt !== undefined
+    ) {
+      throw new ConvexError("Card not found");
+    }
+    return await replaceCardContentAndResetScheduleHandler(ctx, args);
+  },
 });
 
 /** @deprecated use replaceCardContentAndResetSchedule */
@@ -973,8 +1055,26 @@ export const updateCard = mutation({
       v.union(v.literal(0), v.literal(1), v.literal(2), v.literal(3))
     ),
   },
-  returns: v.null(),
-  handler: replaceCardContentAndResetScheduleHandler,
+  returns: v.boolean(),
+  handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    const [card, bag] = await Promise.all([
+      ctx.db.get("cards", args.cardId),
+      ctx.db.get("bags", args.bagId),
+    ]);
+    if (
+      !card ||
+      !bag ||
+      card.userId !== userId ||
+      bag.userId !== userId ||
+      card.bagId !== bag._id ||
+      card.deletedAt !== undefined ||
+      bag.deletedAt !== undefined
+    ) {
+      throw new ConvexError("Card not found");
+    }
+    return await replaceCardContentAndResetScheduleHandler(ctx, args);
+  },
 });
 
 /** Delete a card. */
@@ -984,20 +1084,25 @@ export const deleteCard = mutation({
     bagId: v.id("bags"),
   },
   handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
     const card = await ctx.db.get("cards", args.cardId);
     const bag = await ctx.db.get("bags", args.bagId);
     if (
       !card ||
       !bag ||
+      card.userId !== userId ||
+      bag.userId !== userId ||
+      card.bagId !== bag._id ||
       card.deletedAt !== undefined ||
       bag.deletedAt !== undefined
     ) {
-      return null;
+      return false;
     }
     const deletedAt = Date.now();
     await ctx.db.patch("cards", args.cardId, {
       deletedAt,
     });
+    await trackUpdatedCard(ctx, card);
 
     const counts = {
       totalCards: bag.totalCards - 1,
@@ -1009,6 +1114,6 @@ export const deleteCard = mutation({
       ...counts,
       lastModified: new Date(deletedAt).toISOString(),
     });
-    return null;
+    return true;
   },
 });

@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "lint": "eslint src convex mcp-server/src",
     "lint:fix": "eslint src convex mcp-server/src --fix",
+    "pretest": "pnpm --filter @english-punch/mcp-server copy",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
@@ -25,6 +26,7 @@
   },
   "dependencies": {
     "@auth/core": "^0.41.3",
+    "@convex-dev/aggregate": "^0.2.2",
     "@convex-dev/auth": "^0.0.95",
     "@google/genai": "^2.17.1",
     "@radix-ui/react-slot": "^1.3.3",
@@ -38,6 +40,7 @@
     "dayjs": "^1.11.23",
     "es-toolkit": "^1.51.0",
     "i18next": "^26.3.6",
+    "jose": "^6.2.9",
     "lucide-react": "^1.32.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

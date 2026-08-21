@@ -56,6 +56,13 @@ This is a pnpm workspace monorepo orchestrated with Turborepo.
 
   After installation, the `english-punch` skill is exposed automatically in Claude Code sessions. No separate registration or API key is required. Run the same command again to update it.
 
+### ChatGPT and Codex Plugin
+
+The OAuth-protected Streamable HTTP server and plugin bundle live in
+[`mcp-server/`](mcp-server/) and [`plugins/english-punch/`](plugins/english-punch/).
+See [`mcp-server/README.md`](mcp-server/README.md) for the token contract,
+container deployment, and ChatGPT developer-mode connection steps.
+
 ## Tech Stack
 
 ### Frontend
@@ -141,6 +148,7 @@ Pull requests are welcome. The repository is kept in English so contributors fro
 
 ## References
 
+- [ChatGPT MCP OAuth architecture](docs/mcp-oauth.md)
 - [`ep` CLI design principles](docs/cli-llm-as-caller.md)
 - [FSRS algorithm overview](https://github.com/open-spaced-repetition/fsrs4anki/wiki/ABC-of-FSRS)
 - [ts-fsrs library](https://github.com/open-spaced-repetition/ts-fsrs)

@@ -1,0 +1,30 @@
+{
+  "name": "english-punch",
+  "version": "0.1.0",
+  "description": "Create and review English vocabulary cards through an OAuth-authenticated English Punch connection.",
+  "author": {
+    "name": "English Punch",
+    "url": "https://github.com/englishpunch"
+  },
+  "homepage": "https://ep.echoja.com",
+  "repository": "https://github.com/englishpunch/english-punch-app",
+  "license": "MIT",
+  "keywords": ["english", "vocabulary", "flashcards", "fsrs", "learning"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "English Punch",
+    "shortDescription": "Build vocabulary and run spaced-repetition reviews",
+    "longDescription": "Save vocabulary from conversation context, organize cards into bags, and complete server-timed FSRS reviews with your English Punch account.",
+    "developerName": "English Punch",
+    "category": "Education",
+    "capabilities": ["Interactive", "Read", "Write"],
+    "websiteURL": "https://ep.echoja.com",
+    "defaultPrompt": [
+      "Save this unfamiliar expression as an English Punch card",
+      "Start an English Punch review session",
+      "Show my vocabulary bags and due-card counts"
+    ],
+    "brandColor": "#F97316"
+  },
+  "mcpServers": "./.mcp.json"
+}

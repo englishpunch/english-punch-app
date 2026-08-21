@@ -1,7 +1,37 @@
 import { httpRouter } from "convex/server";
 import { httpAction } from "./_generated/server";
+import {
+  oauthAuthorizationServerMetadata,
+  oauthPublicJwk,
+} from "./oauthConfig";
+import { token } from "./oauthHttp";
 
 const http = httpRouter();
+
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store",
+    },
+  });
+
+http.route({
+  path: "/.well-known/oauth-authorization-server",
+  method: "GET",
+  handler: httpAction(async () =>
+    jsonResponse(oauthAuthorizationServerMetadata)
+  ),
+});
+
+http.route({
+  path: "/oauth/jwks",
+  method: "GET",
+  handler: httpAction(async () => jsonResponse({ keys: [oauthPublicJwk] })),
+});
+
+http.route({ path: "/oauth/token", method: "POST", handler: token });
 
 // Health check endpoint
 http.route({

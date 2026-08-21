@@ -19,3 +19,5 @@ Formula
 skills
 cli
 mcp-server
+!mcp-server
+!mcp-server/**

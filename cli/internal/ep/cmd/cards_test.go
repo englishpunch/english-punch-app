@@ -120,6 +120,27 @@ func TestCardsCreate_ValidationOrder(t *testing.T) {
 	assertMissingField(t, err, "answer")
 }
 
+func TestCardsQuestionAndAnswerHelpIsFormatAgnostic(t *testing.T) {
+	create := newCardsCreateCmd()
+	if !strings.Contains(
+		create.Long,
+		"The answer and question values are arbitrary non-empty strings.",
+	) {
+		t.Fatalf("create help imposes a card format:\n%s", create.Long)
+	}
+	if got := create.Flags().Lookup("question").Usage; got != "Question text. Required." {
+		t.Fatalf("create --question usage = %q", got)
+	}
+
+	replace := newCardsReplaceCmd()
+	if got := replace.Flags().Lookup("question").Usage; got != "Replacement question text. Required." {
+		t.Fatalf("replace --question usage = %q", got)
+	}
+	if got := replace.Flags().Lookup("answer").Usage; got != "Replacement answer text. Defaults to the current answer when omitted." {
+		t.Fatalf("replace --answer usage = %q", got)
+	}
+}
+
 func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
 	resetCardsCommandTestState()
 	t.Cleanup(resetCardsCommandTestState)

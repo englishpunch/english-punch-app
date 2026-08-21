@@ -68,6 +68,7 @@ describe("reviewCard elapsed_days tracking", () => {
     insert = vi.fn().mockResolvedValue("log_1");
 
     ctx = {
+      runMutation: vi.fn().mockResolvedValue(null),
       db: {
         get: vi.fn().mockResolvedValue(card),
         patch,
