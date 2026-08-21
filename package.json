@@ -11,6 +11,7 @@
     "preview": "vite preview",
     "lint": "eslint src convex mcp-server/src",
     "lint:fix": "eslint src convex mcp-server/src --fix",
+    "pretest": "pnpm --filter @english-punch/mcp-server copy",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
