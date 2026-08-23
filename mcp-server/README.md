@@ -54,6 +54,12 @@ curl http://localhost:3001/.well-known/oauth-protected-resource/mcp \
   -H 'Host: mcp-ep.echoja.com'
 ```
 
+The health response includes the canonical English Punch product version:
+
+```json
+{"status":"ok","version":"0.3.5"}
+```
+
 ## Build and deploy the container
 
 Build from the repository root because the MCP package copies the generated
@@ -67,9 +73,10 @@ docker run --rm -p 3001:3001 --env-file mcp-server/.env.local \
 
 On every merge to `main`, `.github/workflows/docker.yml` builds the frontend
 and MCP images for `linux/amd64` and `linux/arm64`, publishes both to GHCR with
-the same `sha-<commit>` tag, and opens one infra PR that advances both image
-tags. The Argo CD-managed Helm chart in `echoja/infra/apps/english-punch` owns
-the MCP Deployment, Service, and Ingress resources.
+the same `sha-<commit>` tag and product-version OCI label, and opens one infra
+PR that advances both image tags and the Helm `appVersion`. The Argo CD-managed
+Helm chart in `echoja/infra/apps/english-punch` owns the MCP Deployment,
+Service, and Ingress resources.
 
 For the first deployment, merge the infra chart scaffold while `mcp.enabled`
 is still `false`, then merge the app change. The app's `main` build publishes

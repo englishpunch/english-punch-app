@@ -42,6 +42,7 @@ run_and_capture() {
 set +e
 
 # --- Pre-commit checks (safe with staged changes) ---
+run_and_capture "version" pnpm run check:version
 run_and_capture "lint" pnpm run lint
 run_and_capture "knip" pnpm run knip
 run_and_capture "test" env CI=true pnpm run test

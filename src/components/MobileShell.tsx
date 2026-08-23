@@ -19,6 +19,7 @@ import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useTranslation } from "react-i18next";
 import { languageOptions } from "@/i18n";
+import { AppVersion } from "./AppVersion";
 
 interface MobileShellProps {
   children?: React.ReactNode;
@@ -263,10 +264,11 @@ function ProfileDrawer({
             </Select>
           </div>
         </div>
-        <div className="mt-auto">
+        <div className="mt-auto flex items-center justify-between">
           <Button variant="secondary" size="sm" onClick={() => void signOut()}>
             {t("common.actions.signOut")}
           </Button>
+          <AppVersion />
         </div>
       </div>
     </div>

@@ -55,17 +55,34 @@ export const updateEnglishPunchValues = (content, imageTag) => {
   return lines.join("\n");
 };
 
+export const updateEnglishPunchChart = (content, version) => {
+  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+    throw new Error(`Invalid English Punch version: ${version}`);
+  }
+
+  const appVersionFields = content.match(/^appVersion:\s*.*$/gm) ?? [];
+  if (appVersionFields.length !== 1) {
+    throw new Error("Expected exactly one Helm appVersion field");
+  }
+
+  return content.replace(/^appVersion:\s*.*$/m, `appVersion: "${version}"`);
+};
+
 const isCli =
   process.argv[1] !== undefined &&
   import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isCli) {
-  const [, , valuesPath, imageTag] = process.argv;
-  if (!valuesPath || !imageTag) {
+  const [, , valuesPath, chartPath, imageTag, version] = process.argv;
+  if (!valuesPath || !chartPath || !imageTag || !version) {
     throw new Error(
-      "Usage: update-infra-images.mjs <values.yaml path> <sha-image-tag>"
+      "Usage: update-infra-images.mjs <values.yaml path> <Chart.yaml path> <sha-image-tag> <x.x.x version>"
     );
   }
-  const content = readFileSync(valuesPath, "utf8");
-  writeFileSync(valuesPath, updateEnglishPunchValues(content, imageTag));
+  const values = readFileSync(valuesPath, "utf8");
+  const chart = readFileSync(chartPath, "utf8");
+  const updatedValues = updateEnglishPunchValues(values, imageTag);
+  const updatedChart = updateEnglishPunchChart(chart, version);
+  writeFileSync(valuesPath, updatedValues);
+  writeFileSync(chartPath, updatedChart);
 }

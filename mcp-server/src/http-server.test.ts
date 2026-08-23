@@ -17,6 +17,27 @@ afterEach(() => {
 });
 
 describe("English Punch MCP HTTP server", () => {
+  it("reports the canonical version from the health endpoint", async () => {
+    const config = loadServerConfig({
+      MCP_ALLOWED_HOSTS: "127.0.0.1",
+    });
+    const server = createMcpHttpServer(config, {
+      authenticate: async () => {
+        throw new Error("authentication should not run for health checks");
+      },
+    });
+    openServers.push(server);
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve)
+    );
+    const { port } = server.address() as AddressInfo;
+
+    const response = await fetch(`http://127.0.0.1:${port}/healthz`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ status: "ok", version: "0.3.5" });
+  });
+
   it("serves OAuth protected-resource discovery without authentication", async () => {
     const config = loadServerConfig({
       MCP_ALLOWED_HOSTS: "127.0.0.1",

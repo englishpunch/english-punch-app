@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { updateEnglishPunchValues } from "./update-infra-images.mjs";
+import {
+  updateEnglishPunchChart,
+  updateEnglishPunchValues,
+} from "./update-infra-images.mjs";
 
 const values = `frontend:
   image:
@@ -17,6 +20,12 @@ mcp:
 backend:
   image:
     tag: unchanged
+`;
+
+const chart = `apiVersion: v2
+name: english-punch
+version: 0.1.0
+appVersion: "0.1.0"
 `;
 
 describe("updateEnglishPunchValues", () => {
@@ -38,5 +47,30 @@ describe("updateEnglishPunchValues", () => {
     expect(() => updateEnglishPunchValues(values, "main")).toThrow(
       "Invalid image tag"
     );
+  });
+});
+
+describe("updateEnglishPunchChart", () => {
+  it("updates the English Punch appVersion without changing the chart version", () => {
+    expect(updateEnglishPunchChart(chart, "0.3.5")).toBe(`apiVersion: v2
+name: english-punch
+version: 0.1.0
+appVersion: "0.3.5"
+`);
+  });
+
+  it("rejects a non-SemVer product version", () => {
+    expect(() => updateEnglishPunchChart(chart, "main")).toThrow(
+      "Invalid English Punch version"
+    );
+  });
+
+  it("rejects missing or duplicate appVersion fields", () => {
+    expect(() =>
+      updateEnglishPunchChart(chart.replace(/^appVersion:.*$/m, ""), "0.3.5")
+    ).toThrow("Expected exactly one Helm appVersion field");
+    expect(() =>
+      updateEnglishPunchChart(`${chart}appVersion: "9.9.9"\n`, "0.3.5")
+    ).toThrow("Expected exactly one Helm appVersion field");
   });
 });

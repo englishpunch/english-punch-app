@@ -21,6 +21,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/mcp-server/node_modules ./mcp-server/node_modules
 COPY --from=build /app/mcp-server/dist ./mcp-server/dist
 COPY --from=build /app/mcp-server/package.json ./mcp-server/package.json

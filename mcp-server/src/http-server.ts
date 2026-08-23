@@ -12,6 +12,7 @@ import type { AuthenticatedRequest } from "./oauth.js";
 import type { ServerConfig } from "./config.js";
 import { bearerChallenge, protectedResourceMetadata } from "./oauth.js";
 import { createEnglishPunchServer } from "./server.js";
+import { ENGLISH_PUNCH_VERSION } from "./version.js";
 
 type AuthenticationResult = {
   auth: AuthenticatedRequest;
@@ -134,7 +135,10 @@ export const createMcpHttpServer = (
     }
 
     if (request.method === "GET" && pathname === "/healthz") {
-      sendJson(response, 200, { status: "ok" });
+      sendJson(response, 200, {
+        status: "ok",
+        version: ENGLISH_PUNCH_VERSION,
+      });
       return;
     }
 

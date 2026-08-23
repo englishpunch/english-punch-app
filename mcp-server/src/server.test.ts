@@ -19,6 +19,11 @@ describe("English Punch MCP tools", () => {
       client.connect(clientTransport),
     ]);
 
+    expect(client.getServerVersion()).toEqual({
+      name: "english-punch",
+      version: "0.3.5",
+    });
+
     const { tools } = await client.listTools();
     const createCard = tools.find((tool) => tool.name === "create-card");
     const updateCard = tools.find((tool) => tool.name === "update-card");
