@@ -5,6 +5,7 @@ import {
   oauthPublicJwk,
 } from "./oauthConfig";
 import { token } from "./oauthHttp";
+import { ENGLISH_PUNCH_VERSION } from "../src/lib/version";
 
 const http = httpRouter();
 
@@ -33,13 +34,25 @@ http.route({
 
 http.route({ path: "/oauth/token", method: "POST", handler: token });
 
+http.route({
+  path: "/version",
+  method: "GET",
+  handler: httpAction(async () =>
+    jsonResponse({ version: ENGLISH_PUNCH_VERSION })
+  ),
+});
+
 // Health check endpoint
 http.route({
   path: "/health",
   method: "GET",
   handler: httpAction(async () => {
     return new Response(
-      JSON.stringify({ status: "ok", timestamp: Date.now() }),
+      JSON.stringify({
+        status: "ok",
+        version: ENGLISH_PUNCH_VERSION,
+        timestamp: Date.now(),
+      }),
       {
         status: 200,
         headers: {

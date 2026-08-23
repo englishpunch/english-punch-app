@@ -7,6 +7,7 @@ import { registerCardTools } from "./tools/cards.js";
 import { registerLearningTools } from "./tools/learning.js";
 import { resultContent } from "./tools/result.js";
 import { registerStatsTools } from "./tools/stats.js";
+import { ENGLISH_PUNCH_VERSION } from "./version.js";
 
 export const createEnglishPunchServer = (
   client: ConvexHttpClient,
@@ -16,7 +17,7 @@ export const createEnglishPunchServer = (
   const server = new McpServer(
     {
       name: "english-punch",
-      version: "0.2.0",
+      version: ENGLISH_PUNCH_VERSION,
     },
     {
       instructions:
