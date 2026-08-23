@@ -20,10 +20,10 @@ it("reports the canonical English Punch version from backend health", async () =
   });
 });
 
-it("exposes the canonical English Punch backend version", async () => {
+it("exposes the canonical version at the ingress rewrite target", async () => {
   const t = convexTest(schema, modules);
 
-  const response = await t.fetch("/version");
+  const response = await t.fetch("/api/version");
 
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({ version: "0.3.5" });
