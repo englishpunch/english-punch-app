@@ -30,3 +30,7 @@ The Docker workflow publishes the images and opens one automated infra PR that
 updates both SHA image tags and `appVersion`. Argo CD deploys the merged infra
 change. The Convex `engineRevision` annotation is operational metadata and must
 not be presented as the English Punch product version.
+
+The self-hosted Convex engine reserves its own root `/version` path. Traefik
+therefore preserves the public application endpoint `GET /version` while
+rewriting it to the application-owned Convex HTTP action at `GET /api/version`.

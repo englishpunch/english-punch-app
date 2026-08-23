@@ -35,7 +35,7 @@ http.route({
 http.route({ path: "/oauth/token", method: "POST", handler: token });
 
 http.route({
-  path: "/version",
+  path: "/api/version",
   method: "GET",
   handler: httpAction(async () =>
     jsonResponse({ version: ENGLISH_PUNCH_VERSION })
