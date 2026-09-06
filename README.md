@@ -37,6 +37,14 @@ This is a pnpm workspace monorepo orchestrated with Turborepo.
   ep --version
   ```
 
+- Upgrade an existing installation and check the installed version:
+
+  ```bash
+  brew update
+  brew upgrade englishpunch/cli/ep
+  ep --version
+  ```
+
 ### Claude Code Skill
 
 - The `english-punch` skill is a thin public wrapper that documents only the minimum `ep` CLI workflow.
