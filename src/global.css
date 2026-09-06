@@ -39,3 +39,8 @@
     border-color: var(--color-gray-200);
   }
 }
+
+/* Informational heatmap tooltips must not cover neighboring day targets. */
+[data-radix-popper-content-wrapper]:has([data-activity-heatmap-tooltip]) {
+  pointer-events: none;
+}
