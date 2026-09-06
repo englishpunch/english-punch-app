@@ -35,7 +35,7 @@ describe("English Punch MCP HTTP server", () => {
     const response = await fetch(`http://127.0.0.1:${port}/healthz`);
 
     expect(response.status).toBe(200);
-    expect(await response.json()).toEqual({ status: "ok", version: "0.3.6" });
+    expect(await response.json()).toEqual({ status: "ok", version: "0.3.7" });
   });
 
   it("serves OAuth protected-resource discovery without authentication", async () => {

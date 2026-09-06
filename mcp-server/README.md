@@ -57,7 +57,7 @@ curl http://localhost:3001/.well-known/oauth-protected-resource/mcp \
 The health response includes the canonical English Punch product version:
 
 ```json
-{ "status": "ok", "version": "0.3.6" }
+{ "status": "ok", "version": "0.3.7" }
 ```
 
 ## Build and deploy the container
