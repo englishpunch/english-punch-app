@@ -43,11 +43,11 @@ export function ActivityHeatmapCell({
           })}
           data-testid={`activity-heatmap-cell-${day.date}`}
           onClick={() => onSelect(day.date)}
-          className="group relative flex h-4 w-4 items-center justify-center outline-none"
+          className="group relative flex h-4 w-full items-center justify-center outline-none"
         >
           <span
             className={cn(
-              "group-focus-visible:ring-primary-500 h-2.5 w-2.5 rounded-[2px] border transition group-hover:ring-2 group-hover:ring-gray-400 group-focus-visible:ring-2 sm:h-3 sm:w-3",
+              "group-focus-visible:ring-primary-500 h-3 w-[calc(100%-3px)] rounded-[2px] border transition group-hover:ring-2 group-hover:ring-gray-400 group-focus-visible:ring-2",
               getHeatmapCellClass(day.intensity),
               active && "ring-2 ring-gray-700"
             )}
@@ -61,7 +61,7 @@ export function ActivityHeatmapCell({
           align="center"
           sideOffset={2}
           collisionPadding={8}
-          className="z-50 rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium whitespace-nowrap text-white shadow-lg"
+          className="pointer-events-none z-50 rounded-md bg-gray-900 px-2 py-1 text-[11px] font-medium whitespace-nowrap text-white shadow-lg"
         >
           <span className="block text-left text-gray-300">{dateLabel}</span>
           <span className="mt-1 grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5">

@@ -17,7 +17,6 @@ export type ActivitySource = "web" | "cli" | "system";
 
 const DEFAULT_TIMEZONE = "Asia/Seoul";
 const ACTIVITY_SCHEMA_VERSION = 1;
-const DEFAULT_HEATMAP_WEEKS = 13;
 
 const activitySourceValidator = v.union(
   v.literal("web"),
@@ -244,10 +243,7 @@ export const getActivityHeatmap = query({
       args.toDate ?? dayjs(Date.now()).tz(timezone).format(DATE_FORMAT);
     const fromDate =
       args.fromDate ??
-      dayjs(toDate)
-        .subtract(DEFAULT_HEATMAP_WEEKS - 1, "week")
-        .startOf("week")
-        .format(DATE_FORMAT);
+      dayjs(toDate).subtract(1, "year").startOf("week").format(DATE_FORMAT);
     const [startDate, endDate] =
       fromDate <= toDate ? [fromDate, toDate] : [toDate, fromDate];
 

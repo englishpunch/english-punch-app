@@ -7,7 +7,7 @@ const tableWrapperVariants = cva(
   {
     variants: {
       edgeToEdge: {
-        true: "rounded-none border-x-0",
+        true: "rounded-none border-x-0 shadow-none",
       },
     },
   }
@@ -36,6 +36,7 @@ export function Table({ className, ...props }: TableProps) {
     <table
       className={cn(
         "min-w-full border-separate border-spacing-0 text-sm",
+        "[&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2",
         className
       )}
       {...props}
@@ -74,7 +75,7 @@ export function Th({ className, ...props }: ThProps) {
   return (
     <th
       className={cn(
-        "px-4 py-3 text-left text-xs font-semibold text-gray-600",
+        "px-3 py-2 text-left text-xs font-semibold text-gray-600",
         className
       )}
       {...props}
@@ -85,5 +86,5 @@ export function Th({ className, ...props }: ThProps) {
 type TdProps = ComponentProps<"td">;
 
 export function Td({ className, ...props }: TdProps) {
-  return <td className={cn("px-4 py-3 align-top", className)} {...props} />;
+  return <td className={cn("px-3 py-2 align-top", className)} {...props} />;
 }
