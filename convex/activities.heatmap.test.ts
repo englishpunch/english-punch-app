@@ -16,7 +16,7 @@ it("includes the past calendar year and aligns its first column to Sunday", asyn
   expect(heatmap.fromDate).toBe("2025-08-31");
   expect(heatmap.toDate).toBe("2026-09-06");
   expect(heatmap.days).toHaveLength(372);
-  expect(heatmap.days.at(-1)?.date).toBe(heatmap.toDate);
+  expect(heatmap.days[heatmap.days.length - 1]?.date).toBe(heatmap.toDate);
 });
 
 it("preserves explicit date ranges, including leap day", async () => {
