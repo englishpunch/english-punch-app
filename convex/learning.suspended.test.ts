@@ -19,7 +19,6 @@ const setupCard = async (suspended = false) => {
       userId,
       name: "Test bag",
       isActive: true,
-      sortOrder: 0,
       totalCards: 1,
       newCards: 1,
       learningCards: 0,
@@ -41,7 +40,6 @@ const setupCard = async (suspended = false) => {
       lapses: 1,
       state: 2,
       last_review: 1_755_126_600_000,
-      tags: [],
       suspended,
     });
     return { cardId, otherUserId, userId };

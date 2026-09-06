@@ -18,7 +18,6 @@ it("soft-deletes a large bag's cards through scheduled bounded batches", async (
       userId,
       name: "Large bag",
       isActive: true,
-      sortOrder: 0,
       totalCards: 61,
       newCards: 61,
       learningCards: 0,
@@ -41,7 +40,6 @@ it("soft-deletes a large bag's cards through scheduled bounded batches", async (
         reps: 0,
         lapses: 0,
         state: 0,
-        tags: [],
         suspended: false,
       });
     }

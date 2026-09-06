@@ -23,7 +23,6 @@ it("counts every due card instead of capping the result at 101", async () => {
       userId,
       name: "Large review bag",
       isActive: true,
-      sortOrder: 0,
       totalCards: 102,
       newCards: 102,
       learningCards: 0,
@@ -46,7 +45,6 @@ it("counts every due card instead of capping the result at 101", async () => {
         reps: 0,
         lapses: 0,
         state: 0,
-        tags: [],
         suspended: false,
       });
     }
