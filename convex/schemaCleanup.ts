@@ -1,5 +1,16 @@
 import { v } from "convex/values";
+import { paginationOptsValidator, type PaginationOptions } from "convex/server";
 import { internalMutation } from "./_generated/server";
+
+function assertMigrationBounds(options: PaginationOptions) {
+  if (
+    options.numItems !== 50 ||
+    options.maximumRowsRead !== 50 ||
+    options.maximumBytesRead !== 1_000_000
+  ) {
+    throw new Error("migration_limits_required");
+  }
+}
 
 const result = v.object({
   continueCursor: v.string(),
@@ -17,16 +28,12 @@ export const removeRetiredFields = internalMutation({
       v.literal("bags"),
       v.literal("cards")
     ),
-    cursor: v.union(v.string(), v.null()),
+    paginationOpts: paginationOptsValidator,
   },
   returns: result,
-  handler: async (ctx, { table, cursor }) => {
-    const page = await ctx.db.query(table).paginate({
-      cursor,
-      numItems: 50,
-      maximumRowsRead: 50,
-      maximumBytesRead: 1_000_000,
-    });
+  handler: async (ctx, { table, paginationOpts }) => {
+    assertMigrationBounds(paginationOpts);
+    const page = await ctx.db.query(table).paginate(paginationOpts);
     const fields = {
       userSettings: ["lastReviewDate"],
       bags: ["sortOrder"],
@@ -60,16 +67,12 @@ export const emptyRetiredTable = internalMutation({
       v.literal("cardTemplates"),
       v.literal("sessions")
     ),
-    cursor: v.union(v.string(), v.null()),
+    paginationOpts: paginationOptsValidator,
   },
   returns: result,
-  handler: async (ctx, { table, cursor }) => {
-    const page = await ctx.db.query(table).paginate({
-      cursor,
-      numItems: 50,
-      maximumRowsRead: 50,
-      maximumBytesRead: 1_000_000,
-    });
+  handler: async (ctx, { table, paginationOpts }) => {
+    assertMigrationBounds(paginationOpts);
+    const page = await ctx.db.query(table).paginate(paginationOpts);
     for (const document of page.page) {
       await ctx.db.delete(table, document._id);
     }

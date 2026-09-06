@@ -8,6 +8,12 @@ import { api, internal } from "./_generated/api";
 import schema from "./schema";
 
 const modules = import.meta.glob("./**/*.ts");
+const paginationOpts = {
+  numItems: 50,
+  maximumRowsRead: 50,
+  maximumBytesRead: 1_000_000,
+  cursor: null,
+};
 
 it("removes only retired fields and is safe to rerun", async () => {
   const t = convexTest(schema, modules);
@@ -42,7 +48,7 @@ it("removes only retired fields and is safe to rerun", async () => {
       internal.schemaCleanup.removeRetiredFields,
       {
         table,
-        cursor: null,
+        paginationOpts,
       }
     );
     expect(migrated.isDone).toBe(true);
@@ -51,7 +57,7 @@ it("removes only retired fields and is safe to rerun", async () => {
       internal.schemaCleanup.removeRetiredFields,
       {
         table,
-        cursor: null,
+        paginationOpts,
       }
     );
     expect(repeated.changed).toBe(0);
@@ -85,19 +91,19 @@ it("deletes legacy table rows in bounded, resumable batches", async () => {
 
   const first = await t.mutation(internal.schemaCleanup.emptyRetiredTable, {
     table: "cardTemplates",
-    cursor: null,
+    paginationOpts,
   });
   expect(first.changed).toBe(50);
   expect(first.isDone).toBe(false);
   const second = await t.mutation(internal.schemaCleanup.emptyRetiredTable, {
     table: "cardTemplates",
-    cursor: first.continueCursor,
+    paginationOpts: { ...paginationOpts, cursor: first.continueCursor },
   });
   expect(second.changed).toBe(11);
   expect(second.isDone).toBe(true);
   const repeated = await t.mutation(internal.schemaCleanup.emptyRetiredTable, {
     table: "cardTemplates",
-    cursor: null,
+    paginationOpts,
   });
   expect(repeated.changed).toBe(0);
   expect(
