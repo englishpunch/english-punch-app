@@ -38,7 +38,7 @@ export const learningTables = {
     totalReviews: v.number(),
     currentStreak: v.number(),
     longestStreak: v.number(),
-    lastReviewDate: v.optional(v.string()), // ISO date string.
+    lastReviewDate: v.optional(v.string()), // Transitional: removed after migration #88.
   }).index("by_user", ["userId"]),
 
   /**
@@ -51,7 +51,7 @@ export const learningTables = {
 
     // Bag settings.
     isActive: v.boolean(),
-    sortOrder: v.number(),
+    sortOrder: v.optional(v.number()), // Transitional: removed after migration #88.
 
     // Statistics.
     totalCards: v.number(),
@@ -106,8 +106,8 @@ export const learningTables = {
     last_review: v.optional(v.number()), // Last review timestamp.
 
     // Metadata.
-    tags: v.array(v.string()),
-    source: v.optional(v.string()), // Card source.
+    tags: v.optional(v.array(v.string())), // Transitional: removed after migration #88.
+    source: v.optional(v.string()), // Transitional: removed after migration #88.
     suspended: v.boolean(), // Whether the card is suspended.
     deletedAt: v.optional(v.number()),
   })

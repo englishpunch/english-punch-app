@@ -73,7 +73,6 @@ export const createSampleBag = mutation({
       name: "Basic English Expressions",
       description: "Practice common English expressions used in daily life.",
       isActive: true,
-      sortOrder: 1,
       totalCards: 0,
       newCards: 0,
       learningCards: 0,
@@ -178,8 +177,6 @@ export const createSampleBag = mutation({
         last_review: undefined,
 
         // Metadata.
-        tags: ["basic"],
-        source: "starter package",
         suspended: false,
       });
       await trackInsertedCard(ctx, cardId);
@@ -689,7 +686,6 @@ export const createBag = mutation({
       name: args.name,
       description: undefined,
       isActive: true,
-      sortOrder: 0,
       totalCards: 0,
       newCards: 0,
       learningCards: 0,
@@ -1000,8 +996,6 @@ export const createCard = mutation({
       context: args.context,
       sourceWord: args.sourceWord,
       expression: args.expression,
-      tags: [],
-      source: "manual",
       ...initialSchedule(now),
     });
     await trackInsertedCard(ctx, cardId);
