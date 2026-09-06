@@ -32,9 +32,20 @@ an issuer-aware `tokenIdentifier` mapping.
 - ChatGPT Client ID Metadata Document validation
 - One-time authorization codes with a five-minute lifetime
 - RS256 access tokens with a one-hour lifetime
+- Opaque, rotating refresh tokens with a sliding 30-day lifetime
+- Hashed refresh-token storage with client and resource binding
 - Exact resource and audience binding
 - Per-tool least-privilege scopes
-- No refresh tokens or client secrets in ChatGPT
+- No client secrets in ChatGPT
+
+The token endpoint supports both `authorization_code` and `refresh_token`
+grants. Every successful refresh invalidates the presented refresh token and
+returns a replacement. Expired and replayed tokens return `invalid_grant`; a
+detected replay also revokes the active token in the same token family.
+
+Connections authorized before refresh-token support was deployed do not have a
+refresh token. Disconnect and reconnect the English Punch connector once after
+deployment so ChatGPT receives one through a new authorization-code exchange.
 
 ## Due-card aggregate migration
 
@@ -49,3 +60,9 @@ node --env-file=.env.convex-selfhost node_modules/convex/bin/main.js \
 
 New databases do not require a backfill. All card creation and update mutations
 maintain the aggregate transactionally after this migration.
+
+## References
+
+- [OpenAI plugin authentication](https://developers.openai.com/plugins/build/auth)
+- [OAuth 2.0 refresh-token grant](https://www.rfc-editor.org/rfc/rfc6749.html#section-6)
+- [OAuth 2.0 refresh-token protection](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.14)

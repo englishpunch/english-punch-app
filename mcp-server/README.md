@@ -57,7 +57,7 @@ curl http://localhost:3001/.well-known/oauth-protected-resource/mcp \
 The health response includes the canonical English Punch product version:
 
 ```json
-{"status":"ok","version":"0.3.5"}
+{ "status": "ok", "version": "0.3.6" }
 ```
 
 ## Build and deploy the container
@@ -99,6 +99,11 @@ After DNS, TLS, OAuth discovery, and the MCP health checks are working:
 3. Complete OAuth in the browser and grant the desired English Punch scopes.
 4. Test `list-bags`, a card creation in a test bag, and the complete
    `start-review` → `reveal-review` → `rate-review` flow.
+
+The authorization server issues a rotating refresh token with the initial
+access token, so ChatGPT can renew an expired access token without another
+interactive login. After deploying refresh-token support, disconnect and
+reconnect any connector that was authorized before the deployment.
 
 The repository plugin bundle is in `plugins/english-punch`. It intentionally
 does not contain `.app.json`: that file requires the app ID assigned after the
