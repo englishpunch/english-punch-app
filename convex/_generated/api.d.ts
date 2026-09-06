@@ -26,7 +26,6 @@ import type * as oauthHttp from "../oauthHttp.js";
 import type * as oauthProtocol from "../oauthProtocol.js";
 import type * as review from "../review.js";
 import type * as router from "../router.js";
-import type * as schemaCleanup from "../schemaCleanup.js";
 
 import type {
   ApiFromModules,
@@ -53,7 +52,6 @@ declare const fullApi: ApiFromModules<{
   oauthProtocol: typeof oauthProtocol;
   review: typeof review;
   router: typeof router;
-  schemaCleanup: typeof schemaCleanup;
 }>;
 
 /**

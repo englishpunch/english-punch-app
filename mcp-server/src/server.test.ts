@@ -21,7 +21,7 @@ describe("English Punch MCP tools", () => {
 
     expect(client.getServerVersion()).toEqual({
       name: "english-punch",
-      version: "0.3.7",
+      version: "0.3.8",
     });
 
     const { tools } = await client.listTools();

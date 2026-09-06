@@ -18,7 +18,6 @@ it("uses the authenticated user even when a legacy user ID is supplied", async (
         userId: claimedUserId,
         name: "Another user's bag",
         isActive: true,
-        sortOrder: 0,
         totalCards: 0,
         newCards: 0,
         learningCards: 0,

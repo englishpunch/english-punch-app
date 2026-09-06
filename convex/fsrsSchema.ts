@@ -38,7 +38,6 @@ export const learningTables = {
     totalReviews: v.number(),
     currentStreak: v.number(),
     longestStreak: v.number(),
-    lastReviewDate: v.optional(v.string()), // Transitional: removed after migration #88.
   }).index("by_user", ["userId"]),
 
   /**
@@ -51,7 +50,6 @@ export const learningTables = {
 
     // Bag settings.
     isActive: v.boolean(),
-    sortOrder: v.optional(v.number()), // Transitional: removed after migration #88.
 
     // Statistics.
     totalCards: v.number(),
@@ -106,8 +104,6 @@ export const learningTables = {
     last_review: v.optional(v.number()), // Last review timestamp.
 
     // Metadata.
-    tags: v.optional(v.array(v.string())), // Transitional: removed after migration #88.
-    source: v.optional(v.string()), // Transitional: removed after migration #88.
     suspended: v.boolean(), // Whether the card is suspended.
     deletedAt: v.optional(v.number()),
   })
@@ -236,105 +232,4 @@ export const learningTables = {
     startTime: v.number(), // Date.now() at creation — source of truth for duration
     revealTime: v.optional(v.number()), // Date.now() when answer was revealed
   }).index("by_user", ["userId"]),
-
-  /**
-   * Study session.
-   */
-  sessions: defineTable({
-    userId: v.id("users"),
-    bagId: v.optional(v.id("bags")), // Which bag this session is for
-
-    // Session information.
-    startTime: v.string(), // Start time.
-    endTime: v.optional(v.string()), // End time.
-
-    // Ordered card IDs for this session (shuffled once at session start)
-    cardIds: v.optional(v.array(v.id("cards"))),
-
-    // Session statistics.
-    cardsReviewed: v.number(),
-    cardsNew: v.number(),
-    cardsLearning: v.number(),
-    cardsRelearning: v.number(),
-
-    // Accuracy counts by Rating.
-    manualCount: v.number(), // Manual (0)
-    againCount: v.number(), // Again (1)
-    hardCount: v.number(), // Hard (2)
-    goodCount: v.number(), // Good (3)
-    easyCount: v.number(), // Easy (4)
-
-    // Average data.
-    averageDuration: v.number(), // Average response time.
-    averageDifficulty: v.number(), // Average difficulty.
-
-    // Session type.
-    sessionType: v.union(
-      v.literal("daily"), // Daily study.
-      v.literal("custom"), // Custom study.
-      v.literal("cramming") // Cramming.
-    ),
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_and_date", ["userId", "startTime"]),
-
-  /**
-   * User statistics as aggregate data.
-   */
-  dailyStats: defineTable({
-    userId: v.id("users"),
-    date: v.string(), // Date in YYYY-MM-DD format.
-
-    // Daily statistics.
-    cardsReviewed: v.number(),
-    cardsNew: v.number(),
-    cardsLearning: v.number(),
-    cardsRelearning: v.number(),
-
-    // Time statistics.
-    totalStudyTime: v.number(), // Total study time in milliseconds.
-    averageAnswerTime: v.number(), // Average response time.
-
-    // Performance metrics.
-    retention: v.number(), // Retention rate.
-    correctAnswers: v.number(),
-    totalAnswers: v.number(),
-
-    // Rating distribution aligned with the ts-fsrs Rating enum.
-    manualCount: v.number(), // Manual (0)
-    againCount: v.number(), // Again (1)
-    hardCount: v.number(), // Hard (2)
-    goodCount: v.number(), // Good (3)
-    easyCount: v.number(), // Easy (4)
-  })
-    .index("by_user", ["userId"])
-    .index("by_user_and_date", ["userId", "date"]),
-
-  /**
-   * Card templates, prebuilt cards.
-   */
-  cardTemplates: defineTable({
-    // Template information.
-    category: v.string(), // For example "daily conversation", "business", or "travel".
-    level: v.union(
-      v.literal("beginner"),
-      v.literal("intermediate"),
-      v.literal("advanced")
-    ),
-
-    // Card content.
-    question: v.string(),
-    answer: v.string(),
-    hint: v.optional(v.string()),
-    explanation: v.optional(v.string()),
-
-    // Metadata.
-    tags: v.array(v.string()),
-    source: v.optional(v.string()),
-    popularity: v.number(), // Popularity.
-    difficulty: v.number(), // Average difficulty.
-  })
-    .index("by_category", ["category"])
-    .index("by_level", ["level"])
-    .index("by_category_and_level", ["category", "level"]),
 };

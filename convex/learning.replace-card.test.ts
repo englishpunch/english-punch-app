@@ -35,7 +35,6 @@ describe("replaceCardContentAndResetScheduleHandler", () => {
       lapses: 2,
       state: 2,
       last_review: new Date("2026-06-01T00:00:00.000Z").getTime(),
-      tags: [],
       suspended: false,
     };
 

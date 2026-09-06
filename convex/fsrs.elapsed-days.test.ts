@@ -45,7 +45,6 @@ describe("reviewCard elapsed_days tracking", () => {
     lapses: 1,
     state: State.Review,
     last_review: lastReview.getTime(),
-    tags: [],
     suspended: false,
     // previous interval between prior two reviews
     elapsed_days: 5,
