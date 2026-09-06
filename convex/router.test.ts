@@ -15,7 +15,7 @@ it("reports the canonical English Punch version from backend health", async () =
   expect(response.status).toBe(200);
   expect(await response.json()).toEqual({
     status: "ok",
-    version: "0.3.5",
+    version: "0.3.6",
     timestamp: expect.any(Number),
   });
 });
@@ -26,5 +26,5 @@ it("exposes the canonical version at the ingress rewrite target", async () => {
   const response = await t.fetch("/api/version");
 
   expect(response.status).toBe(200);
-  expect(await response.json()).toEqual({ version: "0.3.5" });
+  expect(await response.json()).toEqual({ version: "0.3.6" });
 });

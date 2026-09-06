@@ -30,6 +30,7 @@ it("publishes ChatGPT-compatible OAuth authorization server metadata", async () 
       jwks_uri: "https://ep.echoja.com/oauth/jwks",
       client_id_metadata_document_supported: true,
       code_challenge_methods_supported: ["S256"],
+      grant_types_supported: ["authorization_code", "refresh_token"],
       token_endpoint_auth_methods_supported: ["none"],
     })
   );
@@ -74,6 +75,9 @@ it("exchanges an authorization code only once and enforces its PKCE binding", as
     redirectUri: "https://chatgpt.com/connector_platform_oauth_redirect",
     resource: "https://mcp-ep.echoja.com/mcp",
     codeChallenge: "challenge",
+    refreshTokenHash: "refresh-token-hash",
+    refreshTokenFamilyId: "refresh-token-family",
+    refreshTokenExpiresAt: 1_900_000_000_000,
     now: 1_800_000_000_000,
   };
 
@@ -122,6 +126,58 @@ it("deletes expired authorization codes in a bounded cleanup batch", async () =>
       redirectUri: "https://chatgpt.com/connector_platform_oauth_redirect",
       resource: "https://mcp-ep.echoja.com/mcp",
       codeChallenge: "challenge",
+      refreshTokenHash: "refresh-token-hash",
+      refreshTokenFamilyId: "refresh-token-family",
+      refreshTokenExpiresAt: 1_900_000_000_000,
+      now: 200,
+    })
+  ).resolves.toEqual(expect.objectContaining({ userId }));
+});
+
+it("keeps refresh tokens client-bound and deletes expired tokens in a bounded batch", async () => {
+  const t = convexTest(schema, modules);
+  const userId = await t.run((ctx) => ctx.db.insert("users", {}));
+  vi.useFakeTimers();
+  vi.setSystemTime(200);
+
+  await t.run(async (ctx) => {
+    for (const [tokenHash, expiresAt] of [
+      ["expired", 100],
+      ["active", 300],
+    ] as const) {
+      await ctx.db.insert("oauthRefreshTokens", {
+        tokenHash,
+        familyId: tokenHash,
+        status: "active",
+        userId,
+        clientId: "https://chatgpt.com/oauth/client.json",
+        resource: "https://mcp-ep.echoja.com/mcp",
+        scope: "cards:read",
+        expiresAt,
+      });
+    }
+  });
+
+  await expect(
+    t.mutation(internal.oauth.deleteExpiredRefreshTokens, {})
+  ).resolves.toBe(1);
+  await expect(
+    t.mutation(internal.oauth.rotateRefreshToken, {
+      tokenHash: "active",
+      clientId: "https://chatgpt.com/oauth/other-client.json",
+      resource: "https://mcp-ep.echoja.com/mcp",
+      replacementTokenHash: "replacement",
+      replacementExpiresAt: 400,
+      now: 200,
+    })
+  ).resolves.toBeNull();
+  await expect(
+    t.mutation(internal.oauth.rotateRefreshToken, {
+      tokenHash: "active",
+      clientId: "https://chatgpt.com/oauth/client.json",
+      resource: "https://mcp-ep.echoja.com/mcp",
+      replacementTokenHash: "replacement",
+      replacementExpiresAt: 400,
       now: 200,
     })
   ).resolves.toEqual(expect.objectContaining({ userId }));
@@ -200,7 +256,7 @@ it("rejects token requests outside the authorization-code PKCE flow", async () =
   });
 });
 
-it("exchanges a ChatGPT PKCE code for a short-lived audience-bound JWT once", async () => {
+it("exchanges a ChatGPT PKCE code and rotates audience-bound tokens", async () => {
   const t = convexTest(schema, modules);
   const userId = await t.run((ctx) => ctx.db.insert("users", {}));
   const clientId = "https://chatgpt.com/oauth/client.json";
@@ -268,14 +324,29 @@ it("exchanges a ChatGPT PKCE code for a short-lived audience-bound JWT once", as
   const body = (await response.json()) as {
     access_token: string;
     expires_in: number;
+    refresh_token: string;
     scope: string;
     token_type: string;
   };
   expect(body).toMatchObject({
     expires_in: 3_600,
+    refresh_token: expect.stringMatching(/^[\w-]{40,}$/),
     scope: "cards:read reviews:read",
     token_type: "Bearer",
   });
+  const refreshTokenHash = await sha256Base64Url(body.refresh_token);
+  const storedRefreshToken = await t.run((ctx) =>
+    ctx.db
+      .query("oauthRefreshTokens")
+      .withIndex("by_token_hash", (q) => q.eq("tokenHash", refreshTokenHash))
+      .unique()
+  );
+  expect(storedRefreshToken).toMatchObject({
+    clientId,
+    status: "active",
+    tokenHash: refreshTokenHash,
+  });
+  expect(storedRefreshToken?.tokenHash).not.toBe(body.refresh_token);
   await expect(
     jwtVerify(body.access_token, publicKey, {
       issuer: "https://ep.echoja.com",
@@ -288,6 +359,89 @@ it("exchanges a ChatGPT PKCE code for a short-lived audience-bound JWT once", as
       resource: "https://mcp-ep.echoja.com/mcp",
     },
   });
+
+  const refreshRequest = (refreshToken: string, scope?: string) =>
+    t.fetch("/oauth/token", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "refresh_token",
+        refresh_token: refreshToken,
+        client_id: clientId,
+        resource: "https://mcp-ep.echoja.com/mcp",
+        ...(scope ? { scope } : {}),
+      }),
+    });
+
+  const overScopedResponse = await refreshRequest(
+    body.refresh_token,
+    "cards:write"
+  );
+  expect(overScopedResponse.status).toBe(400);
+  expect(await overScopedResponse.json()).toEqual({ error: "invalid_scope" });
+
+  const issuedAt = Date.now();
+  vi.useFakeTimers();
+  vi.setSystemTime(issuedAt + 29 * 24 * 60 * 60 * 1_000);
+  const refreshedResponse = await refreshRequest(body.refresh_token);
+  expect(refreshedResponse.status).toBe(200);
+  const refreshedBody = (await refreshedResponse.json()) as {
+    access_token: string;
+    expires_in: number;
+    refresh_token: string;
+    scope: string;
+    token_type: string;
+  };
+  expect(refreshedBody).toMatchObject({
+    expires_in: 3_600,
+    refresh_token: expect.stringMatching(/^[\w-]{40,}$/),
+    scope: "cards:read reviews:read",
+    token_type: "Bearer",
+  });
+  expect(refreshedBody.refresh_token).not.toBe(body.refresh_token);
+  await expect(
+    jwtVerify(refreshedBody.access_token, publicKey, {
+      issuer: "https://ep.echoja.com",
+      audience: "https://mcp-ep.echoja.com/mcp",
+    })
+  ).resolves.toMatchObject({
+    payload: {
+      sub: userId,
+      client_id: clientId,
+      resource: "https://mcp-ep.echoja.com/mcp",
+    },
+  });
+
+  const narrowedResponse = await refreshRequest(
+    refreshedBody.refresh_token,
+    "cards:read"
+  );
+  expect(narrowedResponse.status).toBe(200);
+  const narrowedBody = (await narrowedResponse.json()) as {
+    access_token: string;
+    refresh_token: string;
+    scope: string;
+  };
+  expect(narrowedBody).toMatchObject({
+    refresh_token: expect.not.stringMatching(refreshedBody.refresh_token),
+    scope: "cards:read",
+  });
+  await expect(
+    jwtVerify(narrowedBody.access_token, publicKey, {
+      issuer: "https://ep.echoja.com",
+      audience: "https://mcp-ep.echoja.com/mcp",
+    })
+  ).resolves.toMatchObject({ payload: { scope: "cards:read" } });
+
+  vi.setSystemTime(issuedAt + 31 * 24 * 60 * 60 * 1_000);
+  await t.mutation(internal.oauth.deleteExpiredRefreshTokens, {});
+  const refreshReplay = await refreshRequest(body.refresh_token);
+  expect(refreshReplay.status).toBe(400);
+  expect(await refreshReplay.json()).toEqual({ error: "invalid_grant" });
+
+  const revokedFamily = await refreshRequest(narrowedBody.refresh_token);
+  expect(revokedFamily.status).toBe(400);
+  expect(await revokedFamily.json()).toEqual({ error: "invalid_grant" });
 
   const replay = await tokenRequest();
   expect(replay.status).toBe(400);

@@ -3,10 +3,22 @@ import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { env, httpAction } from "./_generated/server";
 import { MCP_RESOURCE, OAUTH_ISSUER, oauthPublicJwk } from "./oauthConfig";
-import { sha256Base64Url } from "./oauthProtocol";
+import {
+  normalizeRequestedScopes,
+  randomOAuthToken,
+  sha256Base64Url,
+} from "./oauthProtocol";
 
 const MAX_TOKEN_REQUEST_BYTES = 16_384;
 const ACCESS_TOKEN_LIFETIME_SECONDS = 3_600;
+const REFRESH_TOKEN_LIFETIME_MS = 30 * 24 * 60 * 60 * 1_000;
+
+type TokenGrant = {
+  userId: Id<"users">;
+  clientId: string;
+  resource: string;
+  scope: string;
+};
 
 const jsonResponse = (body: unknown, status: number) =>
   new Response(JSON.stringify(body), {
@@ -25,6 +37,14 @@ const readSingle = (form: URLSearchParams, name: string) => {
   return values.length === 1 && values[0].length > 0 ? values[0] : null;
 };
 
+const readOptionalSingle = (form: URLSearchParams, name: string) => {
+  const values = form.getAll(name);
+  if (values.length === 0) {
+    return undefined;
+  }
+  return values.length === 1 && values[0].length > 0 ? values[0] : null;
+};
+
 const privateSigningKey = async () => {
   let jwk: JWK;
   try {
@@ -39,6 +59,27 @@ const privateSigningKey = async () => {
   return await importJWK(jwk, "RS256");
 };
 
+const signAccessToken = async (grant: TokenGrant) => {
+  const now = Math.floor(Date.now() / 1_000);
+  return await new SignJWT({
+    client_id: grant.clientId,
+    scope: grant.scope,
+    resource: grant.resource,
+  })
+    .setProtectedHeader({
+      alg: "RS256",
+      kid: oauthPublicJwk.kid,
+      typ: "JWT",
+    })
+    .setIssuer(OAUTH_ISSUER)
+    .setSubject(grant.userId)
+    .setAudience(MCP_RESOURCE)
+    .setJti(randomOAuthToken())
+    .setIssuedAt(now)
+    .setExpirationTime(now + ACCESS_TOKEN_LIFETIME_SECONDS)
+    .sign(await privateSigningKey());
+};
+
 export const token = httpAction(async (ctx, request) => {
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > MAX_TOKEN_REQUEST_BYTES) {
@@ -50,7 +91,61 @@ export const token = httpAction(async (ctx, request) => {
     return oauthError("invalid_request");
   }
   const form = new URLSearchParams(body);
-  if (readSingle(form, "grant_type") !== "authorization_code") {
+  const grantType = readSingle(form, "grant_type");
+  if (!grantType) {
+    return oauthError("invalid_request");
+  }
+  if (grantType === "refresh_token") {
+    const currentRefreshToken = readSingle(form, "refresh_token");
+    const clientId = readSingle(form, "client_id");
+    const resource = readSingle(form, "resource");
+    const rawScope = readOptionalSingle(form, "scope");
+    if (
+      !currentRefreshToken ||
+      !clientId ||
+      resource !== MCP_RESOURCE ||
+      rawScope === null
+    ) {
+      return oauthError("invalid_request");
+    }
+    let scope: string | undefined;
+    try {
+      scope = rawScope ? normalizeRequestedScopes(rawScope) : undefined;
+    } catch {
+      return oauthError("invalid_scope");
+    }
+
+    const now = Date.now();
+    const replacementRefreshToken = randomOAuthToken();
+    const refreshed: TokenGrant | "invalid_scope" | null =
+      await ctx.runMutation(internal.oauth.rotateRefreshToken, {
+        tokenHash: await sha256Base64Url(currentRefreshToken),
+        clientId,
+        resource,
+        replacementTokenHash: await sha256Base64Url(replacementRefreshToken),
+        replacementExpiresAt: now + REFRESH_TOKEN_LIFETIME_MS,
+        scope,
+        now,
+      });
+    if (refreshed === "invalid_scope") {
+      return oauthError("invalid_scope");
+    }
+    if (!refreshed) {
+      return oauthError("invalid_grant");
+    }
+
+    return jsonResponse(
+      {
+        access_token: await signAccessToken(refreshed),
+        token_type: "Bearer",
+        expires_in: ACCESS_TOKEN_LIFETIME_SECONDS,
+        refresh_token: replacementRefreshToken,
+        scope: refreshed.scope,
+      },
+      200
+    );
+  }
+  if (grantType !== "authorization_code") {
     return oauthError("unsupported_grant_type");
   }
 
@@ -70,46 +165,33 @@ export const token = httpAction(async (ctx, request) => {
     return oauthError("invalid_request");
   }
 
-  const exchanged: {
-    userId: Id<"users">;
-    clientId: string;
-    resource: string;
-    scope: string;
-  } | null = await ctx.runMutation(internal.oauth.exchangeAuthorizationCode, {
-    codeHash: await sha256Base64Url(code),
-    clientId,
-    redirectUri,
-    resource,
-    codeChallenge: await sha256Base64Url(codeVerifier),
-    now: Date.now(),
-  });
+  const now = Date.now();
+  const refreshToken = randomOAuthToken();
+  const refreshTokenFamilyId = randomOAuthToken();
+  const exchanged: TokenGrant | null = await ctx.runMutation(
+    internal.oauth.exchangeAuthorizationCode,
+    {
+      codeHash: await sha256Base64Url(code),
+      clientId,
+      redirectUri,
+      resource,
+      codeChallenge: await sha256Base64Url(codeVerifier),
+      refreshTokenHash: await sha256Base64Url(refreshToken),
+      refreshTokenFamilyId,
+      refreshTokenExpiresAt: now + REFRESH_TOKEN_LIFETIME_MS,
+      now,
+    }
+  );
   if (!exchanged) {
     return oauthError("invalid_grant");
   }
 
-  const now = Math.floor(Date.now() / 1_000);
-  const accessToken = await new SignJWT({
-    client_id: exchanged.clientId,
-    scope: exchanged.scope,
-    resource: exchanged.resource,
-  })
-    .setProtectedHeader({
-      alg: "RS256",
-      kid: oauthPublicJwk.kid,
-      typ: "JWT",
-    })
-    .setIssuer(OAUTH_ISSUER)
-    .setSubject(exchanged.userId)
-    .setAudience(MCP_RESOURCE)
-    .setIssuedAt(now)
-    .setExpirationTime(now + ACCESS_TOKEN_LIFETIME_SECONDS)
-    .sign(await privateSigningKey());
-
   return jsonResponse(
     {
-      access_token: accessToken,
+      access_token: await signAccessToken(exchanged),
       token_type: "Bearer",
       expires_in: ACCESS_TOKEN_LIFETIME_SECONDS,
+      refresh_token: refreshToken,
       scope: exchanged.scope,
     },
     200

@@ -1,6 +1,6 @@
 {
   "name": "@english-punch/mcp-server",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "MCP server for English Punch — vocabulary learning tools",
   "type": "module",
   "bin": {

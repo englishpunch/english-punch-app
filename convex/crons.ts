@@ -9,4 +9,10 @@ crons.interval(
   internal.oauth.deleteExpiredAuthorizationCodes
 );
 
+crons.interval(
+  "delete expired OAuth refresh tokens",
+  { hours: 1 },
+  internal.oauth.deleteExpiredRefreshTokens
+);
+
 export default crons;
