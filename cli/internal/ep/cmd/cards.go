@@ -169,8 +169,12 @@ func newCardsCreateCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create <answer>",
 		Short: "Create a flashcard from caller-provided fields",
-		Long: `Create a flashcard by passing every field on the command
-line. The answer and question values are arbitrary non-empty strings.
+		Long: `Create a flashcard with a required answer and --question.
+Hints and explanations (descriptions) are optional: omit --hint or
+--explanation, or pass an empty string, to store a blank value.
+Leading and trailing whitespace is trimmed from all fields.
+
+The answer and question values are arbitrary non-empty strings.
 ep does not call Gemini or any other AI — the caller (a Claude Code
 skill in the primary use case) generates the card content, then passes
 it through the command arguments and flags.
@@ -183,8 +187,17 @@ tokens for the skill to branch on.
 The --bag flag is optional and falls back to default_bag_id in the
 config file (set via 'ep bags default set'). Bag ownership is not
 pre-verified — the server will reject an unauthorized bag id on
-the createCard mutation.`,
-		Example: `  # Happy path: every field supplied, default bag from config
+the createCard mutation.
+
+Each call creates a new card; the backend has no idempotency key.
+After a timeout, inspect the bag before retrying to avoid duplicates.`,
+		Example: `  # Optional fields omitted
+  ep cards create "curriculum" --question "교육과정"
+
+  # Explicit blank fields
+  ep cards create "curriculum" --question "교육과정" --hint "" --explanation ""
+
+  # Every field supplied, default bag from config
   ep cards create "disheartened" \
     --question "I felt ___ after the long rejection letter arrived." \
     --hint "extremely discouraged or low-spirited" \
@@ -218,22 +231,8 @@ the createCard mutation.`,
 					nil,
 				)
 			}
-			if strings.TrimSpace(hint) == "" {
-				return common.NewTokenError(
-					common.TokenMissingRequiredField,
-					"--hint is required",
-					nil,
-				)
-			}
-			if strings.TrimSpace(explanation) == "" {
-				return common.NewTokenError(
-					common.TokenMissingRequiredField,
-					"--explanation is required",
-					nil,
-				)
-			}
 
-			resolvedBag, err := resolveBagID(bagID)
+			resolvedBag, err := cardsResolveBagIDFunc(bagID)
 			if err != nil {
 				return err
 			}
@@ -251,7 +250,7 @@ the createCard mutation.`,
 
 			ctx := cmd.Context()
 
-			client, user, err := authenticatedClient(ctx)
+			client, user, err := cardsAuthenticatedClientFunc(ctx)
 			if err != nil {
 				return err
 			}
@@ -295,8 +294,8 @@ the createCard mutation.`,
 
 	cmd.Flags().StringVar(&bagID, "bag", "", "Target bag ID. Falls back to default_bag_id in the config file.")
 	cmd.Flags().StringVar(&question, "question", "", "Question text. Required.")
-	cmd.Flags().StringVar(&hint, "hint", "", "Short definition or synonym, under 12 words. Required.")
-	cmd.Flags().StringVar(&explanation, "explanation", "", "Usage/scenario/nuance note, 10-70 words. Required.")
+	cmd.Flags().StringVar(&hint, "hint", "", "Optional hint. Omitted or blank values are stored as an empty string.")
+	cmd.Flags().StringVar(&explanation, "explanation", "", "Optional explanation (description). Omitted or blank values are stored as an empty string.")
 
 	return cmd
 }
