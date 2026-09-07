@@ -19,11 +19,13 @@ func newBagsCmd() *cobra.Command {
 		Use:   "bags",
 		Short: "Manage flashcard bags",
 		Long: `Manage flashcard bags (the English Punch term for a study
-collection). Use "ep bags list" to discover IDs, and
+collection). Use "ep bags create <name>" to create a bag,
+"ep bags list" to discover IDs, and
 "ep bags default set <id>" to avoid repeating --bag on every
 card-scoped command.`,
 	}
 
+	cmd.AddCommand(newBagsCreateCmd())
 	cmd.AddCommand(newBagsListCmd())
 	cmd.AddCommand(newBagsDefaultCmd())
 

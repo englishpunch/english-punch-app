@@ -10,10 +10,7 @@ import (
 	"github.com/echoja/english-punch-app/cli/internal/ep/convex"
 )
 
-// These tests exercise the client-side flag validation in
-// ep cards create. They stop before any network call because
-// every failure mode checked here is detected before the command
-// reaches authenticatedClient / client.Mutation.
+// These tests exercise required-field validation and card commands.
 //
 // The assertions check both the token (so the skill's
 // pattern-matching keeps working) and the English message tail
@@ -89,24 +86,6 @@ func TestCardsCreate_WhitespaceQuestion(t *testing.T) {
 		"--explanation", "e",
 	})
 	assertMissingField(t, err, "--question")
-}
-
-func TestCardsCreate_MissingHint(t *testing.T) {
-	err := runCardsCreate([]string{
-		"disheartened",
-		"--question", "I felt ___.",
-		"--explanation", "e",
-	})
-	assertMissingField(t, err, "--hint")
-}
-
-func TestCardsCreate_MissingExplanation(t *testing.T) {
-	err := runCardsCreate([]string{
-		"disheartened",
-		"--question", "I felt ___.",
-		"--hint", "h",
-	})
-	assertMissingField(t, err, "--explanation")
 }
 
 // Validation order: answer is checked first, so when multiple

@@ -1,7 +1,7 @@
 # English Punch versioning
 
 English Punch uses one public product version in `x.x.x` format. The canonical
-source is the root `package.json`. For version `0.3.8`, the same value appears
+source is the root `package.json`. For version `0.3.9`, the same value appears
 at these public seams:
 
 - `ep --version` in a tagged CLI release

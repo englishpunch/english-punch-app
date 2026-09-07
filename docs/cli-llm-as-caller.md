@@ -66,6 +66,23 @@ Before merging a new `ep` subcommand, confirm:
 - [ ] The error-token Go test passes (`go test ./internal/ep/common/...`)
 - [ ] `cd cli && ~/go/bin/golangci-lint run` reports **0 issues** — this catches `errcheck` / `staticcheck` violations that plain `go vet` misses. Do not skip: CI runs `golangci-lint` and will fail the push if anything slips through.
 
+## Creating bags and cards
+
+```bash
+# Create a new bag and return its ID without changing the default bag.
+ep bags create "TOEFL Speaking" --json ok,bagId,name
+
+# Only the answer and question are required; optional fields stay blank.
+ep cards create "curriculum" --bag <bag-id> --question "교육과정" --json ok,cardId
+
+# Explicit empty strings also save blank hints and explanations (descriptions).
+ep cards create "curriculum" --bag <bag-id> --question "교육과정" --hint "" --explanation ""
+```
+
+- `ep bags create --json` discovers output fields without creating a bag or requiring login.
+- Creation trims leading and trailing whitespace. Bag names, card questions, and card answers must be non-empty.
+- Bag and card creation are not idempotent: the backend permits duplicates and has no idempotency key. After a timeout, inspect existing bags or cards before retrying.
+
 ## References
 
 - Active migration plan: `thoughts/plans/2026-04-11-cli-llm-as-caller.md`
