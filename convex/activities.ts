@@ -255,18 +255,24 @@ export const getActivityHeatmap = query({
       fromDate <= toDate ? [fromDate, toDate] : [toDate, fromDate];
 
     // Until this user's backfill is complete, keep returning exact event totals.
-    // The indexed readiness check reads at most one event, never the history.
+    // Indexed readiness checks read at most one event and one unverified day.
     const pending = await ctx.db
       .query("activities")
-      .withIndex("by_userId_and_dailyCounted", (q) =>
-        q.eq("userId", userId).eq("dailyCounted", undefined)
+      .withIndex("by_dailyCounted_and_userId", (q) =>
+        q.eq("dailyCounted", undefined).eq("userId", userId)
       )
       .first();
     const countsByDate = new Map<
       string,
       { questionSeenCount: number; revealCount: number; ratedCount: number }
     >();
-    if (pending) {
+    const unverified = await ctx.db
+      .query("activityDailyCounts")
+      .withIndex("by_verified_and_userId", (q) =>
+        q.eq("verified", false).eq("userId", userId)
+      )
+      .first();
+    if (pending || unverified) {
       const activities = await ctx.db
         .query("activities")
         .withIndex("by_user_date_time", (q) =>

@@ -196,7 +196,10 @@ export const learningTables = {
     questionSeenCount: v.number(),
     revealCount: v.number(),
     ratedCount: v.number(),
-  }).index("by_userId_and_localDate", ["userId", "localDate"]),
+    verified: v.boolean(),
+  })
+    .index("by_userId_and_localDate", ["userId", "localDate"])
+    .index("by_verified_and_userId", ["verified", "userId"]),
 
   activities: defineTable({
     userId: v.id("users"),
@@ -217,7 +220,7 @@ export const learningTables = {
     dailyCounted: v.optional(v.literal(true)),
     payload: v.optional(v.any()),
   })
-    .index("by_userId_and_dailyCounted", ["userId", "dailyCounted"])
+    .index("by_dailyCounted_and_userId", ["dailyCounted", "userId"])
     .index("by_user_and_occurred_at", ["userId", "occurredAt"])
     .index("by_user_event_date", ["userId", "eventType", "localDate"])
     .index("by_user_date_time", ["userId", "localDate", "occurredAt"])

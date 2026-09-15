@@ -7,9 +7,10 @@ backfill uses each event's stored local date, even if the user's timezone has
 changed since that event.
 
 The migration is additive: event payloads and the existing history API stay
-unchanged. Until a user's last uncounted event is migrated, their heatmap uses
-the original event query. An indexed lookup of at most one uncounted event gates
-the switch, so partially backfilled totals never appear. Users with no legacy
+unchanged. Until a user's last uncounted event is migrated and every historical daily
+summary is verified against its source events, their heatmap uses the original
+event query. Two indexed lookups gate the switch, so incomplete or unverified
+totals never appear. Users with no legacy
 events use summaries immediately. All future event writers must use
 `logActivity`; events must not be deleted or recategorized without maintaining
 the associated counts.
@@ -40,17 +41,27 @@ node --env-file=.env.convex-selfhost node_modules/convex/bin/main.js run \
   activityMigrations:backfillDailyCounts '{"dryRun":true}'
 ```
 
-Start or resume the tracked migration. The component schedules batches of 50;
-new events continue to be counted transactionally while it runs.
+Start or resume the tracked migration sequence. The component counts batches
+of 50 events, then schedules verification for each historical day. Verification
+reads at most 100 events or 1 MiB per page and restarts a day if live writes change
+its totals between pages. New events continue to be counted transactionally.
 
 ```sh
 node --env-file=.env.convex-selfhost node_modules/convex/bin/main.js run \
-  activityMigrations:backfillDailyCounts
+  activityMigrations:runDailyCounts
 node --env-file=.env.convex-selfhost node_modules/convex/bin/main.js run \
   --component migrations lib:getStatus
+node --env-file=.env.convex-selfhost node_modules/convex/bin/main.js run \
+  activityMigrations:verificationStatus
 ```
 
-Confirm `isDone` and no migration error. Re-running resumes or skips completed
+Confirm both tracked migrations have `isDone` and no migration error, then
+wait for `verificationStatus.ready` to become `true`. The verification migration
+only schedules checks; its completion alone does not mean checks have finished.
+Inspect scheduled-function failures if verification remains pending. A mismatch
+leaves summary reads disabled for that user. Investigate and repair the incorrect
+summary before restarting `activityMigrations:verifyDailyCounts` with
+`{"reset":true}` to reschedule unfinished checks. Re-running resumes or skips completed
 work. An intentional restart with `{"reset":true}` is also safe: already-counted
 events are not counted again. Never clear daily summaries while retaining the
 per-event markers.

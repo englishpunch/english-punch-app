@@ -5,7 +5,8 @@ import type { MutationCtx } from "./_generated/server";
 // this path, so retries, duplicate events, and migration restarts cannot recount.
 export async function countActivityOnce(
   ctx: MutationCtx,
-  activity: Doc<"activities">
+  activity: Doc<"activities">,
+  backfill = false
 ) {
   if (activity.dailyCounted) {
     return;
@@ -28,12 +29,16 @@ export async function countActivityOnce(
       Number(activity.eventType === "review_rated"),
   };
   if (existing) {
-    await ctx.db.patch("activityDailyCounts", existing._id, counts);
+    await ctx.db.patch("activityDailyCounts", existing._id, {
+      ...counts,
+      verified: backfill ? false : existing.verified,
+    });
   } else {
     await ctx.db.insert("activityDailyCounts", {
       userId: activity.userId,
       localDate: activity.localDate,
       ...counts,
+      verified: !backfill,
     });
   }
   await ctx.db.patch("activities", activity._id, { dailyCounted: true });

@@ -139,6 +139,17 @@ it("preserves exact heatmap totals through partial backfill and interleaved writ
     revealCount: 2,
     ratedCount: 2,
   });
+  await t.mutation(internal.activityMigrations.verifyDayPage, {
+    dayId: ownDays[0]._id,
+    cursor: null,
+    expected: null,
+    counts: { questionSeenCount: 0, revealCount: 0, ratedCount: 0 },
+  });
+  expect(
+    (await t.run((ctx) => ctx.db.get("activityDailyCounts", ownDays[0]._id)))
+      ?.verified
+  ).toBe(true);
+  expect(await query()).toEqual(during);
 });
 
 it("rolls back counts and event markers during a migration dry run", async () => {
@@ -231,21 +242,131 @@ it("runs the resumable migration through its scheduled component runner", async 
       });
     }
   });
-  await t.mutation(internal.activityMigrations.backfillDailyCounts, {
+  await t.mutation(internal.activityMigrations.runDailyCounts, {
     batchSize: 2,
   });
   await t.finishAllScheduledFunctions(vi.runAllTimers);
   expect(
     await t.run((ctx) => ctx.db.query("activityDailyCounts").first())
-  ).toMatchObject({ ratedCount: 5 });
+  ).toMatchObject({ ratedCount: 5, verified: true });
+  expect(
+    await t.query(internal.activityMigrations.verificationStatus, {})
+  ).toEqual({
+    ready: true,
+    backfillPending: false,
+    verificationPending: false,
+  });
   expect(
     await t.run((ctx) =>
       ctx.db
         .query("activities")
-        .withIndex("by_userId_and_dailyCounted", (q) =>
-          q.eq("userId", userId).eq("dailyCounted", undefined)
+        .withIndex("by_dailyCounted_and_userId", (q) =>
+          q.eq("dailyCounted", undefined).eq("userId", userId)
         )
         .first()
     )
   ).toBeNull();
+});
+
+it("refuses to serve a historical summary whose verified totals do not match", async () => {
+  const t = setup();
+  const userId = await t.run((ctx) => ctx.db.insert("users", {}));
+  await t.run(async (ctx) => {
+    await ctx.db.insert("activities", {
+      userId,
+      eventType: "review_rated",
+      occurredAt: 0,
+      localDate: "2026-09-15",
+      timezone: "Asia/Seoul",
+      source: "web",
+      dedupeKey: "legacy",
+      schemaVersion: 1,
+    });
+  });
+  await t.mutation(internal.activityMigrations.backfillDailyCounts, {
+    oneBatchOnly: true,
+    cursor: null,
+    dryRun: false,
+  });
+  const summary = await t.run((ctx) =>
+    ctx.db.query("activityDailyCounts").first()
+  );
+  await t.run((ctx) =>
+    ctx.db.patch("activityDailyCounts", summary!._id, { ratedCount: 2 })
+  );
+  await expect(
+    t.mutation(internal.activityMigrations.verifyDayPage, {
+      dayId: summary!._id,
+      cursor: null,
+      expected: null,
+      counts: { questionSeenCount: 0, revealCount: 0, ratedCount: 0 },
+    })
+  ).rejects.toThrow("Daily activity totals differ");
+  const heatmap = await t
+    .withIdentity({ subject: userId })
+    .query(api.activities.getActivityHeatmap, {
+      fromDate: "2026-09-15",
+      toDate: "2026-09-15",
+    });
+  expect(heatmap.days[0].ratedCount).toBe(1);
+  expect(
+    await t.query(internal.activityMigrations.verificationStatus, {})
+  ).toEqual({
+    ready: false,
+    backfillPending: false,
+    verificationPending: true,
+  });
+});
+
+it("restarts a paginated verification when a backdated live write arrives between pages", async () => {
+  vi.useFakeTimers();
+  const t = setup();
+  const userId = await t.run((ctx) => ctx.db.insert("users", {}));
+  const base = Date.parse("2026-09-15T01:00:00Z");
+  await t.run(async (ctx) => {
+    for (let i = 0; i < 205; i++) {
+      await ctx.db.insert("activities", {
+        userId,
+        eventType: "review_rated",
+        occurredAt: base + i,
+        localDate: "2026-09-15",
+        timezone: "Asia/Seoul",
+        source: "cli",
+        dedupeKey: `legacy-${i}`,
+        schemaVersion: 1,
+      });
+    }
+  });
+  await t.mutation(internal.activityMigrations.backfillDailyCounts, {
+    oneBatchOnly: true,
+    cursor: null,
+    dryRun: false,
+    batchSize: 500,
+  });
+  const summary = await t.run((ctx) =>
+    ctx.db.query("activityDailyCounts").first()
+  );
+  await t.mutation(internal.activityMigrations.verifyDayPage, {
+    dayId: summary!._id,
+    cursor: null,
+    expected: null,
+    counts: { questionSeenCount: 0, revealCount: 0, ratedCount: 0 },
+  });
+  expect(
+    (await t.run((ctx) => ctx.db.get("activityDailyCounts", summary!._id)))
+      ?.verified
+  ).toBe(false);
+  await t.run((ctx) =>
+    logActivity(ctx, {
+      userId,
+      eventType: "review_question_seen",
+      occurredAt: base - 60000,
+      source: "cli",
+      dedupeKey: "backdated-live",
+    })
+  );
+  await t.finishAllScheduledFunctions(vi.runAllTimers);
+  expect(
+    await t.run((ctx) => ctx.db.get("activityDailyCounts", summary!._id))
+  ).toMatchObject({ ratedCount: 205, questionSeenCount: 1, verified: true });
 });
