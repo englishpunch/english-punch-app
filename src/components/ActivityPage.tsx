@@ -1,6 +1,6 @@
 import { Button } from "./Button";
 import { TableWrapper, Table, THead, TBody, Tr, Th, Td } from "./Table";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import * as Tooltip from "@radix-ui/react-tooltip";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -25,26 +25,11 @@ export default function ActivityPage() {
     api.activities.getActivityHeatmap,
     userId ? { userId } : "skip"
   );
-  const activeDate = useMemo(() => {
-    if (!heatmap) {
-      return null;
-    }
-
-    const selectedDateExists = heatmap.days.some(
-      (day) => day.date === selectedDate
-    );
-    if (selectedDate && selectedDateExists) {
-      return selectedDate;
-    }
-
-    const latestRevealDay = [...heatmap.days]
-      .reverse()
-      .find(
-        (day) =>
-          day.ratedCount > 0 || day.revealCount > 0 || day.questionSeenCount > 0
-      );
-    return latestRevealDay?.date ?? heatmap.toDate;
-  }, [heatmap, selectedDate]);
+  const latestDay = useQuery(
+    api.activities.getLatestActivityDate,
+    userId ? {} : "skip"
+  );
+  const activeDate = selectedDate ?? latestDay?.date;
 
   const selectedDay = useQuery(
     api.activities.getActivitiesByDate,
@@ -54,20 +39,11 @@ export default function ActivityPage() {
   const filteredActivities = selectedDay?.activities.filter(
     (activity) => activity.eventType === eventFilter
   );
-  const totalActivities = useMemo(
-    () =>
-      heatmap?.days.reduce(
-        (total, day) =>
-          total + day.questionSeenCount + day.revealCount + day.ratedCount,
-        0
-      ) ?? 0,
-    [heatmap]
-  );
   const handleHeatmapDaySelect = (date: string) => {
     setSelectedDate(date);
   };
 
-  if (loggedInUser === undefined || (userId && heatmap === undefined)) {
+  if (loggedInUser === undefined) {
     return <Spinner wrapper="page" />;
   }
 
@@ -84,10 +60,6 @@ export default function ActivityPage() {
     );
   }
 
-  if (!heatmap) {
-    return <Spinner wrapper="page" />;
-  }
-
   return (
     <div className="relative space-y-4 py-3">
       <section
@@ -95,39 +67,50 @@ export default function ActivityPage() {
         data-testid="activity-heatmap"
         className="space-y-2 px-3"
       >
-        <div className="text-right text-xs text-gray-500">
-          {formatDateRange(heatmap.fromDate, heatmap.toDate)}
-        </div>
-
-        <div className="overflow-x-auto pb-1">
-          <Tooltip.Provider
-            delayDuration={0}
-            skipDelayDuration={0}
-            disableHoverableContent
+        {heatmap === undefined ? (
+          <div
+            className="flex h-36 items-center justify-center"
+            data-testid="activity-heatmap-loading"
           >
-            <div
-              role="group"
-              aria-label={t("activity.heatmapGridAriaLabel")}
-              data-testid="activity-heatmap-grid"
-              className="grid w-full min-w-[500px] grid-flow-col grid-rows-7"
-              style={{
-                gridTemplateColumns: `repeat(${Math.ceil(heatmap.days.length / 7)}, minmax(0, 1fr))`,
-              }}
-            >
-              {heatmap.days.map((day) => (
-                <ActivityHeatmapCell
-                  key={day.date}
-                  day={day}
-                  active={activeDate === day.date}
-                  onSelect={handleHeatmapDaySelect}
-                />
-              ))}
+            <Spinner />
+          </div>
+        ) : (
+          <>
+            <div className="text-right text-xs text-gray-500">
+              {formatDateRange(heatmap.fromDate, heatmap.toDate)}
             </div>
-          </Tooltip.Provider>
-        </div>
+
+            <div className="overflow-x-auto pb-1">
+              <Tooltip.Provider
+                delayDuration={0}
+                skipDelayDuration={0}
+                disableHoverableContent
+              >
+                <div
+                  role="group"
+                  aria-label={t("activity.heatmapGridAriaLabel")}
+                  data-testid="activity-heatmap-grid"
+                  className="grid w-full min-w-[500px] grid-flow-col grid-rows-7"
+                  style={{
+                    gridTemplateColumns: `repeat(${Math.ceil(heatmap.days.length / 7)}, minmax(0, 1fr))`,
+                  }}
+                >
+                  {heatmap.days.map((day) => (
+                    <ActivityHeatmapCell
+                      key={day.date}
+                      day={day}
+                      active={activeDate === day.date}
+                      onSelect={handleHeatmapDaySelect}
+                    />
+                  ))}
+                </div>
+              </Tooltip.Provider>
+            </div>
+          </>
+        )}
       </section>
 
-      {totalActivities === 0 ? (
+      {latestDay?.hasActivity === false && !selectedDate ? (
         <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-8 text-center shadow-sm">
           <p className="text-lg font-semibold text-gray-900">
             {t("activity.emptyTitle")}

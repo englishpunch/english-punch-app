@@ -8,6 +8,7 @@ import type { Id } from "./_generated/dataModel";
 import { v } from "convex/values";
 import type { Value } from "convex/values";
 import { dayjs, DATE_FORMAT } from "../src/lib/dayjs";
+import { countActivityOnce } from "./activityDailyCounts";
 import { requireAuthenticatedUserId } from "./authUser";
 
 export type ActivityEventType =
@@ -71,7 +72,7 @@ export async function logActivity(
   const occurredAt = args.occurredAt ?? Date.now();
   const timezone = await getUserTimezone(ctx, args.userId);
 
-  return await ctx.db.insert("activities", {
+  const activityId = await ctx.db.insert("activities", {
     userId: args.userId,
     eventType: args.eventType,
     occurredAt,
@@ -85,6 +86,12 @@ export async function logActivity(
     schemaVersion: ACTIVITY_SCHEMA_VERSION,
     payload: args.payload,
   });
+  const activity = await ctx.db.get("activities", activityId);
+  if (!activity) {
+    throw new Error("Inserted activity could not be loaded");
+  }
+  await countActivityOnce(ctx, activity);
+  return activityId;
 }
 
 export async function logReviewQuestionSeen(
@@ -247,40 +254,56 @@ export const getActivityHeatmap = query({
     const [startDate, endDate] =
       fromDate <= toDate ? [fromDate, toDate] : [toDate, fromDate];
 
-    const activities = await ctx.db
+    // Until this user's backfill is complete, keep returning exact event totals.
+    // The indexed readiness check reads at most one event, never the history.
+    const pending = await ctx.db
       .query("activities")
-      .withIndex("by_user_date_time", (q) =>
-        q
-          .eq("userId", userId)
-          .gte("localDate", startDate)
-          .lte("localDate", endDate)
+      .withIndex("by_userId_and_dailyCounted", (q) =>
+        q.eq("userId", userId).eq("dailyCounted", undefined)
       )
-      .collect();
-
+      .first();
     const countsByDate = new Map<
       string,
-      {
-        questionSeenCount: number;
-        revealCount: number;
-        ratedCount: number;
-      }
+      { questionSeenCount: number; revealCount: number; ratedCount: number }
     >();
-    for (const activity of activities) {
-      const counts = countsByDate.get(activity.localDate) ?? {
-        questionSeenCount: 0,
-        revealCount: 0,
-        ratedCount: 0,
-      };
-
-      if (activity.eventType === "review_question_seen") {
-        counts.questionSeenCount++;
-      } else if (activity.eventType === "review_answer_revealed") {
-        counts.revealCount++;
-      } else if (activity.eventType === "review_rated") {
-        counts.ratedCount++;
+    if (pending) {
+      const activities = await ctx.db
+        .query("activities")
+        .withIndex("by_user_date_time", (q) =>
+          q
+            .eq("userId", userId)
+            .gte("localDate", startDate)
+            .lte("localDate", endDate)
+        )
+        .collect();
+      for (const activity of activities) {
+        const counts = countsByDate.get(activity.localDate) ?? {
+          questionSeenCount: 0,
+          revealCount: 0,
+          ratedCount: 0,
+        };
+        if (activity.eventType === "review_question_seen") {
+          counts.questionSeenCount++;
+        } else if (activity.eventType === "review_answer_revealed") {
+          counts.revealCount++;
+        } else {
+          counts.ratedCount++;
+        }
+        countsByDate.set(activity.localDate, counts);
       }
-
-      countsByDate.set(activity.localDate, counts);
+    } else {
+      const dailyCounts = await ctx.db
+        .query("activityDailyCounts")
+        .withIndex("by_userId_and_localDate", (q) =>
+          q
+            .eq("userId", userId)
+            .gte("localDate", startDate)
+            .lte("localDate", endDate)
+        )
+        .collect();
+      for (const day of dailyCounts) {
+        countsByDate.set(day.localDate, day);
+      }
     }
 
     const days = enumerateDates(startDate, endDate).map((date) => {
@@ -303,6 +326,32 @@ export const getActivityHeatmap = query({
       toDate: endDate,
       days,
     };
+  },
+});
+
+// Independent of the heatmap and its migration: one indexed event lookup.
+export const getLatestActivityDate = query({
+  args: {},
+  returns: v.object({ date: v.string(), hasActivity: v.boolean() }),
+  handler: async (ctx) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    const timezone = await getUserTimezone(ctx, userId);
+    const toDate = dayjs(Date.now()).tz(timezone).format(DATE_FORMAT);
+    const fromDate = dayjs(toDate)
+      .subtract(1, "year")
+      .startOf("week")
+      .format(DATE_FORMAT);
+    const latest = await ctx.db
+      .query("activities")
+      .withIndex("by_user_date_time", (q) =>
+        q
+          .eq("userId", userId)
+          .gte("localDate", fromDate)
+          .lte("localDate", toDate)
+      )
+      .order("desc")
+      .first();
+    return { date: latest?.localDate ?? toDate, hasActivity: latest !== null };
   },
 });
 

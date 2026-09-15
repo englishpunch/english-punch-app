@@ -17,6 +17,9 @@ importers:
       '@convex-dev/auth':
         specifier: ^0.0.95
         version: 0.0.95(@auth/core@0.41.3)(convex@1.44.0(react@19.2.8))(react@19.2.8)
+      '@convex-dev/migrations':
+        specifier: ^0.3.6
+        version: 0.3.6(convex-helpers@0.1.124(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76))(convex@1.44.0(react@19.2.8))
       '@google/genai':
         specifier: ^2.17.1
         version: 2.17.1(@modelcontextprotocol/sdk@1.30.0(zod@3.25.76))
@@ -414,6 +417,12 @@ packages:
     resolution: {integrity: sha512-7bYP8Fkk+19L7LWl3xIqUqq/0yIEZNoUQHOodZKIvupqmgaMisz8NKz6OkmMwBVLUQ0sh/9+iPK1OyASANiWyw==}
     peerDependencies:
       convex: ^1.43.0
+
+  '@convex-dev/migrations@0.3.6':
+    resolution: {integrity: sha512-cURYG4uy323MDi55QWNF5HAGemS4QspSgJ4uP+gGPAJdBLBbk2KFO7toFlKhacc1NinJQiG6+D/YEFyFyBS1/A==}
+    peerDependencies:
+      convex: ^1.42.0
+      convex-helpers: ^0.1.115
 
   '@edge-runtime/primitives@6.0.0':
     resolution: {integrity: sha512-FqoxaBT+prPBHBwE1WXS1ocnu/VLTQyZ6NMUBAdbP7N2hsFTTxMC/jMu2D/8GAlMQfxeuppcPuCUk/HO3fpIvA==}
@@ -2086,6 +2095,28 @@ packages:
 
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
+
+  convex-helpers@0.1.124:
+    resolution: {integrity: sha512-Gbu/jq6I3x5Y51cXP5c7+CI3t15vX5Xi2G0tOym3rxpBtYqrI+qWwxkqZgJYrHHccY42wZudB8h6kS3fak8Aeg==}
+    hasBin: true
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      convex: ^1.43.0
+      hono: ^4.0.5
+      react: ^17.0.2 || ^18.0.0 || ^19.0.0
+      typescript: ^5.5 || ^6.0.0 || ^7.0.0
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      '@standard-schema/spec':
+        optional: true
+      hono:
+        optional: true
+      react:
+        optional: true
+      typescript:
+        optional: true
+      zod:
+        optional: true
 
   convex-test@0.0.55:
     resolution: {integrity: sha512-ablJ6vR3WUpyTaYrrRQf8yxInGrhHyqBEQsCFzloda3G0MDEu2RMKNGUkvlBXYWPiiEP0UIKPS7gZuLbqGnvQw==}
@@ -4332,6 +4363,11 @@ snapshots:
       - supports-color
       - typescript
 
+  '@convex-dev/migrations@0.3.6(convex-helpers@0.1.124(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76))(convex@1.44.0(react@19.2.8))':
+    dependencies:
+      convex: 1.44.0(react@19.2.8)
+      convex-helpers: 0.1.124(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76)
+
   '@edge-runtime/primitives@6.0.0': {}
 
   '@edge-runtime/vm@5.0.0':
@@ -5698,6 +5734,16 @@ snapshots:
       argue-cli: 3.1.0
 
   convert-source-map@2.0.0: {}
+
+  convex-helpers@0.1.124(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76):
+    dependencies:
+      convex: 1.44.0(react@19.2.8)
+    optionalDependencies:
+      '@standard-schema/spec': 1.1.0
+      hono: 4.13.3
+      react: 19.2.8
+      typescript: 6.0.3
+      zod: 3.25.76
 
   convex-test@0.0.55(convex@1.44.0(react@19.2.8)):
     dependencies:
