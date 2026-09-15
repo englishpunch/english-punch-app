@@ -190,6 +190,17 @@ export const learningTables = {
    * `reviewLogs` remains the ledger of completed FSRS reviews. This table owns
    * the behavior timeline and reveal-based heatmap shown in the Activity tab.
    */
+  activityDailyCounts: defineTable({
+    userId: v.id("users"),
+    localDate: v.string(),
+    questionSeenCount: v.number(),
+    revealCount: v.number(),
+    ratedCount: v.number(),
+    verified: v.boolean(),
+  })
+    .index("by_userId_and_localDate", ["userId", "localDate"])
+    .index("by_verified_and_userId", ["verified", "userId"]),
+
   activities: defineTable({
     userId: v.id("users"),
     eventType: v.union(
@@ -206,8 +217,10 @@ export const learningTables = {
     attemptId: v.optional(v.string()),
     dedupeKey: v.string(),
     schemaVersion: v.number(),
+    dailyCounted: v.optional(v.literal(true)),
     payload: v.optional(v.any()),
   })
+    .index("by_dailyCounted_and_userId", ["dailyCounted", "userId"])
     .index("by_user_and_occurred_at", ["userId", "occurredAt"])
     .index("by_user_event_date", ["userId", "eventType", "localDate"])
     .index("by_user_date_time", ["userId", "localDate", "occurredAt"])

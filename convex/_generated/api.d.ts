@@ -9,6 +9,8 @@
  */
 
 import type * as activities from "../activities.js";
+import type * as activityDailyCounts from "../activityDailyCounts.js";
+import type * as activityMigrations from "../activityMigrations.js";
 import type * as admin from "../admin.js";
 import type * as ai from "../ai.js";
 import type * as auth from "../auth.js";
@@ -35,6 +37,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   activities: typeof activities;
+  activityDailyCounts: typeof activityDailyCounts;
+  activityMigrations: typeof activityMigrations;
   admin: typeof admin;
   ai: typeof ai;
   auth: typeof auth;
@@ -81,5 +85,6 @@ export declare const internal: FilterApi<
 >;
 
 export declare const components: {
+  migrations: import("@convex-dev/migrations/_generated/component.js").ComponentApi<"migrations">;
   dueCards: import("@convex-dev/aggregate/_generated/component.js").ComponentApi<"dueCards">;
 };
