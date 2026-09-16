@@ -21,7 +21,7 @@ describe("English Punch MCP tools", () => {
 
     expect(client.getServerVersion()).toEqual({
       name: "english-punch",
-      version: "0.3.9",
+      version: "0.3.10",
     });
 
     const { tools } = await client.listTools();
@@ -87,8 +87,15 @@ describe("English Punch MCP tools", () => {
     await server.close();
   });
 
-  it("reports unsuccessful card writes instead of claiming success", async () => {
-    const mutation = vi.fn().mockResolvedValue(false);
+  it.each([
+    { updated: false, scheduleReset: false },
+    { updated: true, scheduleReset: false },
+    { updated: true, scheduleReset: true },
+  ])("reports the backend update result accurately: %j", async (outcome) => {
+    const mutation = vi
+      .fn()
+      .mockResolvedValueOnce(outcome)
+      .mockResolvedValue(false);
     const convexClient = { mutation } as unknown as ConvexHttpClient;
     const server = createEnglishPunchServer(convexClient, ["cards:write"]);
     const client = new Client({ name: "test-client", version: "1.0.0" });
@@ -114,10 +121,7 @@ describe("English Punch MCP tools", () => {
       arguments: { cardId: "card_123", bagId: "bag_123" },
     });
 
-    expect(updateResult.structuredContent).toMatchObject({
-      updated: false,
-      scheduleReset: false,
-    });
+    expect(updateResult.structuredContent).toMatchObject(outcome);
     expect(deleteResult.structuredContent).toMatchObject({ deleted: false });
 
     await client.close();

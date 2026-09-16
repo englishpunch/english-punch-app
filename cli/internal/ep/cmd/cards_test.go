@@ -112,7 +112,7 @@ func TestCardsQuestionAndAnswerHelpIsFormatAgnostic(t *testing.T) {
 	}
 
 	replace := newCardsReplaceCmd()
-	if got := replace.Flags().Lookup("question").Usage; got != "Replacement question text. Required." {
+	if got := replace.Flags().Lookup("question").Usage; got != "Replacement question text. Defaults to the current question when omitted." {
 		t.Fatalf("replace --question usage = %q", got)
 	}
 	if got := replace.Flags().Lookup("answer").Usage; got != "Replacement answer text. Defaults to the current answer when omitted." {
@@ -199,7 +199,7 @@ func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
 	}
 }
 
-func TestCardsReplace_RequiresQuestionAndHint(t *testing.T) {
+func TestCardsReplace_RejectsBlankQuestionAndAnswer(t *testing.T) {
 	resetCardsCommandTestState()
 	t.Cleanup(resetCardsCommandTestState)
 
@@ -209,7 +209,7 @@ func TestCardsReplace_RequiresQuestionAndHint(t *testing.T) {
 
 	err := runCardsCommand(cmd, []string{
 		"card-1",
-		"--hint", "discouraged, dejected",
+		"--question", "",
 	})
 	assertMissingField(t, err, "--question")
 
@@ -219,9 +219,9 @@ func TestCardsReplace_RequiresQuestionAndHint(t *testing.T) {
 
 	err = runCardsCommand(cmd, []string{
 		"card-1",
-		"--question", "I felt ___.",
+		"--answer", "",
 	})
-	assertMissingField(t, err, "--hint")
+	assertMissingField(t, err, "--answer")
 }
 
 func TestCardsGet_CardNotFoundTokenPropagates(t *testing.T) {
@@ -334,4 +334,45 @@ func TestCardsList_RejectsInvalidLimit(t *testing.T) {
 
 func ptr(value string) *string {
 	return &value
+}
+
+func TestCardsReplace_HelperOnlyUpdates(t *testing.T) {
+	for _, field := range []string{"hint", "explanation"} {
+		for _, value := range []string{"updated helper", ""} {
+			t.Run(field+"/"+value, func(t *testing.T) {
+				resetCardsCommandTestState()
+				t.Cleanup(resetCardsCommandTestState)
+				cardsResolveBagIDFunc = func(string) (string, error) { return "bag-1", nil }
+				cardsAuthenticatedClientFunc = func(context.Context) (*convex.Client, *convex.User, error) {
+					return &convex.Client{}, &convex.User{ID: "user-1"}, nil
+				}
+				cardsGetCardFunc = func(context.Context, *convex.Client, string, string, string) (*cardDetail, error) {
+					return &cardDetail{ID: "card-1", Question: "She felt ___.", Answer: "disheartened", Hint: ptr("discouraged"), Explanation: ptr("old explanation")}, nil
+				}
+				called := false
+				cardsReplaceCardContentAndResetScheduleFunc = func(_ context.Context, _ *convex.Client, _, _ string, got cardReplacement) error {
+					called = true
+					if got.Question != "She felt ___." || got.Answer != "disheartened" {
+						t.Fatalf("study content changed: %+v", got)
+					}
+					wantHint, wantExplanation := "discouraged", "old explanation"
+					if field == "hint" {
+						wantHint = value
+					} else {
+						wantExplanation = value
+					}
+					if got.Hint != wantHint || got.Explanation == nil || *got.Explanation != wantExplanation {
+						t.Fatalf("unexpected helper content: %+v", got)
+					}
+					return nil
+				}
+				if err := runCardsCommand(newCardsReplaceCmd(), []string{"card-1", "--" + field, value}); err != nil {
+					t.Fatal(err)
+				}
+				if !called {
+					t.Fatal("update was not called")
+				}
+			})
+		}
+	}
 }

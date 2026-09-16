@@ -66,7 +66,7 @@ export default function CardEditPage() {
       answer: formData.answer,
       hint: formData.hint,
       explanation: formData.explanation,
-      context: formData.context || undefined,
+      context: formData.context,
     });
 
     toast.success(t("cardEdit.updated"));
