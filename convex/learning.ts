@@ -920,7 +920,7 @@ type CardContentReplacementArgs = {
   expression?: string;
 };
 
-export const replaceCardContentAndResetScheduleHandler = async (
+const replaceCardContentHandler = async (
   ctx: MutationCtx,
   args: CardContentReplacementArgs
 ) => {
@@ -935,8 +935,19 @@ export const replaceCardContentAndResetScheduleHandler = async (
     card.deletedAt !== undefined ||
     bag.deletedAt !== undefined
   ) {
-    return false;
+    return { updated: false, scheduleReset: false };
   }
+
+  // Optional metadata omitted by older clients must survive helper-only edits.
+  const context = args.context ?? card.context;
+  const sourceWord = args.sourceWord ?? card.sourceWord;
+  const expression = args.expression ?? card.expression;
+  const preserveSchedule =
+    args.question === card.question &&
+    args.answer === card.answer &&
+    (context ?? "") === (card.context ?? "") &&
+    (sourceWord ?? "") === (card.sourceWord ?? "") &&
+    (expression ?? "") === (card.expression ?? "");
 
   const now = Date.now();
   await ctx.db.patch("cards", args.cardId, {
@@ -944,16 +955,19 @@ export const replaceCardContentAndResetScheduleHandler = async (
     answer: args.answer,
     hint: args.hint,
     explanation: args.explanation,
-    context: args.context,
-    sourceWord: args.sourceWord,
-    expression: args.expression,
-    ...initialSchedule(now),
+    context,
+    sourceWord,
+    expression,
+    ...(preserveSchedule ? {} : initialSchedule(now)),
   });
   await trackUpdatedCard(ctx, card);
 
-  const newCards = bag.newCards + (card.state === 0 ? 0 : 1);
-  const learningCards = bag.learningCards - (card.state === 1 ? 1 : 0);
-  const reviewCards = bag.reviewCards - (card.state === 2 ? 1 : 0);
+  const newCards =
+    bag.newCards + (preserveSchedule || card.state === 0 ? 0 : 1);
+  const learningCards =
+    bag.learningCards - (!preserveSchedule && card.state === 1 ? 1 : 0);
+  const reviewCards =
+    bag.reviewCards - (!preserveSchedule && card.state === 2 ? 1 : 0);
   await ctx.db.patch("bags", args.bagId, {
     newCards,
     learningCards,
@@ -961,8 +975,14 @@ export const replaceCardContentAndResetScheduleHandler = async (
     lastModified: new Date(now).toISOString(),
   });
 
-  return true;
+  return { updated: true, scheduleReset: !preserveSchedule };
 };
+
+// Preserve the boolean response expected by deployed frontend and CLI clients.
+export const replaceCardContentAndResetScheduleHandler = async (
+  ctx: MutationCtx,
+  args: CardContentReplacementArgs
+) => (await replaceCardContentHandler(ctx, args)).updated;
 
 /** Create a card. */
 export const createCard = mutation({
@@ -1009,29 +1029,42 @@ export const createCard = mutation({
   },
 });
 
-/** Replace card content and reset the FSRS schedule. */
+const replaceCardContentForOwner = async (
+  ctx: MutationCtx,
+  args: CardContentReplacementArgs
+) => {
+  const userId = await requireAuthenticatedUserId(ctx);
+  const [card, bag] = await Promise.all([
+    ctx.db.get("cards", args.cardId),
+    ctx.db.get("bags", args.bagId),
+  ]);
+  if (
+    !card ||
+    !bag ||
+    card.userId !== userId ||
+    bag.userId !== userId ||
+    card.bagId !== bag._id ||
+    card.deletedAt !== undefined ||
+    bag.deletedAt !== undefined
+  ) {
+    throw new ConvexError("Card not found");
+  }
+  return await replaceCardContentHandler(ctx, args);
+};
+
+/** Replace content and report whether the schedule changed. */
+export const replaceCardContent = mutation({
+  args: cardContentReplacementArgs,
+  returns: v.object({ updated: v.boolean(), scheduleReset: v.boolean() }),
+  handler: replaceCardContentForOwner,
+});
+
+/** Compatibility endpoint: helper-only edits now preserve review state. */
 export const replaceCardContentAndResetSchedule = mutation({
   args: cardContentReplacementArgs,
   returns: v.boolean(),
-  handler: async (ctx, args) => {
-    const userId = await requireAuthenticatedUserId(ctx);
-    const [card, bag] = await Promise.all([
-      ctx.db.get("cards", args.cardId),
-      ctx.db.get("bags", args.bagId),
-    ]);
-    if (
-      !card ||
-      !bag ||
-      card.userId !== userId ||
-      bag.userId !== userId ||
-      card.bagId !== bag._id ||
-      card.deletedAt !== undefined ||
-      bag.deletedAt !== undefined
-    ) {
-      throw new ConvexError("Card not found");
-    }
-    return await replaceCardContentAndResetScheduleHandler(ctx, args);
-  },
+  handler: async (ctx, args) =>
+    (await replaceCardContentForOwner(ctx, args)).updated,
 });
 
 /** @deprecated use replaceCardContentAndResetSchedule */

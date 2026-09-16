@@ -142,7 +142,7 @@ export function registerCardTools(
       {
         title: "Replace vocabulary card",
         description:
-          "Replace a card's content and reset its FSRS schedule. Confirm with the user because review progress will be reset.",
+          "Replace card content. Hint-only and explanation-only edits preserve review parameters and history. Other content changes reset the schedule; confirm those changes with the user.",
         inputSchema: {
           cardId,
           bagId,
@@ -178,25 +178,21 @@ export function registerCardTools(
         sourceWord,
         expression,
       }) => {
-        const updated = await client.mutation(
-          api.learning.replaceCardContentAndResetSchedule,
-          {
-            cardId,
-            bagId,
-            question,
-            answer,
-            hint,
-            explanation,
-            context,
-            sourceWord,
-            expression,
-          }
-        );
+        const result = await client.mutation(api.learning.replaceCardContent, {
+          cardId,
+          bagId,
+          question,
+          answer,
+          hint,
+          explanation,
+          context,
+          sourceWord,
+          expression,
+        });
         return resultContent({
           cardId,
           answer,
-          updated,
-          scheduleReset: updated,
+          ...result,
         });
       }
     );
