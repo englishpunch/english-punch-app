@@ -31,7 +31,7 @@ func resetCardsCommandTestState() {
 	cardsAuthenticatedClientFunc = authenticatedClient
 	cardsGetCardFunc = getCard
 	cardsListCardsFunc = listCards
-	cardsReplaceCardContentAndResetScheduleFunc = replaceCardContentAndResetSchedule
+	cardsReplaceCardContentFunc = replaceCardContent
 }
 
 func runCardsCommand(command interface {
@@ -154,7 +154,7 @@ func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
 			Expression:  &expression,
 		}, nil
 	}
-	cardsReplaceCardContentAndResetScheduleFunc = func(_ context.Context, _ *convex.Client, bagID, cardID string, replacement cardReplacement) error {
+	cardsReplaceCardContentFunc = func(_ context.Context, _ *convex.Client, bagID, cardID string, replacement cardReplacement) error {
 		if bagID != "bag-1" || cardID != "card-1" {
 			t.Fatalf("unexpected replace target: bag=%s card=%s", bagID, cardID)
 		}
@@ -350,7 +350,7 @@ func TestCardsReplace_HelperOnlyUpdates(t *testing.T) {
 					return &cardDetail{ID: "card-1", Question: "She felt ___.", Answer: "disheartened", Hint: ptr("discouraged"), Explanation: ptr("old explanation")}, nil
 				}
 				called := false
-				cardsReplaceCardContentAndResetScheduleFunc = func(_ context.Context, _ *convex.Client, _, _ string, got cardReplacement) error {
+				cardsReplaceCardContentFunc = func(_ context.Context, _ *convex.Client, _, _ string, got cardReplacement) error {
 					called = true
 					if got.Question != "She felt ___." || got.Answer != "disheartened" {
 						t.Fatalf("study content changed: %+v", got)

@@ -19,7 +19,7 @@ describe("replaceCardContentAndResetScheduleHandler", () => {
     vi.useRealTimers();
   });
 
-  it("replaces content and resets FSRS schedule including elapsed_days", async () => {
+  it("replaces content without writing schedule parameters or counts", async () => {
     const card = {
       _id: cardId,
       bagId,
@@ -73,37 +73,18 @@ describe("replaceCardContentAndResetScheduleHandler", () => {
       context: "after a rejection",
     });
 
-    expect(patch).toHaveBeenCalledWith(
-      "cards",
-      cardId,
-      expect.objectContaining({
-        question: "I felt ___ after reading the rejection letter.",
-        answer: "disheartened",
-        hint: "discouraged, dejected, low-spirited",
-        explanation: "Use when someone has lost confidence or hope.",
-        context: "after a rejection",
-        due: now.getTime(),
-        stability: 0,
-        difficulty: 0,
-        elapsed_days: undefined,
-        scheduled_days: 0,
-        learning_steps: 0,
-        reps: 0,
-        lapses: 0,
-        state: 0,
-        last_review: undefined,
-        suspended: false,
-      })
-    );
+    expect(patch).toHaveBeenCalledWith("cards", cardId, {
+      question: "I felt ___ after reading the rejection letter.",
+      answer: "disheartened",
+      hint: "discouraged, dejected, low-spirited",
+      explanation: "Use when someone has lost confidence or hope.",
+      context: "after a rejection",
+      sourceWord: undefined,
+      expression: undefined,
+    });
 
-    expect(patch).toHaveBeenCalledWith(
-      "bags",
-      bagId,
-      expect.objectContaining({
-        newCards: 4,
-        learningCards: 4,
-        reviewCards: 4,
-      })
-    );
+    expect(patch).toHaveBeenCalledWith("bags", bagId, {
+      lastModified: now.toISOString(),
+    });
   });
 });

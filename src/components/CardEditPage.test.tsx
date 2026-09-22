@@ -7,7 +7,6 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getFunctionName } from "convex/server";
-import { api } from "../../convex/_generated/api";
 import { setupReviewedCard } from "../../convex/cardReplacement.test-helpers";
 import CardEditPage from "./CardEditPage";
 
@@ -19,7 +18,9 @@ const hooks = vi.hoisted(() => ({
 }));
 vi.mock("convex/react", () => ({
   useQuery: (...args: unknown[]) => hooks.query(...args),
-  useMutation: () => hooks.mutate,
+  useMutation:
+    (ref: Parameters<typeof getFunctionName>[0]) => (args: unknown) =>
+      hooks.mutate(ref, args),
   useAction: () => vi.fn(),
 }));
 vi.mock("@tanstack/react-router", () => ({
@@ -36,7 +37,7 @@ afterEach(() => {
 });
 
 describe("editing a reviewed card through the frontend", () => {
-  it.each(["hint", "explanation"] as const)(
+  it.each(["question", "answer", "hint", "explanation", "context"] as const)(
     "saves only %s without changing parameters or history",
     async (field) => {
       const { owner, read, bagId, cardId, userId } = await setupReviewedCard();
@@ -52,12 +53,10 @@ describe("editing a reviewed card through the frontend", () => {
             return before.card;
         }
       });
-      hooks.mutate.mockImplementation((args) =>
-        owner.mutation(api.learning.replaceCardContentAndResetSchedule, args)
-      );
+      hooks.mutate.mockImplementation((ref, args) => owner.mutation(ref, args));
       const { container } = render(<CardEditPage />);
       fireEvent.change(container.querySelector(`#card-${field}`)!, {
-        target: { value: "Updated helper text" },
+        target: { value: "Updated card text" },
       });
       fireEvent.click(
         screen.getByRole("button", { name: "cardEdit.submitLabel" })
@@ -67,7 +66,7 @@ describe("editing a reviewed card through the frontend", () => {
       expect(after.card).toEqual({
         ...before.card,
         context: "",
-        [field]: "Updated helper text",
+        [field]: "Updated card text",
       });
       expect(after.history).toEqual(before.history);
       expect(after.bag).toEqual({

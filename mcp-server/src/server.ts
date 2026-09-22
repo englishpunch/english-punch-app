@@ -21,7 +21,7 @@ export const createEnglishPunchServer = (
     },
     {
       instructions:
-        "Identity comes only from OAuth. Confirm before deleting data or changing card content other than hints or explanations, which resets its schedule. Reviews must follow get status, start, user attempt, reveal, then rate; never invent response duration.",
+        "Identity comes only from OAuth. Confirm before deleting data. Card edits preserve review parameters and history. To start over, explicitly delete the card and create a new one. Reviews must follow get status, start, user attempt, reveal, then rate; never invent response duration.",
     }
   );
 

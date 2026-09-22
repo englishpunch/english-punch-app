@@ -57,11 +57,11 @@ var cardsDeleteFields = []common.Field{
 }
 
 var (
-	cardsResolveBagIDFunc                       = resolveBagID
-	cardsAuthenticatedClientFunc                = authenticatedClient
-	cardsGetCardFunc                            = getCard
-	cardsListCardsFunc                          = listCards
-	cardsReplaceCardContentAndResetScheduleFunc = replaceCardContentAndResetSchedule
+	cardsResolveBagIDFunc        = resolveBagID
+	cardsAuthenticatedClientFunc = authenticatedClient
+	cardsGetCardFunc             = getCard
+	cardsListCardsFunc           = listCards
+	cardsReplaceCardContentFunc  = replaceCardContent
 )
 
 func newCardsCmd() *cobra.Command {
@@ -413,9 +413,8 @@ func newCardsReplaceCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "replace <card-id>",
 		Short: "Update flashcard content",
-		Long: `Update a flashcard's content. Hint-only and explanation-only edits
-preserve its FSRS parameters and review history. Changes to the question,
-answer, or context reset the schedule to the initial new-card state.
+		Long: `Update a flashcard's content while preserving its FSRS parameters and review
+history. To start over, explicitly delete the card and create a new one.
 
 Omitted fields keep their current values. Pass an empty --hint or
 --explanation to clear it. Repeating the same update preserves the schedule.`,
@@ -517,7 +516,7 @@ Omitted fields keep their current values. Pass an empty --hint or
 				SourceWord:  existing.SourceWord,
 				Expression:  existing.Expression,
 			}
-			if err := cardsReplaceCardContentAndResetScheduleFunc(ctx, client, resolvedBag, cardID, replacement); err != nil {
+			if err := cardsReplaceCardContentFunc(ctx, client, resolvedBag, cardID, replacement); err != nil {
 				return err
 			}
 

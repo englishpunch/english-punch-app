@@ -938,17 +938,10 @@ const replaceCardContentHandler = async (
     return { updated: false, scheduleReset: false };
   }
 
-  // Optional metadata omitted by older clients must survive helper-only edits.
+  // Optional metadata omitted by older clients must survive edits.
   const context = args.context ?? card.context;
   const sourceWord = args.sourceWord ?? card.sourceWord;
   const expression = args.expression ?? card.expression;
-  const preserveSchedule =
-    args.question === card.question &&
-    args.answer === card.answer &&
-    (context ?? "") === (card.context ?? "") &&
-    (sourceWord ?? "") === (card.sourceWord ?? "") &&
-    (expression ?? "") === (card.expression ?? "");
-
   const now = Date.now();
   await ctx.db.patch("cards", args.cardId, {
     question: args.question,
@@ -958,24 +951,14 @@ const replaceCardContentHandler = async (
     context,
     sourceWord,
     expression,
-    ...(preserveSchedule ? {} : initialSchedule(now)),
   });
   await trackUpdatedCard(ctx, card);
 
-  const newCards =
-    bag.newCards + (preserveSchedule || card.state === 0 ? 0 : 1);
-  const learningCards =
-    bag.learningCards - (!preserveSchedule && card.state === 1 ? 1 : 0);
-  const reviewCards =
-    bag.reviewCards - (!preserveSchedule && card.state === 2 ? 1 : 0);
   await ctx.db.patch("bags", args.bagId, {
-    newCards,
-    learningCards,
-    reviewCards,
     lastModified: new Date(now).toISOString(),
   });
 
-  return { updated: true, scheduleReset: !preserveSchedule };
+  return { updated: true, scheduleReset: false };
 };
 
 // Preserve the boolean response expected by deployed frontend and CLI clients.
@@ -1052,14 +1035,14 @@ const replaceCardContentForOwner = async (
   return await replaceCardContentHandler(ctx, args);
 };
 
-/** Replace content and report whether the schedule changed. */
+/** Replace content while preserving review parameters and history. */
 export const replaceCardContent = mutation({
   args: cardContentReplacementArgs,
   returns: v.object({ updated: v.boolean(), scheduleReset: v.boolean() }),
   handler: replaceCardContentForOwner,
 });
 
-/** Compatibility endpoint: helper-only edits now preserve review state. */
+/** Compatibility endpoint: all edits preserve review state despite the legacy name. */
 export const replaceCardContentAndResetSchedule = mutation({
   args: cardContentReplacementArgs,
   returns: v.boolean(),
@@ -1067,7 +1050,7 @@ export const replaceCardContentAndResetSchedule = mutation({
     (await replaceCardContentForOwner(ctx, args)).updated,
 });
 
-/** @deprecated use replaceCardContentAndResetSchedule */
+/** @deprecated use replaceCardContent */
 export const updateCard = mutation({
   args: {
     ...cardContentReplacementArgs,

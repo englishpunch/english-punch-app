@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
 import { setupReviewedCard } from "./cardReplacement.test-helpers";
 
-describe("helper-only card updates", () => {
+describe("card content updates", () => {
   for (const state of [0, 1, 2, 3] as const) {
     for (const suspended of [false, true]) {
       it(`preserves all parameters, history and counts (state ${state}, suspended ${suspended})`, async () => {
@@ -12,6 +12,11 @@ describe("helper-only card updates", () => {
           suspended
         );
         for (const change of [
+          { question: "A new question" },
+          { answer: "a new answer" },
+          { context: "a new context" },
+          { sourceWord: "a new source word" },
+          { expression: "a new expression" },
           { hint: "dejected" },
           { explanation: "A loss of confidence or hope." },
           { hint: "", explanation: "" },
@@ -27,10 +32,7 @@ describe("helper-only card updates", () => {
             explanation: before.card.explanation,
             ...change,
           };
-          await owner.mutation(
-            api.learning.replaceCardContentAndResetSchedule,
-            args
-          );
+          await owner.mutation(api.learning.replaceCardContent, args);
           const after = await read();
           expect(after.card).toEqual({ ...before.card, ...change });
           expect(after.history).toEqual(before.history);
@@ -43,7 +45,7 @@ describe("helper-only card updates", () => {
     }
   }
 
-  it("reports schedule preservation and resets accurately to connected tools", async () => {
+  it("reports schedule preservation to connected tools", async () => {
     const { owner, read, cardId, bagId } = await setupReviewedCard();
     const before = await read();
     const args = {
@@ -66,7 +68,7 @@ describe("helper-only card updates", () => {
         ...args,
         answer: "changed",
       })
-    ).toEqual({ updated: true, scheduleReset: true });
+    ).toEqual({ updated: true, scheduleReset: false });
     expect(
       await owner.mutation(api.learning.replaceCardContent, {
         ...args,
@@ -76,36 +78,29 @@ describe("helper-only card updates", () => {
   });
 
   it.each([
-    "question",
-    "answer",
-    "context",
-    "sourceWord",
-    "expression",
-  ] as const)("still resets the schedule when %s changes", async (field) => {
+    api.learning.replaceCardContentAndResetSchedule,
+    api.learning.updateCard,
+  ])("preserves progress through legacy endpoints %s", async (endpoint) => {
     const { owner, read, cardId, bagId } = await setupReviewedCard();
     const before = await read();
-    await owner.mutation(api.learning.replaceCardContentAndResetSchedule, {
-      cardId,
-      bagId,
-      question: before.card.question,
-      answer: before.card.answer,
-      hint: before.card.hint,
-      explanation: before.card.explanation,
-      [field]: "changed",
-    });
+    const change = {
+      question: "Changed question",
+      answer: "Changed answer",
+      hint: "Changed hint",
+      explanation: "Changed explanation",
+      context: "Changed context",
+      sourceWord: "Changed source word",
+      expression: "Changed expression",
+    };
+    expect(await owner.mutation(endpoint, { cardId, bagId, ...change })).toBe(
+      true
+    );
     const after = await read();
-    expect(after.card).toMatchObject({
-      state: 0,
-      stability: 0,
-      difficulty: 0,
-      reps: 0,
-      lapses: 0,
-      scheduled_days: 0,
-      learning_steps: 0,
+    expect(after.card).toEqual({ ...before.card, ...change });
+    expect(after.bag).toEqual({
+      ...before.bag,
+      lastModified: after.bag.lastModified,
     });
-    expect(after.card.last_review).toBeUndefined();
-    expect(after.card.elapsed_days).toBeUndefined();
-    expect(after.bag).toMatchObject({ newCards: 1, reviewCards: 0 });
     expect(after.history).toEqual(before.history);
   });
 });

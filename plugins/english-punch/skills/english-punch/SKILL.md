@@ -37,10 +37,9 @@ When the user clearly asks to save a word or expression:
    uncertain transport failure without checking whether the card exists.
 4. Show the saved question and answer.
 
-Use `get-card` before `update-card`. Hint-only and explanation-only edits preserve
-review parameters and history. Other content changes reset the FSRS schedule,
-so explain that consequence and obtain confirmation first. Obtain confirmation
-before `delete-card` or `delete-bag` as well.
+Use `get-card` before `update-card`. All content edits preserve review parameters
+and history. To start over, explicitly delete the card and create a new one.
+Obtain confirmation before `delete-card` or `delete-bag`.
 
 ## Run a review
 

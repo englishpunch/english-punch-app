@@ -142,7 +142,7 @@ export function registerCardTools(
       {
         title: "Replace vocabulary card",
         description:
-          "Replace card content. Hint-only and explanation-only edits preserve review parameters and history. Other content changes reset the schedule; confirm those changes with the user.",
+          "Replace card content while preserving review parameters and history. To start over, explicitly delete the card and create a new one.",
         inputSchema: {
           cardId,
           bagId,

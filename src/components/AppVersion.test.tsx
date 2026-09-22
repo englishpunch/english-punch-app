@@ -6,6 +6,6 @@ it("shows the canonical English Punch version", () => {
   render(<AppVersion />);
 
   expect(
-    screen.getByLabelText("English Punch version 0.3.10")
-  ).toHaveTextContent("v0.3.10");
+    screen.getByLabelText("English Punch version 0.3.11")
+  ).toHaveTextContent("v0.3.11");
 });

@@ -22,9 +22,7 @@ export default function CardEditPage() {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
   const navigate = useNavigate();
-  const replaceCardContentAndResetSchedule = useMutation(
-    api.learning.replaceCardContentAndResetSchedule
-  );
+  const replaceCardContent = useMutation(api.learning.replaceCardContent);
 
   // Get bag info
   const bagsArgs = isMock ? "skip" : userId ? { userId } : "skip";
@@ -59,7 +57,7 @@ export default function CardEditPage() {
       return;
     }
 
-    await replaceCardContentAndResetSchedule({
+    await replaceCardContent({
       cardId: card._id,
       bagId: bag._id,
       question: formData.question,

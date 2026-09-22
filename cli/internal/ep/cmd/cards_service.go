@@ -115,7 +115,7 @@ func listCards(ctx context.Context, client *convex.Client, opts cardListOptions)
 	}, nil
 }
 
-func replaceCardContentAndResetSchedule(
+func replaceCardContent(
 	ctx context.Context,
 	client *convex.Client,
 	bagID string,
@@ -142,7 +142,7 @@ func replaceCardContentAndResetSchedule(
 		args["expression"] = *replacement.Expression
 	}
 
-	if _, err := client.Mutation(ctx, "learning:replaceCardContentAndResetSchedule", args); err != nil {
+	if _, err := client.Mutation(ctx, "learning:replaceCardContent", args); err != nil {
 		return err
 	}
 	return nil
