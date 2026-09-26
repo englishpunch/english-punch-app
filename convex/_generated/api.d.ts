@@ -24,6 +24,7 @@ import type * as learning from "../learning.js";
 import type * as oauth from "../oauth.js";
 import type * as oauthActions from "../oauthActions.js";
 import type * as oauthConfig from "../oauthConfig.js";
+import type * as oauthDevice from "../oauthDevice.js";
 import type * as oauthHttp from "../oauthHttp.js";
 import type * as oauthProtocol from "../oauthProtocol.js";
 import type * as review from "../review.js";
@@ -52,6 +53,7 @@ declare const fullApi: ApiFromModules<{
   oauth: typeof oauth;
   oauthActions: typeof oauthActions;
   oauthConfig: typeof oauthConfig;
+  oauthDevice: typeof oauthDevice;
   oauthHttp: typeof oauthHttp;
   oauthProtocol: typeof oauthProtocol;
   review: typeof review;
@@ -87,4 +89,5 @@ export declare const internal: FilterApi<
 export declare const components: {
   migrations: import("@convex-dev/migrations/_generated/component.js").ComponentApi<"migrations">;
   dueCards: import("@convex-dev/aggregate/_generated/component.js").ComponentApi<"dueCards">;
+  rateLimiter: import("@convex-dev/rate-limiter/_generated/component.js").ComponentApi<"rateLimiter">;
 };

@@ -2,7 +2,14 @@ import { importJWK, SignJWT, type JWK } from "jose";
 import type { Id } from "./_generated/dataModel";
 import { internal } from "./_generated/api";
 import { env, httpAction } from "./_generated/server";
-import { MCP_RESOURCE, OAUTH_ISSUER, oauthPublicJwk } from "./oauthConfig";
+import {
+  CLI_CLIENT_ID,
+  CLI_RESOURCE,
+  DEVICE_GRANT_TYPE,
+  MCP_RESOURCE,
+  OAUTH_ISSUER,
+  oauthPublicJwk,
+} from "./oauthConfig";
 import {
   normalizeRequestedScopes,
   randomOAuthToken,
@@ -73,7 +80,7 @@ const signAccessToken = async (grant: TokenGrant) => {
     })
     .setIssuer(OAUTH_ISSUER)
     .setSubject(grant.userId)
-    .setAudience(MCP_RESOURCE)
+    .setAudience(grant.resource)
     .setJti(randomOAuthToken())
     .setIssuedAt(now)
     .setExpirationTime(now + ACCESS_TOKEN_LIFETIME_SECONDS)
@@ -95,6 +102,43 @@ export const token = httpAction(async (ctx, request) => {
   if (!grantType) {
     return oauthError("invalid_request");
   }
+  if (grantType === DEVICE_GRANT_TYPE) {
+    const deviceCode = readSingle(form, "device_code");
+    const clientId = readSingle(form, "client_id");
+    const resource = readSingle(form, "resource");
+    if (
+      !deviceCode ||
+      clientId !== CLI_CLIENT_ID ||
+      resource !== CLI_RESOURCE
+    ) {
+      return oauthError("invalid_request");
+    }
+    const refreshToken = randomOAuthToken();
+    const exchanged: TokenGrant | { error: string } = await ctx.runMutation(
+      internal.oauthDevice.exchange,
+      {
+        deviceCodeHash: await sha256Base64Url(deviceCode),
+        clientId,
+        resource,
+        refreshTokenHash: await sha256Base64Url(refreshToken),
+        refreshTokenFamilyId: randomOAuthToken(),
+        refreshTokenExpiresAt: Date.now() + REFRESH_TOKEN_LIFETIME_MS,
+      }
+    );
+    if ("error" in exchanged) {
+      return oauthError(exchanged.error);
+    }
+    return jsonResponse(
+      {
+        access_token: await signAccessToken(exchanged),
+        token_type: "Bearer",
+        expires_in: ACCESS_TOKEN_LIFETIME_SECONDS,
+        refresh_token: refreshToken,
+        scope: exchanged.scope,
+      },
+      200
+    );
+  }
   if (grantType === "refresh_token") {
     const currentRefreshToken = readSingle(form, "refresh_token");
     const clientId = readSingle(form, "client_id");
@@ -103,14 +147,16 @@ export const token = httpAction(async (ctx, request) => {
     if (
       !currentRefreshToken ||
       !clientId ||
-      resource !== MCP_RESOURCE ||
+      (resource !== MCP_RESOURCE && resource !== CLI_RESOURCE) ||
       rawScope === null
     ) {
       return oauthError("invalid_request");
     }
     let scope: string | undefined;
     try {
-      scope = rawScope ? normalizeRequestedScopes(rawScope) : undefined;
+      scope = rawScope
+        ? normalizeRequestedScopes(rawScope, resource)
+        : undefined;
     } catch {
       return oauthError("invalid_scope");
     }
@@ -196,4 +242,59 @@ export const token = httpAction(async (ctx, request) => {
     },
     200
   );
+});
+
+export const deviceAuthorization = httpAction(async (ctx, request) => {
+  if (
+    Number(request.headers.get("content-length") ?? "0") >
+    MAX_TOKEN_REQUEST_BYTES
+  ) {
+    return oauthError("invalid_request");
+  }
+  const body = await request.text();
+  if (body.length > MAX_TOKEN_REQUEST_BYTES) {
+    return oauthError("invalid_request");
+  }
+  const form = new URLSearchParams(body);
+  if (
+    readSingle(form, "client_id") !== CLI_CLIENT_ID ||
+    readSingle(form, "resource") !== CLI_RESOURCE
+  ) {
+    return oauthError("invalid_client");
+  }
+  if (readSingle(form, "scope") !== "cli:access") {
+    return oauthError("invalid_scope");
+  }
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const deviceCode = randomOAuthToken();
+    const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    const bytes = crypto.getRandomValues(new Uint8Array(8));
+    const rawCode = Array.from(bytes, (byte) => alphabet[byte & 31]).join("");
+    const result: "created" | "slow_down" | "collision" = await ctx.runMutation(
+      internal.oauthDevice.create,
+      {
+        deviceCodeHash: await sha256Base64Url(deviceCode),
+        userCodeHash: await sha256Base64Url(rawCode),
+      }
+    );
+    if (result === "slow_down") {
+      return jsonResponse({ error: "slow_down" }, 429);
+    }
+    if (result === "collision") {
+      continue;
+    }
+    const userCode = `${rawCode.slice(0, 4)}-${rawCode.slice(4)}`;
+    return jsonResponse(
+      {
+        device_code: deviceCode,
+        user_code: userCode,
+        verification_uri: `${OAUTH_ISSUER}/device`,
+        verification_uri_complete: `${OAUTH_ISSUER}/device?user_code=${userCode}`,
+        expires_in: 900,
+        interval: 5,
+      },
+      200
+    );
+  }
+  return jsonResponse({ error: "temporarily_unavailable" }, 503);
 });

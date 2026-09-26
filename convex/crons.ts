@@ -4,6 +4,12 @@ import { internal } from "./_generated/api";
 const crons = cronJobs();
 
 crons.interval(
+  "delete expired OAuth device codes",
+  { hours: 1 },
+  internal.oauthDevice.cleanup
+);
+
+crons.interval(
   "delete expired OAuth authorization codes",
   { hours: 1 },
   internal.oauth.deleteExpiredAuthorizationCodes

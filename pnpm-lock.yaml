@@ -20,6 +20,9 @@ importers:
       '@convex-dev/migrations':
         specifier: ^0.3.6
         version: 0.3.6(convex-helpers@0.1.124(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76))(convex@1.44.0(react@19.2.8))
+      '@convex-dev/rate-limiter':
+        specifier: ^0.4.0
+        version: 0.4.0(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76)
       '@google/genai':
         specifier: ^2.17.1
         version: 2.17.1(@modelcontextprotocol/sdk@1.30.0(zod@3.25.76))
@@ -413,6 +416,11 @@ packages:
       react:
         optional: true
 
+  '@convex-dev/batch-worker@0.3.4':
+    resolution: {integrity: sha512-CKeOrPFsPoIKozMNP/qKExSwE6vd63QDKbZIbchK+P3S7fyGuFjRLbTg6+QmC/mzOjn6I5N8zo+k/SdXqeaA2g==}
+    peerDependencies:
+      convex: ^1.43.0
+
   '@convex-dev/eslint-plugin@4.0.0':
     resolution: {integrity: sha512-7bYP8Fkk+19L7LWl3xIqUqq/0yIEZNoUQHOodZKIvupqmgaMisz8NKz6OkmMwBVLUQ0sh/9+iPK1OyASANiWyw==}
     peerDependencies:
@@ -423,6 +431,15 @@ packages:
     peerDependencies:
       convex: ^1.42.0
       convex-helpers: ^0.1.115
+
+  '@convex-dev/rate-limiter@0.4.0':
+    resolution: {integrity: sha512-AEXbo8+pMT1bPlOJiofmue55EoiFp9ygCcEnckx+RENoPjRYEg5jiihAtaD5TKDwdmHJyvLwNQ1h+MbhgvMyOA==}
+    peerDependencies:
+      convex: ^1.43.0
+      react: ^18.2.0 || ^19.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@edge-runtime/primitives@6.0.0':
     resolution: {integrity: sha512-FqoxaBT+prPBHBwE1WXS1ocnu/VLTQyZ6NMUBAdbP7N2hsFTTxMC/jMu2D/8GAlMQfxeuppcPuCUk/HO3fpIvA==}
@@ -4353,6 +4370,17 @@ snapshots:
     optionalDependencies:
       react: 19.2.8
 
+  '@convex-dev/batch-worker@0.3.4(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76)':
+    dependencies:
+      convex: 1.44.0(react@19.2.8)
+      convex-helpers: 0.1.124(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76)
+    transitivePeerDependencies:
+      - '@standard-schema/spec'
+      - hono
+      - react
+      - typescript
+      - zod
+
   '@convex-dev/eslint-plugin@4.0.0(convex@1.44.0(react@19.2.8))(eslint@10.8.1(jiti@2.7.0))(typescript@6.0.3)':
     dependencies:
       '@typescript-eslint/types': 8.58.2
@@ -4367,6 +4395,18 @@ snapshots:
     dependencies:
       convex: 1.44.0(react@19.2.8)
       convex-helpers: 0.1.124(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76)
+
+  '@convex-dev/rate-limiter@0.4.0(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76)':
+    dependencies:
+      '@convex-dev/batch-worker': 0.3.4(@standard-schema/spec@1.1.0)(convex@1.44.0(react@19.2.8))(hono@4.13.3)(react@19.2.8)(typescript@6.0.3)(zod@3.25.76)
+      convex: 1.44.0(react@19.2.8)
+    optionalDependencies:
+      react: 19.2.8
+    transitivePeerDependencies:
+      - '@standard-schema/spec'
+      - hono
+      - typescript
+      - zod
 
   '@edge-runtime/primitives@6.0.0': {}
 

@@ -6,6 +6,26 @@ import { learningTables } from "./fsrsSchema";
 export default defineSchema({
   ...authTables,
   ...learningTables,
+  oauthDeviceCodes: defineTable({
+    deviceCodeHash: v.string(),
+    userCodeHash: v.string(),
+    clientId: v.string(),
+    resource: v.string(),
+    scope: v.string(),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("approved"),
+      v.literal("denied"),
+      v.literal("used")
+    ),
+    userId: v.optional(v.id("users")),
+    expiresAt: v.number(),
+    intervalMs: v.number(),
+    nextPollAt: v.number(),
+  })
+    .index("by_device_code_hash", ["deviceCodeHash"])
+    .index("by_user_code_hash", ["userCodeHash"])
+    .index("by_expires_at", ["expiresAt"]),
   oauthAuthorizationCodes: defineTable({
     codeHash: v.string(),
     userId: v.id("users"),

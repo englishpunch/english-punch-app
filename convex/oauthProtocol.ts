@@ -1,4 +1,9 @@
-import { MCP_OAUTH_SCOPES, MCP_RESOURCE, OAUTH_ISSUER } from "./oauthConfig";
+import {
+  CLI_RESOURCE,
+  MCP_OAUTH_SCOPES,
+  MCP_RESOURCE,
+  OAUTH_ISSUER,
+} from "./oauthConfig";
 
 const CHATGPT_CLIENT_PATH =
   /^\/oauth\/(?:client|[A-Za-z0-9_-]+\/client)\.json$/;
@@ -36,7 +41,10 @@ export const sha256Base64Url = async (value: string) => {
   return base64Url(new Uint8Array(digest));
 };
 
-export const normalizeRequestedScopes = (scope: string) => {
+export const normalizeRequestedScopes = (
+  scope: string,
+  resource = MCP_RESOURCE
+) => {
   if (scope.length > 1_024) {
     throw new Error("OAuth scope is too long");
   }
@@ -45,9 +53,11 @@ export const normalizeRequestedScopes = (scope: string) => {
     requested.length === 0 ||
     requested.some(
       (candidate) =>
-        !MCP_OAUTH_SCOPES.includes(
-          candidate as (typeof MCP_OAUTH_SCOPES)[number]
-        )
+        !(resource === CLI_RESOURCE
+          ? candidate === "cli:access"
+          : MCP_OAUTH_SCOPES.includes(
+              candidate as (typeof MCP_OAUTH_SCOPES)[number]
+            ))
     )
   ) {
     throw new Error("OAuth scope is not supported");

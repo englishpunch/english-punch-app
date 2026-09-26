@@ -14,7 +14,12 @@ test.each(["oauth-authorization-server", "openid-configuration"])(
     );
 
     expect(metadata).toMatchObject({
-      grant_types_supported: ["authorization_code", "refresh_token"],
+      grant_types_supported: [
+        "authorization_code",
+        "refresh_token",
+        "urn:ietf:params:oauth:grant-type:device_code",
+      ],
+      device_authorization_endpoint: "https://ep.echoja.com/oauth/device/code",
     });
     expect(metadata).toMatchObject(oauthAuthorizationServerMetadata);
   }

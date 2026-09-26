@@ -30,7 +30,11 @@ it("publishes ChatGPT-compatible OAuth authorization server metadata", async () 
       jwks_uri: "https://ep.echoja.com/oauth/jwks",
       client_id_metadata_document_supported: true,
       code_challenge_methods_supported: ["S256"],
-      grant_types_supported: ["authorization_code", "refresh_token"],
+      grant_types_supported: [
+        "authorization_code",
+        "refresh_token",
+        "urn:ietf:params:oauth:grant-type:device_code",
+      ],
       token_endpoint_auth_methods_supported: ["none"],
     })
   );

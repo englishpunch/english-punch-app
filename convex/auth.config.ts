@@ -1,4 +1,4 @@
-import { MCP_RESOURCE, OAUTH_ISSUER } from "./oauthConfig";
+import { CLI_RESOURCE, MCP_RESOURCE, OAUTH_ISSUER } from "./oauthConfig";
 
 const providers = [
   {
@@ -8,6 +8,10 @@ const providers = [
   {
     domain: OAUTH_ISSUER,
     applicationID: MCP_RESOURCE,
+  },
+  {
+    domain: OAUTH_ISSUER,
+    applicationID: CLI_RESOURCE,
   },
 ];
 

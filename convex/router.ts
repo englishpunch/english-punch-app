@@ -4,7 +4,7 @@ import {
   oauthAuthorizationServerMetadata,
   oauthPublicJwk,
 } from "./oauthConfig";
-import { token } from "./oauthHttp";
+import { deviceAuthorization, token } from "./oauthHttp";
 import { ENGLISH_PUNCH_VERSION } from "../src/lib/version";
 
 const http = httpRouter();
@@ -33,6 +33,11 @@ http.route({
 });
 
 http.route({ path: "/oauth/token", method: "POST", handler: token });
+http.route({
+  path: "/oauth/device/code",
+  method: "POST",
+  handler: deviceAuthorization,
+});
 
 http.route({
   path: "/api/version",

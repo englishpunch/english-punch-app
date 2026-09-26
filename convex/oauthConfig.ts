@@ -1,5 +1,8 @@
 export const OAUTH_ISSUER = "https://ep.echoja.com";
 export const MCP_RESOURCE = "https://mcp-ep.echoja.com/mcp";
+export const CLI_RESOURCE = "https://ep-convex.echoja.com";
+export const CLI_CLIENT_ID = "english-punch-cli";
+export const DEVICE_GRANT_TYPE = "urn:ietf:params:oauth:grant-type:device_code";
 
 export const MCP_OAUTH_SCOPES = [
   "profile:read",
@@ -15,14 +18,19 @@ export const oauthAuthorizationServerMetadata = {
   issuer: OAUTH_ISSUER,
   authorization_endpoint: `${OAUTH_ISSUER}/oauth/authorize`,
   token_endpoint: `${OAUTH_ISSUER}/oauth/token`,
+  device_authorization_endpoint: `${OAUTH_ISSUER}/oauth/device/code`,
   jwks_uri: `${OAUTH_ISSUER}/oauth/jwks`,
   response_types_supported: ["code"],
-  grant_types_supported: ["authorization_code", "refresh_token"],
+  grant_types_supported: [
+    "authorization_code",
+    "refresh_token",
+    DEVICE_GRANT_TYPE,
+  ],
   code_challenge_methods_supported: ["S256"],
   token_endpoint_auth_methods_supported: ["none"],
   client_id_metadata_document_supported: true,
   authorization_response_iss_parameter_supported: true,
-  scopes_supported: MCP_OAUTH_SCOPES,
+  scopes_supported: [...MCP_OAUTH_SCOPES, "cli:access"],
 };
 
 export const oauthPublicJwk = {
