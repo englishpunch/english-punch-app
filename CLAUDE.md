@@ -57,7 +57,9 @@ scripts/update-convex-rules.sh --force
 - Connect every code or documentation change to a relevant GitHub Issue. Before creating a new issue, review the full open issue list, not only a narrow keyword search. If none clearly matches, create one before starting work and assign it to the person doing the work.
 - Keep issue bodies simple. Do not include direct code references, file links, or line links. Use `Direction`, `As-is`, and `To-be` to describe the problem and intended direction. If `To-be` is not clear yet, do not invent a solution; add the `TBD` label to the GitHub Issue.
 - Every commit message must include the relevant GitHub Issue number. Example: `feat: add card filters #67`. Do not reference an unrelated nearby issue just to satisfy commitlint.
-- Do not auto-close issues from commit messages. Avoid keywords such as `Closes #67`, `Fixes #67`, and `Resolves #67`. Close issues manually or through a separate audit skill/workflow.
+- ALWAYS create a feature branch before editing (`git switch -c <branch>`). To make every change reviewable, NEVER commit or push directly to `main`; ALWAYS open a PR targeting `main`, including documentation and release automation changes.
+- ALWAYS put `Closes #<issue-number>` in the PR description for each issue fully completed by the PR, so merging closes the issue automatically. Use `Refs #<issue-number>` for partially addressed issues. NEVER use closing keywords in commit messages; keep their plain issue references.
+- ALWAYS wait for required checks to pass before merging a PR. Local hooks block commits and pushes to `main`; repository administrators must also require PRs in GitHub branch protection to enforce this for every client.
 
 ### Check CI After Push
 
@@ -91,8 +93,7 @@ gh run view --log-failed
 
 ### Go CLI Versioning and Release
 
-- `ep` CLI releases start by pushing a `v*` tag. `.github/workflows/release-cli.yml` runs GoReleaser and updates the GitHub Release, darwin binaries, and `Formula/ep.rb`.
-- Before releasing, `main` must be clean and synced with the remote.
+- ALWAYS release CLI changes through a merged PR first, then push a `v*` tag from clean, synced `main`. `.github/workflows/release-cli.yml` publishes the GitHub Release and darwin binaries and opens a separate PR for `Formula/ep.rb`.
 
 ```sh
 git checkout main
@@ -118,14 +119,16 @@ gh run watch
 gh run view --log-failed
 ```
 
-- GoReleaser can push `Formula/ep.rb` back to `main`, so after the release completes, run `git pull --ff-only` to sync local state.
-- Verify the release:
+- ALWAYS review the generated formula PR, add the appropriate issue reference, and merge it after checks pass before updating Homebrew. NEVER push the formula directly to `main`. GitHub Actions must be permitted to create PRs in the repository settings.
+- ALWAYS verify the CLI installed on the current computer against the latest published release after a deployment, even when the deployment only changes the web app. A downloaded binary in `/tmp` does not verify the executable users actually run. Install with `brew install englishpunch/cli/ep` if missing; otherwise upgrade:
 
 ```sh
 brew update
 brew upgrade englishpunch/cli/ep
-ep --version
+scripts/verify-local-cli.sh
 ```
+
+- ALWAYS report the resolved executable path, installed version, and latest release version. NEVER mark local installation verification complete if the versions differ, the executable is missing, or installation fails; report the specific blocker separately from deployment status.
 
 <!-- convex-ai-start -->
 

@@ -7,6 +7,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   release:
@@ -44,3 +45,16 @@ jobs:
           workdir: cli
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # GoReleaser logs PR creation failures without failing the release.
+      - name: Verify formula pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          formula_branch="release/ep-${GITHUB_REF_NAME#v}"
+          pr_url="$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$formula_branch" --base main --state open --json url --jq '.[0].url // empty')"
+          if [[ -z "$pr_url" ]]; then
+            echo "Formula PR missing. Check GoReleaser logs and repository permissions for Actions to create pull requests." >&2
+            exit 1
+          fi
+          echo "Formula PR: $pr_url"

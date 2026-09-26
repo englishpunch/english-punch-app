@@ -27,6 +27,11 @@ brews:
   - repository:
       owner: englishpunch
       name: english-punch-app
+      branch: "release/ep-{{ .Version }}"
+      pull_request:
+        enabled: true
+        base:
+          branch: main
     directory: Formula
     homepage: https://github.com/englishpunch/english-punch-app
     description: CLI for English Punch flashcard app
