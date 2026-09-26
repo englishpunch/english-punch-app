@@ -1,3 +1,4 @@
+import { useDueCountAsOf } from "@/hooks/useDueCountAsOf";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -24,17 +25,7 @@ export default function FSRSStudySession({
 
   const userId = loggedInUser?._id;
   const [isReviewing, setIsReviewing] = useState(false);
-  const [dueCountAsOf, setDueCountAsOf] = useState(() => Date.now());
-
-  useEffect(() => {
-    const refreshDueCount = () => setDueCountAsOf(Date.now());
-    const intervalId = window.setInterval(refreshDueCount, 60_000);
-    document.addEventListener("visibilitychange", refreshDueCount);
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener("visibilitychange", refreshDueCount);
-    };
-  }, []);
+  const dueCountAsOf = useDueCountAsOf();
 
   // Convex queries and mutations.
   const dueCard = useQuery(api.learning.getOneDueCard, {

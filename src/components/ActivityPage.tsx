@@ -177,24 +177,22 @@ export default function ActivityPage() {
             <Spinner wrapper="page" />
           ) : (
             <TableWrapper edgeToEdge>
-              <Table className="w-full table-fixed border-collapse text-left">
+              <Table className="table-fixed">
                 <caption className="sr-only">
                   {t("activity.selectedDateSubtitle")} {activeDate}
                 </caption>
-                <THead className="border-b border-gray-200 bg-gray-50 text-xs text-gray-500">
+                <THead>
                   <Tr>
-                    <Th scope="col" className="w-16 font-medium">
+                    <Th scope="col" className="w-16">
                       {t("activity.columns.time")}
                     </Th>
-                    <Th scope="col" className="font-medium">
-                      {t("activity.columns.question")}
-                    </Th>
-                    <Th scope="col" className="w-20 font-medium">
+                    <Th scope="col">{t("activity.columns.question")}</Th>
+                    <Th scope="col" className="w-20">
                       {t("activity.columns.rating")}
                     </Th>
                   </Tr>
                 </THead>
-                <TBody className="divide-y divide-gray-100">
+                <TBody>
                   {filteredActivities?.length === 0 ? (
                     <Tr>
                       <Td

@@ -1,191 +1,98 @@
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
-import { Id } from "../../convex/_generated/dataModel";
-import { Link } from "@tanstack/react-router";
 import { Button } from "./Button";
-import { buttonVariants } from "./buttonVariants";
-import { ArrowLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { useDueCountAsOf } from "@/hooks/useDueCountAsOf";
+import { TableWrapper, Table, THead, TBody, Tr, Th } from "./Table";
+import { StudyBagRow } from "./StudyBagRow";
 
-interface BagManagerProps {
-  onBack?: () => void;
-}
-
-export default function BagManager({ onBack }: BagManagerProps) {
+export default function BagManager() {
   const { t } = useTranslation();
-  const loggedInUser = useQuery(api.auth.loggedInUser);
-  const userId = loggedInUser?._id;
-
+  const user = useQuery(api.auth.loggedInUser);
+  const now = useDueCountAsOf();
+  const bags = useQuery(api.learning.getStudyBags, user ? { now } : "skip");
+  const settings = useQuery(
+    api.fsrs.getUserSettings,
+    user ? { userId: user._id } : "skip"
+  );
+  const createSampleBag = useMutation(api.learning.createSampleBag);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
-  // Convex queries and mutations.
-  const bags = useQuery(api.learning.getUserBags, userId ? { userId } : "skip");
-  const createSampleBag = useMutation(api.learning.createSampleBag);
-  const updateBagStats = useMutation(api.learning.updateBagStats);
-
   const handleCreateSampleBag = async () => {
-    if (!userId) {
+    if (!user) {
       return;
     }
     setIsCreatingSample(true);
     try {
-      const bagId = await createSampleBag({ userId });
-      await updateBagStats({ bagId });
+      await createSampleBag({ userId: user._id });
     } catch (error) {
       console.error("Failed to create sample bag:", error);
+      toast.error(t("bagManager.sample.failed"));
     } finally {
       setIsCreatingSample(false);
     }
   };
 
-  return (
-    <div className="mx-auto max-w-4xl space-y-8 px-4 py-10">
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold text-gray-900">
-            {t("bagManager.title")}
-          </h1>
-          <p className="text-base leading-6 text-gray-600">
-            {t("bagManager.description")}
-          </p>
-        </div>
-        {onBack && (
-          <Button
-            onClick={onBack}
-            variant="secondary"
-            size="sm"
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" aria-hidden />
-            {t("bagManager.backToMain")}
-          </Button>
-        )}
+  if (bags === undefined) {
+    return <Spinner wrapper="page" />;
+  }
+  if (bags.length === 0) {
+    return (
+      <div className="space-y-3 px-4 py-10 text-center">
+        <h2 className="text-lg font-semibold text-gray-900">
+          {t("bagManager.sample.title")}
+        </h2>
+        <p className="text-sm text-gray-600">
+          {t("bagManager.sample.description")}
+        </p>
+        <Button
+          onClick={() => void handleCreateSampleBag()}
+          loading={isCreatingSample}
+          disabled={!user}
+          className="mx-auto"
+        >
+          <Plus className="h-4 w-4" aria-hidden />
+          {t("bagManager.sample.create")}
+        </Button>
       </div>
-
-      {/* Sample bag creation button */}
-      {(!bags || bags.length === 0) && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 shadow-sm">
-          <div className="space-y-4 text-center">
-            <div className="bg-primary-50 text-primary-700 mx-auto flex h-14 w-14 items-center justify-center rounded-full text-xl">
-              <Plus className="h-6 w-6" aria-hidden />
-            </div>
-            <div className="space-y-2">
-              <h2 className="text-xl font-semibold text-gray-900">
-                {t("bagManager.sample.title")}
-              </h2>
-              <p className="text-sm leading-6 text-gray-600">
-                {t("bagManager.sample.description")}
-              </p>
-            </div>
-            <Button
-              onClick={() => void handleCreateSampleBag()}
-              loading={isCreatingSample}
-              disabled={!userId}
-              className="mx-auto px-6"
+    );
+  }
+  return (
+    <TableWrapper edgeToEdge>
+      <Table>
+        <caption className="sr-only">{t("bagManager.tableCaption")}</caption>
+        <THead>
+          <Tr>
+            <Th scope="col">{t("bagManager.columns.bag")}</Th>
+            <Th scope="col" className="w-px text-right whitespace-nowrap">
+              {t("bagManager.columns.cards")}
+            </Th>
+            <Th
+              scope="col"
+              className="w-px whitespace-nowrap"
+              aria-sort="descending"
             >
-              <Plus className="h-4 w-4" aria-hidden />
-              <span>{t("bagManager.sample.create")}</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {/* Bag list */}
-      {bags && bags.length > 0 && (
-        <div className="grid grid-cols-1 gap-4">
+              {t("bagManager.columns.lastStudied")}
+            </Th>
+            <Th scope="col" className="w-px text-right">
+              {t("bagManager.columns.study")}
+            </Th>
+          </Tr>
+        </THead>
+        <TBody>
           {bags.map((bag) => (
-            <BagCard key={bag._id} bag={bag} />
+            <StudyBagRow
+              key={bag._id}
+              bag={bag}
+              timezone={settings?.timezone ?? "Asia/Seoul"}
+            />
           ))}
-        </div>
-      )}
-
-      {/* Loading state */}
-      {!bags && <Spinner wrapper="page" />}
-    </div>
-  );
-}
-
-interface BagCardProps {
-  bag: {
-    _id: Id<"bags">;
-    name: string;
-    description?: string;
-    totalCards: number;
-    newCards: number;
-    learningCards: number;
-    tags: string[];
-    isActive: boolean;
-  };
-}
-
-function BagCard({ bag }: BagCardProps) {
-  const dueCount = bag.newCards + bag.learningCards; // Simple approximation.
-  const { t } = useTranslation();
-
-  return (
-    <div className="rounded-lg border border-gray-200 bg-white shadow-sm transition-shadow duration-200 hover:shadow">
-      <div className="p-6">
-        {/* Bag header */}
-        <div className="mb-3 flex items-start justify-between">
-          <h3 className="text-lg font-semibold text-gray-900">{bag.name}</h3>
-          <div className="flex items-center space-x-2">
-            {!bag.isActive && (
-              <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">
-                {t("bagManager.inactive")}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Bag description */}
-        {bag.description && (
-          <p className="mb-4 text-sm text-gray-600">{bag.description}</p>
-        )}
-
-        {/* Tags */}
-        {bag.tags.length > 0 && (
-          <div className="mb-4 flex flex-wrap gap-1">
-            {bag.tags.map((tag) => (
-              <span
-                key={tag}
-                className="bg-primary-50 text-primary-700 rounded-full px-2 py-1 text-xs"
-              >
-                {tag}
-              </span>
-            ))}
-          </div>
-        )}
-
-        {/* Statistics */}
-        <div className="mb-6 space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">
-              {t("bagManager.stats.totalCards")}:
-            </span>
-            <span className="font-medium">{bag.totalCards}</span>
-          </div>
-        </div>
-
-        {/* Action button */}
-        <div className="space-y-2">
-          {dueCount > 0 ? (
-            <Link
-              to="/run/$bagId"
-              params={{ bagId: bag._id }}
-              className={buttonVariants({ fullWidth: true })}
-            >
-              {t("bagManager.actions.studyWithCount", { count: dueCount })}
-            </Link>
-          ) : (
-            <Button fullWidth variant="secondary" disabled>
-              {t("bagManager.actions.noCards")}
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+        </TBody>
+      </Table>
+    </TableWrapper>
   );
 }

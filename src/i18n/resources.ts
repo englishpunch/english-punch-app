@@ -168,16 +168,21 @@ const enTranslation = {
     },
   },
   bagManager: {
-    title: "English Study Bag",
-    description:
-      "Memorize efficiently with scientific spaced repetition. We keep it simple by focusing on one main action at a time.",
-    backToMain: "Back to main",
+    tableCaption: "Study bags, most recently studied first",
+    columns: {
+      bag: "Bag",
+      cards: "Cards",
+      lastStudied: "Last studied",
+      study: "Study",
+    },
+    neverStudied: "Not yet",
     sample: {
       title: "Start your first study!",
       description:
         "Try a sample bag with basic English phrases. It includes 10 practical sentences.",
       create: "Create sample bag",
       creating: "Creating...",
+      failed: "Could not create the sample bag. Please try again.",
     },
     inactive: "Inactive",
     stats: {
@@ -187,6 +192,8 @@ const enTranslation = {
       reviewCards: "Review",
     },
     actions: {
+      studyCompact: "Study ({{count}})",
+      noCardsCompact: "Up to date",
       studyWithCount: "Study ({{count}} cards)",
       noCards: "No cards to study",
       viewAll: "View all cards",
@@ -536,16 +543,21 @@ const jaTranslation = {
     },
   },
   bagManager: {
-    title: "英語学習サンドバッグ",
-    description:
-      "科学的な間隔反復で効率よく暗記しましょう。一度に一つの主要アクションだけを表示してシンプルに保ちます。",
-    backToMain: "メインに戻る",
+    tableCaption: "最近学習した順のサンドバッグ",
+    columns: {
+      bag: "サンドバッグ",
+      cards: "カード",
+      lastStudied: "最終学習",
+      study: "学習",
+    },
+    neverStudied: "未学習",
     sample: {
       title: "最初の学習を始めましょう!",
       description:
         "基本的な英語表現のサンプルサンドバッグでスマート学習を体験してください。実用的な英語文が10個入っています。",
       create: "サンプルサンドバッグを作成",
       creating: "作成中...",
+      failed: "サンプルを作成できませんでした。もう一度お試しください。",
     },
     inactive: "非アクティブ",
     stats: {
@@ -555,6 +567,8 @@ const jaTranslation = {
       reviewCards: "復習",
     },
     actions: {
+      studyCompact: "学習 ({{count}})",
+      noCardsCompact: "学習なし",
       studyWithCount: "学習する ({{count}}枚)",
       noCards: "学習するカードがありません",
       viewAll: "すべてのカードを見る",

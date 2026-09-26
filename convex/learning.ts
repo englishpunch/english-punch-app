@@ -250,6 +250,73 @@ export const getUserBags = query({
   },
 });
 
+/** Compact Run rows, ordered by completed study rather than bag edits. */
+export const getStudyBags = query({
+  args: { now: v.number() },
+  returns: v.array(
+    v.object({
+      _id: v.id("bags"),
+      name: v.string(),
+      totalCards: v.number(),
+      dueCount: v.number(),
+      lastReviewedAt: v.union(v.number(), v.null()),
+      isActive: v.boolean(),
+    })
+  ),
+  handler: async (ctx, { now }) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    const bags = await ctx.db
+      .query("bags")
+      .withIndex("by_user_and_deleted_at", (q) =>
+        q.eq("userId", userId).eq("deletedAt", undefined)
+      )
+      .collect();
+    const rows = await Promise.all(
+      bags.map(async (bag) => {
+        const [review, dueCount] = await Promise.all([
+          ctx.db
+            .query("activities")
+            .withIndex(
+              "by_userId_and_bagId_and_eventType_and_occurredAt",
+              (q) =>
+                q
+                  .eq("userId", userId)
+                  .eq("bagId", bag._id)
+                  .eq("eventType", "review_rated")
+            )
+            .order("desc")
+            .first(),
+          countDueCards(ctx, userId, bag._id, now),
+        ]);
+        // Older reviews predate the activity timeline. Use the stored review
+        // timestamp without scanning all cards (including soft-deleted cards).
+        const historicalCard = review
+          ? null
+          : await ctx.db
+              .query("cards")
+              .withIndex("by_userId_and_bagId_and_last_review", (q) =>
+                q.eq("userId", userId).eq("bagId", bag._id)
+              )
+              .order("desc")
+              .first();
+        return {
+          _id: bag._id,
+          name: bag.name,
+          totalCards: bag.totalCards,
+          dueCount,
+          lastReviewedAt:
+            review?.occurredAt ?? historicalCard?.last_review ?? null,
+          isActive: bag.isActive,
+        };
+      })
+    );
+    // Stable ties retain creation order; never-studied bags come last.
+    return rows.sort(
+      (a, b) => (b.lastReviewedAt ?? -1) - (a.lastReviewedAt ?? -1)
+    );
+  },
+});
+
 /**
  * Get one studyable card, ordered by due date.
  */
