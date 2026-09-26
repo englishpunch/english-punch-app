@@ -13,6 +13,11 @@ if [[ -z "$branch" ]]; then
   exit 1
 fi
 
+if [[ "$branch" == "main" ]]; then
+  echo "Commit blocked: create a feature branch and open a pull request; direct commits to main are prohibited." >&2
+  exit 1
+fi
+
 upstream="$(git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || true)"
 if [[ -z "$upstream" ]]; then
   echo "Commit blocked: no upstream configured for $branch." >&2
