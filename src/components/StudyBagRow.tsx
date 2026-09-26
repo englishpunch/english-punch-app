@@ -49,7 +49,7 @@ export function StudyBagRow({
             })}
             className={buttonVariants({ size: "sm" })}
           >
-            {t("bagManager.actions.studyCompact", { count: bag.dueCount })}
+            {t("bagManager.actions.studyCompact")}
           </Link>
         ) : (
           <Button size="sm" variant="secondary" disabled>

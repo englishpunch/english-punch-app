@@ -192,7 +192,7 @@ const enTranslation = {
       reviewCards: "Review",
     },
     actions: {
-      studyCompact: "Study ({{count}})",
+      studyCompact: "Study",
       noCardsCompact: "Up to date",
       studyWithCount: "Study ({{count}} cards)",
       noCards: "No cards to study",
@@ -567,7 +567,7 @@ const jaTranslation = {
       reviewCards: "復習",
     },
     actions: {
-      studyCompact: "学習 ({{count}})",
+      studyCompact: "学習",
       noCardsCompact: "学習なし",
       studyWithCount: "学習する ({{count}}枚)",
       noCards: "学習するカードがありません",
