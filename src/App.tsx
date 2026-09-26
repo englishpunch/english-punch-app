@@ -7,6 +7,7 @@ import { Spinner } from "./components/Spinner";
 import { RouterProvider } from "@tanstack/react-router";
 import { router } from "./router";
 import AuthPage from "./components/AuthPage";
+import DeviceAuthorizationPage from "./components/DeviceAuthorizationPage";
 import OAuthConsentPage from "./components/OAuthConsentPage";
 
 export default function App() {
@@ -25,6 +26,10 @@ export default function App() {
         <Toaster />
       </>
     );
+  }
+
+  if (window.location.pathname === "/device") {
+    return <DeviceAuthorizationPage email={loggedInUser.email} />;
   }
 
   if (window.location.pathname === "/oauth/authorize") {

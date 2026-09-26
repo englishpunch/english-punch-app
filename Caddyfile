@@ -5,6 +5,13 @@
 	@oauth_json path /.well-known/oauth-authorization-server /.well-known/openid-configuration /oauth/jwks
 	header @oauth_json Content-Type "application/json; charset=utf-8"
 
+	@oauth_actions path /oauth/token /oauth/device/code
+	handle @oauth_actions {
+		reverse_proxy https://ep-convex-site.echoja.com {
+			header_up Host ep-convex-site.echoja.com
+		}
+	}
+
 	handle /assets/* {
 		header Cache-Control "public, max-age=31536000, immutable"
 		file_server
