@@ -2,8 +2,9 @@ import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
-import FSRSStudySession from "./FSRSStudySession";
+import { Link } from "@tanstack/react-router";
 import { Button } from "./Button";
+import { buttonVariants } from "./buttonVariants";
 import { ArrowLeft, Plus } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
@@ -17,8 +18,6 @@ export default function BagManager({ onBack }: BagManagerProps) {
   const loggedInUser = useQuery(api.auth.loggedInUser);
   const userId = loggedInUser?._id;
 
-  const [currentView, setCurrentView] = useState<"bags" | "study">("bags");
-  const [selectedBagId, setSelectedBagId] = useState<Id<"bags"> | null>(null);
   const [isCreatingSample, setIsCreatingSample] = useState(false);
 
   // Convex queries and mutations.
@@ -40,25 +39,6 @@ export default function BagManager({ onBack }: BagManagerProps) {
       setIsCreatingSample(false);
     }
   };
-
-  const handleStartStudy = (bagId: Id<"bags">) => {
-    setSelectedBagId(bagId);
-    setCurrentView("study");
-  };
-
-  const handleCompleteStudy = () => {
-    setCurrentView("bags");
-    setSelectedBagId(null);
-  };
-
-  if (currentView === "study" && selectedBagId) {
-    return (
-      <FSRSStudySession
-        bagId={selectedBagId}
-        onComplete={handleCompleteStudy}
-      />
-    );
-  }
 
   return (
     <div className="mx-auto max-w-4xl space-y-8 px-4 py-10">
@@ -117,11 +97,7 @@ export default function BagManager({ onBack }: BagManagerProps) {
       {bags && bags.length > 0 && (
         <div className="grid grid-cols-1 gap-4">
           {bags.map((bag) => (
-            <BagCard
-              key={bag._id}
-              bag={bag}
-              onStartStudy={() => handleStartStudy(bag._id)}
-            />
+            <BagCard key={bag._id} bag={bag} />
           ))}
         </div>
       )}
@@ -143,10 +119,9 @@ interface BagCardProps {
     tags: string[];
     isActive: boolean;
   };
-  onStartStudy: () => void;
 }
 
-function BagCard({ bag, onStartStudy }: BagCardProps) {
+function BagCard({ bag }: BagCardProps) {
   const dueCount = bag.newCards + bag.learningCards; // Simple approximation.
   const { t } = useTranslation();
 
@@ -197,9 +172,13 @@ function BagCard({ bag, onStartStudy }: BagCardProps) {
         {/* Action button */}
         <div className="space-y-2">
           {dueCount > 0 ? (
-            <Button onClick={onStartStudy} fullWidth>
+            <Link
+              to="/run/$bagId"
+              params={{ bagId: bag._id }}
+              className={buttonVariants({ fullWidth: true })}
+            >
               {t("bagManager.actions.studyWithCount", { count: dueCount })}
-            </Button>
+            </Link>
           ) : (
             <Button fullWidth variant="secondary" disabled>
               {t("bagManager.actions.noCards")}

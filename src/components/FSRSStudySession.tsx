@@ -4,7 +4,7 @@ import { api } from "../../convex/_generated/api";
 import { Id } from "../../convex/_generated/dataModel";
 import StudyCard from "./StudyCard";
 import { Button } from "./Button";
-import { FileText } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { Spinner } from "./Spinner";
 import { useTranslation } from "react-i18next";
 import { dayjs } from "@/lib/dayjs";
@@ -19,7 +19,7 @@ export default function FSRSStudySession({
   bagId,
   onComplete,
 }: FSRSStudySessionProps) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const loggedInUser = useQuery(api.auth.loggedInUser);
 
   const userId = loggedInUser?._id;
@@ -51,10 +51,13 @@ export default function FSRSStudySession({
     bagId,
     now: dueCountAsOf,
   });
+  // The backend aggregate already returns an exact count without loading cards.
   const dueCardCountDisplay =
-    typeof dueCardCount === "number" && dueCardCount > 100
-      ? "100+"
-      : `${dueCardCount}`;
+    dueCardCount === undefined
+      ? ""
+      : new Intl.NumberFormat(i18n.resolvedLanguage ?? i18n.language).format(
+          dueCardCount
+        );
 
   const reviewCard = useMutation(api.fsrs.reviewCard);
   const disableCardForRun = useMutation(api.learning.disableCardForRun);
@@ -204,10 +207,21 @@ export default function FSRSStudySession({
     <div className="min-h-screen">
       <div>
         <div className="flex items-center justify-between px-4 py-4">
-          <h1 className="text-lg font-medium text-gray-900">
-            {t("studySession.sessionTitle")}
-          </h1>
-          <div className="text-sm text-gray-600">
+          <div className="flex min-w-0 items-center gap-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleBack}
+              aria-label={t("common.actions.back")}
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+            </Button>
+            <h1 className="truncate text-lg font-medium text-gray-900">
+              {bags?.find((bag) => bag._id === bagId)?.name ??
+                t("studySession.sessionTitle")}
+            </h1>
+          </div>
+          <div className="shrink-0 text-sm text-gray-600">
             {dueCardCount !== undefined
               ? t("studySession.cardsDue", {
                   countDisplay: dueCardCountDisplay,

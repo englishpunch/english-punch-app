@@ -1,6 +1,8 @@
-import { Outlet } from "@tanstack/react-router";
+import { Outlet, useNavigate, useParams } from "@tanstack/react-router";
 import ActivityPage from "./components/ActivityPage";
 import BagManager from "./components/BagManager";
+import FSRSStudySession from "./components/FSRSStudySession";
+import type { Id } from "../convex/_generated/dataModel";
 import ComingSoon from "./components/ComingSoon";
 import MobileShell from "./components/MobileShell";
 import BagListPage from "./components/BagListPage";
@@ -20,6 +22,18 @@ export function RootLayout() {
 
 export function RunRoute() {
   return <BagManager />;
+}
+
+export function RunBagRoute() {
+  const { bagId } = useParams({ from: "/run/$bagId" });
+  const navigate = useNavigate();
+  return (
+    <FSRSStudySession
+      key={bagId}
+      bagId={bagId as Id<"bags">}
+      onComplete={() => void navigate({ to: "/run" })}
+    />
+  );
 }
 
 export function PlansRoute() {

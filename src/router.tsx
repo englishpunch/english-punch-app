@@ -17,6 +17,7 @@ import {
   ProfileRoute,
   RootLayout,
   RunRoute,
+  RunBagRoute,
 } from "./router-components";
 import { fallback, zodValidator } from "@tanstack/zod-adapter";
 import { z } from "zod";
@@ -41,6 +42,12 @@ const runRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/run",
   component: RunRoute,
+});
+
+const runBagRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/run/$bagId",
+  component: RunBagRoute,
 });
 
 const homeRoute = createRoute({
@@ -128,6 +135,7 @@ const routeTree = rootRoute.addChildren([
   indexRoute,
   homeRoute,
   runRoute,
+  runBagRoute,
   plansRoute,
   plansBagDetailRoute,
   cardAddRoute,
