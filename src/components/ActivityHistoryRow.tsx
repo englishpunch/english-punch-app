@@ -42,7 +42,7 @@ export function ActivityHistoryRow({
     typeof payload.rating === "number" ? payload.rating : undefined;
 
   return (
-    <Tr className="hover:bg-gray-50/70">
+    <Tr>
       <Td
         className="text-gray-500 tabular-nums"
         title={dayjs(activity.occurredAt)

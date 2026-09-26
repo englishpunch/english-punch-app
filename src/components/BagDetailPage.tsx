@@ -560,7 +560,7 @@ export default function BagDetailPage() {
               </Tr>
             ) : (
               rows.map((row) => (
-                <Tr key={row.id} className="hover:bg-gray-50">
+                <Tr key={row.id}>
                   {row.getVisibleCells().map((cell) => (
                     <Td
                       key={cell.id}

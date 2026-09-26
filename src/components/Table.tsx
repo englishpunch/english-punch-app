@@ -35,8 +35,7 @@ export function Table({ className, ...props }: TableProps) {
   return (
     <table
       className={cn(
-        "min-w-full border-separate border-spacing-0 text-sm",
-        "[&_td]:px-3 [&_td]:py-2 [&_th]:px-3 [&_th]:py-2",
+        "w-full border-separate border-spacing-0 text-left text-sm",
         className
       )}
       {...props}
@@ -47,26 +46,27 @@ export function Table({ className, ...props }: TableProps) {
 type THeadProps = ComponentProps<"thead">;
 
 export function THead({ className, ...props }: THeadProps) {
-  return (
-    <thead
-      className={cn("border-b border-gray-200 bg-gray-50", className)}
-      {...props}
-    />
-  );
+  return <thead className={cn("bg-gray-50", className)} {...props} />;
 }
 
 type TBodyProps = ComponentProps<"tbody">;
 
 export function TBody({ className, ...props }: TBodyProps) {
   return (
-    <tbody className={cn("divide-y divide-gray-200", className)} {...props} />
+    <tbody
+      className={cn(
+        "[&>tr:not(:last-child)>td]:border-b [&>tr:not(:last-child)>td]:border-gray-100",
+        className
+      )}
+      {...props}
+    />
   );
 }
 
 type TrProps = ComponentProps<"tr">;
 
 export function Tr({ className, ...props }: TrProps) {
-  return <tr className={cn(className)} {...props} />;
+  return <tr className={cn("hover:bg-gray-50/70", className)} {...props} />;
 }
 
 type ThProps = ComponentProps<"th">;
@@ -75,7 +75,7 @@ export function Th({ className, ...props }: ThProps) {
   return (
     <th
       className={cn(
-        "px-3 py-2 text-left text-xs font-semibold text-gray-600",
+        "border-b border-gray-200 px-3 py-2 text-left text-xs font-semibold text-gray-600",
         className
       )}
       {...props}

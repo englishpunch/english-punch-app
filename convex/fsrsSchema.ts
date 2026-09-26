@@ -128,6 +128,11 @@ export const learningTables = {
       "deletedAt",
       "due",
     ])
+    .index("by_userId_and_bagId_and_last_review", [
+      "userId",
+      "bagId",
+      "last_review",
+    ])
     .index("by_user_and_state", ["userId", "state"])
     .index("by_bag_and_state", ["bagId", "state"])
     .index("by_user_and_learning_steps", ["userId", "learning_steps"])
@@ -222,6 +227,12 @@ export const learningTables = {
   })
     .index("by_dailyCounted_and_userId", ["dailyCounted", "userId"])
     .index("by_user_and_occurred_at", ["userId", "occurredAt"])
+    .index("by_userId_and_bagId_and_eventType_and_occurredAt", [
+      "userId",
+      "bagId",
+      "eventType",
+      "occurredAt",
+    ])
     .index("by_user_event_date", ["userId", "eventType", "localDate"])
     .index("by_user_date_time", ["userId", "localDate", "occurredAt"])
     .index("by_user_and_dedupe_key", ["userId", "dedupeKey"])

@@ -21,11 +21,14 @@ vi.mock("convex/react", () => ({
       case "auth:loggedInUser":
         return { _id: "user-1" };
       case "learning:getUserBags":
+      case "learning:getStudyBags":
         return [
           {
             _id: "bag-1",
             name: "TOEFL",
             totalCards: 1234,
+            dueCount: 1234,
+            lastReviewedAt: null,
             newCards: 1234,
             learningCards: 0,
             tags: [],
@@ -35,6 +38,8 @@ vi.mock("convex/react", () => ({
             _id: "bag-2",
             name: "Phrases",
             totalCards: 7,
+            dueCount: 7,
+            lastReviewedAt: null,
             newCards: 7,
             learningCards: 0,
             tags: [],
