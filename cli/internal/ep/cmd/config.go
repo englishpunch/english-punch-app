@@ -16,6 +16,7 @@ var configShowFields = []common.Field{
 	{Name: "configFileExists", Type: "boolean"},
 	{Name: "convexUrl", Type: "string"},
 	{Name: "defaultBagId", Type: "string"},
+	{Name: "authStorage", Type: "string"},
 }
 
 func newConfigCmd() *cobra.Command {
@@ -73,6 +74,7 @@ placeholder string.`,
 				"configFileExists": configFileExists,
 				"convexUrl":        cfg.ConvexURL,
 				"defaultBagId":     cfg.DefaultBagID,
+				"authStorage":      cfg.AuthStorage,
 			}
 
 			if handled, err := jsonFlag.HandleOutput(payload, configShowFields); handled {
@@ -92,6 +94,7 @@ placeholder string.`,
 			fmt.Printf("Config file:  %s\n", displayFile)
 			fmt.Printf("Convex URL:   %s\n", cfg.ConvexURL)
 			fmt.Printf("Default bag:  %s\n", defaultBag)
+			fmt.Printf("Auth storage: %s\n", cfg.AuthStorage)
 
 			return nil
 		},

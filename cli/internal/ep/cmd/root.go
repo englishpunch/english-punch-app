@@ -1,18 +1,21 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
 
 	"github.com/echoja/english-punch-app/cli/internal/ep/common"
 	"github.com/spf13/cobra"
 )
 
 var (
-	version   = "dev"
-	configDir string
-	jsonFlag  common.JSONFlag
+	version         = "dev"
+	configDir       string
+	storageOverride string
+	jsonFlag        common.JSONFlag
 )
 
 func NewRootCmd() *cobra.Command {
@@ -29,7 +32,7 @@ idempotency, self-describing help, minimal chrome).
 Human terminal use is supported as a side-effect, not the primary
 design target.`,
 		Example: `  # Log in (stores credentials in the OS keychain)
-  ep auth login --email you@example.com --password hunter2
+  ep auth login --web
 
   # Pick a default bag so card commands can omit --bag
   ep bags list --json _id,name
@@ -43,6 +46,7 @@ design target.`,
 	}
 
 	cmd.PersistentFlags().StringVar(&configDir, "config-dir", "", "Config directory (default: ~/.config/english-punch)")
+	cmd.PersistentFlags().StringVar(&storageOverride, "storage", "", "Credential storage: keyring or file (default: saved selection, initially keyring). Login saves this selection; other commands only override it.")
 	// --json is stripped from os.Args by JSONFlag.Parse() before cobra
 	// sees them, so this persistent flag registration is purely for
 	// documentation — cobra never actually parses a value. Declared on
@@ -63,7 +67,9 @@ design target.`,
 func Execute() {
 	jsonFlag.Parse()
 	cmd := NewRootCmd()
-	if err := cmd.Execute(); err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	if err := cmd.ExecuteContext(ctx); err != nil {
 		var exitErr *common.ExitError
 		if errors.As(err, &exitErr) {
 			fmt.Fprintln(os.Stderr, exitErr.Error())

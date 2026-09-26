@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/echoja/english-punch-app/cli/internal/ep/common"
@@ -32,7 +33,9 @@ func newDoctorCmd() *cobra.Command {
 		Use:   "doctor",
 		Short: "Check CLI setup and connectivity",
 		Long: `Run diagnostic checks against the local config, Convex
-reachability, keychain credentials, and end-to-end authentication.
+reachability, selected credential storage, and end-to-end authentication.
+Uses the saved storage selection unless --storage overrides it. Storage and
+authentication failures are reported separately, without credential contents.
 
 Always exits 0 — individual check results are reported via the
 printed output (or the --json payload). The skill should branch on
@@ -70,22 +73,32 @@ failure from the exit code.`,
 				}
 			}
 
-			// 3. Keychain credentials
-			creds, err := config.KeychainLoad()
-			if err != nil {
-				result.Checks = append(result.Checks, doctorCheck{Name: "Keychain", OK: false, Detail: "no credentials stored"})
-				result.AllOK = false
-			} else {
-				result.Checks = append(result.Checks, doctorCheck{Name: "Keychain", OK: true, Detail: creds.Email})
-			}
-
-			// 4. Auth validation (end-to-end)
-			if creds != nil && cfg != nil {
-				if _, _, err := authenticatedClient(ctx); err != nil {
-					result.Checks = append(result.Checks, doctorCheck{Name: "Auth", OK: false, Detail: "credentials invalid"})
+			// 3. Credential storage, then 4. Auth validation (end-to-end).
+			if cfg != nil {
+				store, err := config.NewCredentialStore(configDir, cfg, storageOverride)
+				if err != nil {
+					result.Checks = append(result.Checks, doctorCheck{Name: "Credentials", OK: false, Detail: err.Error()})
 					result.AllOK = false
 				} else {
-					result.Checks = append(result.Checks, doctorCheck{Name: "Auth", OK: true, Detail: "credentials valid"})
+					var creds *config.Credentials
+					var err error
+					if os.Getenv("EP_TOKEN") != "" {
+						creds = &config.Credentials{Email: "EP_TOKEN"}
+					} else {
+						creds, err = store.Load()
+					}
+					if err != nil {
+						result.Checks = append(result.Checks, doctorCheck{Name: "Credentials", OK: false, Detail: credentialStorageError(store, "load credentials", err).Error()})
+						result.AllOK = false
+					} else {
+						result.Checks = append(result.Checks, doctorCheck{Name: "Credentials", OK: true, Detail: store.Storage + ": " + creds.Email})
+						if _, _, err := authenticateFromStore(ctx, cfg, store); err != nil {
+							result.Checks = append(result.Checks, doctorCheck{Name: "Auth", OK: false, Detail: err.Error()})
+							result.AllOK = false
+						} else {
+							result.Checks = append(result.Checks, doctorCheck{Name: "Auth", OK: true, Detail: "credentials valid"})
+						}
+					}
 				}
 			}
 
@@ -97,7 +110,7 @@ failure from the exit code.`,
 				printCheck(c.OK, c.Name, c.Detail)
 			}
 			if !result.AllOK {
-				fmt.Println("\nSome checks failed. Run 'ep auth login' to set up credentials.")
+				fmt.Println("\nSome checks failed. Check the details above before changing your login.")
 			} else {
 				fmt.Println("\nAll checks passed.")
 			}

@@ -22,10 +22,16 @@ const (
 	TokenNoDefaultBag = "NO_DEFAULT_BAG"
 
 	// Auth lifecycle
-	TokenNotLoggedIn        = "NOT_LOGGED_IN"
-	TokenInvalidCredentials = "INVALID_CREDENTIALS"
-	TokenNotATTY            = "NOT_A_TTY"
-	TokenKeychainFailed     = "KEYCHAIN_FAILED"
+	TokenNotLoggedIn             = "NOT_LOGGED_IN"
+	TokenInvalidCredentials      = "INVALID_CREDENTIALS"
+	TokenNotATTY                 = "NOT_A_TTY"
+	TokenKeychainFailed          = "KEYCHAIN_FAILED"
+	TokenCredentialStorageFailed = "CREDENTIAL_STORAGE_FAILED"
+
+	TokenDeviceAuthDenied   = "DEVICE_AUTH_DENIED"
+	TokenDeviceAuthExpired  = "DEVICE_AUTH_EXPIRED"
+	TokenDeviceAuthCanceled = "DEVICE_AUTH_CANCELED"
+	TokenOAuthFailed        = "OAUTH_FAILED"
 
 	// Convex transport
 	TokenConvexUnreachable = "CONVEX_UNREACHABLE"
@@ -53,25 +59,30 @@ const (
 // need to validate tokens dynamically. Must stay in sync with the
 // Token* constants above — the drift test enforces this.
 var CanonicalTokens = map[string]struct{}{
-	TokenBagNotFound:          {},
-	TokenCardNotFound:         {},
-	TokenNoDefaultBag:         {},
-	TokenNotLoggedIn:          {},
-	TokenInvalidCredentials:   {},
-	TokenNotATTY:              {},
-	TokenKeychainFailed:       {},
-	TokenConvexUnreachable:    {},
-	TokenConvexHTTPError:      {},
-	TokenConvexAPIError:       {},
-	TokenConfigReadFailed:     {},
-	TokenConfigWriteFailed:    {},
-	TokenMissingRequiredField: {},
-	TokenInvalidArgument:      {},
-	TokenInteractiveOnly:      {},
-	TokenReviewAlreadyPending: {},
-	TokenNoPendingReview:      {},
-	TokenReviewNotRevealed:    {},
-	TokenNoCardAvailable:      {},
+	TokenBagNotFound:             {},
+	TokenCardNotFound:            {},
+	TokenNoDefaultBag:            {},
+	TokenNotLoggedIn:             {},
+	TokenDeviceAuthDenied:        {},
+	TokenDeviceAuthExpired:       {},
+	TokenDeviceAuthCanceled:      {},
+	TokenOAuthFailed:             {},
+	TokenInvalidCredentials:      {},
+	TokenNotATTY:                 {},
+	TokenKeychainFailed:          {},
+	TokenCredentialStorageFailed: {},
+	TokenConvexUnreachable:       {},
+	TokenConvexHTTPError:         {},
+	TokenConvexAPIError:          {},
+	TokenConfigReadFailed:        {},
+	TokenConfigWriteFailed:       {},
+	TokenMissingRequiredField:    {},
+	TokenInvalidArgument:         {},
+	TokenInteractiveOnly:         {},
+	TokenReviewAlreadyPending:    {},
+	TokenNoPendingReview:         {},
+	TokenReviewNotRevealed:       {},
+	TokenNoCardAvailable:         {},
 }
 
 // ExitError is an error with a specific exit code and an optional

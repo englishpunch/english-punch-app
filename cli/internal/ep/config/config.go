@@ -19,6 +19,7 @@ const (
 type Config struct {
 	ConvexURL    string `mapstructure:"convex_url"`
 	DefaultBagID string `mapstructure:"default_bag_id"`
+	AuthStorage  string `mapstructure:"auth_storage"`
 }
 
 // Load reads configuration from file, environment, and defaults.
@@ -28,6 +29,7 @@ func Load(configDir string) (*Config, error) {
 
 	v.SetDefault("convex_url", defaultConvexURL)
 	v.SetDefault("default_bag_id", "")
+	v.SetDefault("auth_storage", "keyring")
 
 	v.SetEnvPrefix("EP")
 	v.AutomaticEnv()
@@ -70,6 +72,11 @@ func Save(configDir string, cfg *Config) error {
 	v := viper.New()
 	v.Set("convex_url", cfg.ConvexURL)
 	v.Set("default_bag_id", cfg.DefaultBagID)
+	storage := cfg.AuthStorage
+	if storage == "" {
+		storage = "keyring"
+	}
+	v.Set("auth_storage", storage)
 
 	configFile := filepath.Join(dir, configFileName+"."+configFileType)
 	if err := v.WriteConfigAs(configFile); err != nil {

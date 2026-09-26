@@ -53,6 +53,7 @@ func TestSave_RoundTrip(t *testing.T) {
 	in := &Config{
 		ConvexURL:    "https://custom.example.test",
 		DefaultBagID: "bag_abc123",
+		AuthStorage:  "file",
 	}
 	if err := Save(dir, in); err != nil {
 		t.Fatalf("Save error: %v", err)
@@ -67,6 +68,9 @@ func TestSave_RoundTrip(t *testing.T) {
 	}
 	if out.DefaultBagID != in.DefaultBagID {
 		t.Errorf("DefaultBagID = %q, want %q", out.DefaultBagID, in.DefaultBagID)
+	}
+	if out.AuthStorage != in.AuthStorage {
+		t.Fatal("credential configuration was not preserved")
 	}
 }
 

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/echoja/english-punch-app/cli/internal/ep/common"
 )
@@ -16,14 +17,14 @@ import (
 type Client struct {
 	BaseURL    string
 	HTTPClient *http.Client
-	Token      string // JWT, set after SignIn
+	Token      string // OAuth access token
 }
 
 // NewClient creates a Convex client for the given deployment URL.
 func NewClient(baseURL string) *Client {
 	return &Client{
 		BaseURL:    baseURL,
-		HTTPClient: http.DefaultClient,
+		HTTPClient: &http.Client{Timeout: 30 * time.Second, CheckRedirect: func(_ *http.Request, _ []*http.Request) error { return http.ErrUseLastResponse }},
 	}
 }
 
@@ -166,6 +167,9 @@ func (c *Client) GetCurrentUser(ctx context.Context) (*User, error) {
 	var user User
 	if err := json.Unmarshal(raw, &user); err != nil {
 		return nil, common.NewAuthTokenError(common.TokenNotLoggedIn, "parse user", err)
+	}
+	if user.ID == "" {
+		return nil, common.NewAuthTokenError(common.TokenNotLoggedIn, "no authenticated user; run ep auth login", nil)
 	}
 	return &user, nil
 }

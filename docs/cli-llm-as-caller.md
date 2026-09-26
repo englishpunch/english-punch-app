@@ -83,9 +83,86 @@ ep cards create "curriculum" --bag <bag-id> --question "교육과정" --hint "" 
 - Creation trims leading and trailing whitespace. Bag names, card questions, and card answers must be non-empty.
 - Bag and card creation are not idempotent: the backend permits duplicates and has no idempotency key. After a timeout, inspect existing bags or cards before retrying.
 
+## Device login and credential storage
+
+Tracked in [#96](https://github.com/englishpunch/english-punch-app/issues/96)
+and [#100](https://github.com/englishpunch/english-punch-app/issues/100).
+
+`ep auth login` uses OAuth device authorization, following the browser approval
+pattern of `gh auth login`. It prints a one-time code and `https://ep.echoja.com/device`
+to stderr, then polls until approved, denied, canceled, or expired. No local callback
+server, terminal input, client secret, or CLI password prompt is needed. `--web`
+opens the approval page; otherwise it can be opened on another device. Check that
+the code matches the terminal before approving. Login is not idempotent: each
+invocation creates a new 15-minute authorization request.
+
+```sh
+# Default: OS keyring, with optional automatic browser opening.
+ep auth login --web
+
+# Explicit plaintext token storage for environments without keyring access.
+ep auth login --storage file
+
+ep auth status --json loggedIn,email,storage,credentialsFile,plaintext
+ep bags list --json _id,name
+```
+
+Both backends store OAuth access and refresh tokens, never an account password.
+Access tokens last one hour. Refresh tokens rotate and expire after 30 days of
+inactivity; expired/revoked sessions require another device login. Refresh is
+serialized across local CLI processes to prevent accidental refresh-token replay.
+Do not copy a login between machines or backends: start a separate device login
+for each, so each has its own refresh-token family. `auth export` is not provided.
+
+The CLI uses `zalando/go-keyring` by default. On macOS this still invokes
+`/usr/bin/security` and does not bypass Keychain sandbox restrictions. OAuth
+credentials use service `english-punch-cli-oauth`, account `session`. Legacy
+password entries under `english-punch-cli` are not read or migrated; sign in once
+with the new device flow. Those old entries can be removed through Keychain Access.
+
+File mode writes plaintext to `~/.config/english-punch/auth/credentials.json`,
+or the corresponding location under `--config-dir`. The `auth` directory has
+mode `0700`; the file has mode `0600`. Reads reject group/other-accessible files
+or directories, symlinks, and malformed credentials. Writes replace the file
+atomically. Other applications running as the same OS user may still read it.
+File mode requires POSIX permissions and is unavailable on Windows; use its
+native keyring instead.
+
+Login persists `auth_storage` in `config.yaml`. Global `--storage` overrides it
+for one command. File mode never accesses the keyring; neither backend silently
+falls back to the other. A restricted environment needs file-read access and
+outbound HTTPS. Refresh also requires permission to write the token and lock
+files. Device flow itself does not grant filesystem or network permissions.
+The current CLI pins device login to EP's production issuer and Convex backend.
+
+`EP_TOKEN` supplies an externally managed access token and takes precedence over
+stored tokens, like `GH_TOKEN`. It is not persisted or refreshed. `auth status`
+reports `storage: environment`. Unset it before login/logout of saved credentials.
+Never print the variable's value. For example, configure it through the calling
+environment's secret mechanism, then run `ep bags list --json _id,name`.
+
+`ep auth logout` deletes only the selected backend and retains the selection.
+Other stored logins are retained; explicitly select each backend to remove it.
+Logout removes local credentials, not already issued server sessions. It is
+idempotent when credentials are absent.
+
+```sh
+ep auth logout --storage keyring
+ep auth logout --storage file
+```
+
+`NOT_LOGGED_IN` means missing, expired, or revoked credentials. `KEYCHAIN_FAILED`
+and `CREDENTIAL_STORAGE_FAILED` distinguish keyring and file errors.
+`DEVICE_AUTH_DENIED`, `DEVICE_AUTH_EXPIRED`, and `DEVICE_AUTH_CANCELED` identify
+terminal device-login states; other OAuth failures use `OAUTH_FAILED`.
+Convex request failures retain their `CONVEX_*` tokens. Diagnostics never print
+tokens or password contents. Bare `--json` discovers fields before accessing
+credentials or starting a device login; explicit JSON fields produce a single
+result on stdout, with device instructions on stderr.
+
 ## References
 
 - Active migration plan: `thoughts/plans/2026-04-11-cli-llm-as-caller.md`
 - Canonical token registry: `cli/internal/ep/common/errors.go`
 - JSON flag helper: `cli/internal/ep/common/jsonflag.go`
-- Existing commands as reference: `ep bags list` (good `--json` example), `ep auth login` (interactive path, needs work)
+- Existing commands as reference: `ep bags list` (good `--json` example), `ep auth login` (device flow)
