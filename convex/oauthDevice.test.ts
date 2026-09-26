@@ -240,11 +240,12 @@ it("rate limits failed user-code guesses and rejects unsupported requests", asyn
       approved: true,
     })
   ).toBe("slow_down");
-  for (const fields of [
+  const invalidRequests: Record<string, string>[] = [
     { scope: "cards:read" },
     { scope: "cli:access", client_id: "unknown" },
     { scope: "cli:access", resource: "https://example.com" },
-  ]) {
+  ];
+  for (const fields of invalidRequests) {
     expect((await post(t, "/oauth/device/code", fields)).status).toBe(400);
   }
   for (let i = 0; i < 60; i++) {
