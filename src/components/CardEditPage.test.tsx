@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { getFunctionName } from "convex/server";
-import { setupReviewedCard } from "../../convex/cardReplacement.test-helpers";
+import { setupReviewedCard } from "../../convex/cardUpdate.test-helpers";
 import CardEditPage from "./CardEditPage";
 
 const hooks = vi.hoisted(() => ({

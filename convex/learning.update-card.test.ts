@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Id } from "./_generated/dataModel";
-import { replaceCardContentAndResetScheduleHandler } from "./learning";
+import { updateCardContentHandler } from "./learning";
 
-describe("replaceCardContentAndResetScheduleHandler", () => {
+describe("updateCardContentHandler", () => {
   const cardId = "card_1" as Id<"cards">;
   const bagId = "bag_1" as Id<"bags">;
   const now = new Date("2026-06-09T00:00:00.000Z");
@@ -19,7 +19,7 @@ describe("replaceCardContentAndResetScheduleHandler", () => {
     vi.useRealTimers();
   });
 
-  it("replaces content without writing schedule parameters or counts", async () => {
+  it("updates content without writing schedule parameters or counts", async () => {
     const card = {
       _id: cardId,
       bagId,
@@ -63,7 +63,7 @@ describe("replaceCardContentAndResetScheduleHandler", () => {
       },
     };
 
-    await replaceCardContentAndResetScheduleHandler(ctx as never, {
+    await updateCardContentHandler(ctx as never, {
       cardId,
       bagId,
       question: "I felt ___ after reading the rejection letter.",

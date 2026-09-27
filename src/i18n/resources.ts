@@ -138,7 +138,7 @@ const enTranslation = {
       question: "Question",
       hint: "Hint",
       answer: "Answer",
-      explanation: "Explanation",
+      explanation: "Description",
     },
     showAnswer: "Show answer",
     ratingPrompt: "How well did you remember?",
@@ -263,31 +263,31 @@ const enTranslation = {
     contextPlaceholder:
       "e.g., advising a friend, making a suggestion in a meeting",
     contextHelp:
-      "Adding context tailors the question, hint, and explanation to that situation.",
-    generateButton: "Generate question, hint, and explanation with AI",
+      "Adding context tailors the question, hint, and description to that situation.",
+    generateButton: "Generate question, hint, and description with AI",
     generating: "Generating with AI...",
-    generateAria: "Generate question, hint, and explanation with AI",
+    generateAria: "Generate question, hint, and description with AI",
     generationHelp:
-      "Enter the answer and context, then click above to auto-fill question, hint, and explanation. You can edit below afterwards.",
+      "Enter the answer and context, then click above to auto-fill question, hint, and description. You can edit below afterwards.",
     questionLabel: "Question",
     questionManualSuffix: "(manual)",
     questionToggleOpen: "Write manually",
     questionToggleClose: "Collapse",
     questionPlaceholder: "Enter a question (use ___ for blanks)",
     hintLabel: "Hint (optional)",
-    regenerateButton: "Regenerate hint + explanation",
+    regenerateButton: "Regenerate hint + description",
     regenerating: "Regenerating...",
     hintPlaceholder: "Hint",
-    explanationLabel: "Explanation (optional)",
-    explanationPlaceholder: "Explanation",
+    explanationLabel: "Description (optional)",
+    explanationPlaceholder: "Description",
     toasts: {
       answerRequired: "Please enter the answer first.",
       requestError: "Something went wrong during the request.",
       answerUpdated:
         'Changed answer from "{{prev}}" to "{{next}}". Review and save.',
-      generated: "Filled in the question and explanation. Review and save.",
+      generated: "Filled in the question and description. Review and save.",
       questionAnswerRequired: "Please enter both the question and answer.",
-      helpersRegenerated: "Hint and explanation refreshed.",
+      helpersRegenerated: "Hint and description refreshed.",
     },
   },
   cardAdd: {
@@ -374,7 +374,7 @@ const enTranslation = {
     question: "Mock Question {{number}}",
     answer: "Mock Answer {{number}}",
     hint: "Mock Hint {{number}}",
-    explanation: "Mock Explanation {{number}}",
+    explanation: "Mock Description {{number}}",
   },
 };
 
@@ -749,7 +749,7 @@ const jaTranslation = {
     question: "Mock Question {{number}}",
     answer: "Mock Answer {{number}}",
     hint: "Mock Hint {{number}}",
-    explanation: "Mock Explanation {{number}}",
+    explanation: "Mock Description {{number}}",
   },
 } satisfies TranslationSchema;
 

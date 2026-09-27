@@ -140,9 +140,9 @@ export function registerCardTools(
     server.registerTool(
       "update-card",
       {
-        title: "Replace vocabulary card",
+        title: "Update vocabulary card",
         description:
-          "Replace card content while preserving review parameters and history. To start over, explicitly delete the card and create a new one.",
+          "Update card content while preserving review parameters and history. To start over, explicitly delete the card and create a new one.",
         inputSchema: {
           cardId,
           bagId,
@@ -178,7 +178,7 @@ export function registerCardTools(
         sourceWord,
         expression,
       }) => {
-        const result = await client.mutation(api.learning.replaceCardContent, {
+        const result = await client.mutation(api.learning.updateCardContent, {
           cardId,
           bagId,
           question,

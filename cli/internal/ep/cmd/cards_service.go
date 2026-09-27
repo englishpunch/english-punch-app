@@ -21,7 +21,7 @@ type cardDetail struct {
 	Expression   *string `json:"expression,omitempty"`
 }
 
-type cardReplacement struct {
+type cardUpdate struct {
 	Question    string
 	Answer      string
 	Hint        string
@@ -115,34 +115,34 @@ func listCards(ctx context.Context, client *convex.Client, opts cardListOptions)
 	}, nil
 }
 
-func replaceCardContent(
+func updateCardContent(
 	ctx context.Context,
 	client *convex.Client,
 	bagID string,
 	cardID string,
-	replacement cardReplacement,
+	update cardUpdate,
 ) error {
 	args := map[string]any{
 		"cardId":   cardID,
 		"bagId":    bagID,
-		"question": replacement.Question,
-		"answer":   replacement.Answer,
-		"hint":     replacement.Hint,
+		"question": update.Question,
+		"answer":   update.Answer,
+		"hint":     update.Hint,
 	}
-	if replacement.Explanation != nil {
-		args["explanation"] = *replacement.Explanation
+	if update.Explanation != nil {
+		args["explanation"] = *update.Explanation
 	}
-	if replacement.Context != nil {
-		args["context"] = *replacement.Context
+	if update.Context != nil {
+		args["context"] = *update.Context
 	}
-	if replacement.SourceWord != nil {
-		args["sourceWord"] = *replacement.SourceWord
+	if update.SourceWord != nil {
+		args["sourceWord"] = *update.SourceWord
 	}
-	if replacement.Expression != nil {
-		args["expression"] = *replacement.Expression
+	if update.Expression != nil {
+		args["expression"] = *update.Expression
 	}
 
-	if _, err := client.Mutation(ctx, "learning:replaceCardContent", args); err != nil {
+	if _, err := client.Mutation(ctx, "learning:updateCardContent", args); err != nil {
 		return err
 	}
 	return nil
