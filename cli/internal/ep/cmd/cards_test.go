@@ -31,7 +31,7 @@ func resetCardsCommandTestState() {
 	cardsAuthenticatedClientFunc = authenticatedClient
 	cardsGetCardFunc = getCard
 	cardsListCardsFunc = listCards
-	cardsReplaceCardContentFunc = replaceCardContent
+	cardsUpdateCardContentFunc = updateCardContent
 }
 
 func runCardsCommand(command interface {
@@ -111,16 +111,16 @@ func TestCardsQuestionAndAnswerHelpIsFormatAgnostic(t *testing.T) {
 		t.Fatalf("create --question usage = %q", got)
 	}
 
-	replace := newCardsReplaceCmd()
-	if got := replace.Flags().Lookup("question").Usage; got != "Replacement question text. Defaults to the current question when omitted." {
-		t.Fatalf("replace --question usage = %q", got)
+	update := newCardsUpdateCmd()
+	if got := update.Flags().Lookup("question").Usage; got != "Update question text. Defaults to the current question when omitted." {
+		t.Fatalf("update --question usage = %q", got)
 	}
-	if got := replace.Flags().Lookup("answer").Usage; got != "Replacement answer text. Defaults to the current answer when omitted." {
-		t.Fatalf("replace --answer usage = %q", got)
+	if got := update.Flags().Lookup("answer").Usage; got != "Update answer text. Defaults to the current answer when omitted." {
+		t.Fatalf("update --answer usage = %q", got)
 	}
 }
 
-func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
+func TestCardsUpdate_PreservesExistingOptionalFields(t *testing.T) {
 	resetCardsCommandTestState()
 	t.Cleanup(resetCardsCommandTestState)
 
@@ -128,7 +128,7 @@ func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
 	contextText := "after a rejection"
 	sourceWord := "discouraged"
 	expression := "disheartened"
-	var gotReplacement cardReplacement
+	var gotUpdate cardUpdate
 
 	cardsResolveBagIDFunc = func(flagValue string) (string, error) {
 		if flagValue != "bag-1" {
@@ -154,15 +154,15 @@ func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
 			Expression:  &expression,
 		}, nil
 	}
-	cardsReplaceCardContentFunc = func(_ context.Context, _ *convex.Client, bagID, cardID string, replacement cardReplacement) error {
+	cardsUpdateCardContentFunc = func(_ context.Context, _ *convex.Client, bagID, cardID string, update cardUpdate) error {
 		if bagID != "bag-1" || cardID != "card-1" {
-			t.Fatalf("unexpected replace target: bag=%s card=%s", bagID, cardID)
+			t.Fatalf("unexpected update target: bag=%s card=%s", bagID, cardID)
 		}
-		gotReplacement = replacement
+		gotUpdate = update
 		return nil
 	}
 
-	cmd := newCardsReplaceCmd()
+	cmd := newCardsUpdateCmd()
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
 
@@ -176,34 +176,34 @@ func TestCardsReplace_PreservesExistingOptionalFields(t *testing.T) {
 		t.Fatalf("runCardsCommand: %v", err)
 	}
 
-	if gotReplacement.Question != "I felt ___ after reading the rejection letter." {
-		t.Fatalf("question = %q", gotReplacement.Question)
+	if gotUpdate.Question != "I felt ___ after reading the rejection letter." {
+		t.Fatalf("question = %q", gotUpdate.Question)
 	}
-	if gotReplacement.Answer != "disheartened" {
-		t.Fatalf("answer = %q, want existing answer", gotReplacement.Answer)
+	if gotUpdate.Answer != "disheartened" {
+		t.Fatalf("answer = %q, want existing answer", gotUpdate.Answer)
 	}
-	if gotReplacement.Hint != "discouraged, dejected, low-spirited" {
-		t.Fatalf("hint = %q", gotReplacement.Hint)
+	if gotUpdate.Hint != "discouraged, dejected, low-spirited" {
+		t.Fatalf("hint = %q", gotUpdate.Hint)
 	}
-	if gotReplacement.Explanation == nil || *gotReplacement.Explanation != explanation {
-		t.Fatalf("explanation not preserved: %#v", gotReplacement.Explanation)
+	if gotUpdate.Explanation == nil || *gotUpdate.Explanation != explanation {
+		t.Fatalf("explanation not preserved: %#v", gotUpdate.Explanation)
 	}
-	if gotReplacement.Context == nil || *gotReplacement.Context != contextText {
-		t.Fatalf("context not preserved: %#v", gotReplacement.Context)
+	if gotUpdate.Context == nil || *gotUpdate.Context != contextText {
+		t.Fatalf("context not preserved: %#v", gotUpdate.Context)
 	}
-	if gotReplacement.SourceWord == nil || *gotReplacement.SourceWord != sourceWord {
-		t.Fatalf("sourceWord not preserved: %#v", gotReplacement.SourceWord)
+	if gotUpdate.SourceWord == nil || *gotUpdate.SourceWord != sourceWord {
+		t.Fatalf("sourceWord not preserved: %#v", gotUpdate.SourceWord)
 	}
-	if gotReplacement.Expression == nil || *gotReplacement.Expression != expression {
-		t.Fatalf("expression not preserved: %#v", gotReplacement.Expression)
+	if gotUpdate.Expression == nil || *gotUpdate.Expression != expression {
+		t.Fatalf("expression not preserved: %#v", gotUpdate.Expression)
 	}
 }
 
-func TestCardsReplace_RejectsBlankQuestionAndAnswer(t *testing.T) {
+func TestCardsUpdate_RejectsBlankQuestionAndAnswer(t *testing.T) {
 	resetCardsCommandTestState()
 	t.Cleanup(resetCardsCommandTestState)
 
-	cmd := newCardsReplaceCmd()
+	cmd := newCardsUpdateCmd()
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
 
@@ -213,7 +213,7 @@ func TestCardsReplace_RejectsBlankQuestionAndAnswer(t *testing.T) {
 	})
 	assertMissingField(t, err, "--question")
 
-	cmd = newCardsReplaceCmd()
+	cmd = newCardsUpdateCmd()
 	cmd.SilenceUsage = true
 	cmd.SilenceErrors = true
 
@@ -336,7 +336,7 @@ func ptr(value string) *string {
 	return &value
 }
 
-func TestCardsReplace_HelperOnlyUpdates(t *testing.T) {
+func TestCardsUpdate_HelperOnlyUpdates(t *testing.T) {
 	for _, field := range []string{"hint", "explanation"} {
 		for _, value := range []string{"updated helper", ""} {
 			t.Run(field+"/"+value, func(t *testing.T) {
@@ -350,7 +350,7 @@ func TestCardsReplace_HelperOnlyUpdates(t *testing.T) {
 					return &cardDetail{ID: "card-1", Question: "She felt ___.", Answer: "disheartened", Hint: ptr("discouraged"), Explanation: ptr("old explanation")}, nil
 				}
 				called := false
-				cardsReplaceCardContentFunc = func(_ context.Context, _ *convex.Client, _, _ string, got cardReplacement) error {
+				cardsUpdateCardContentFunc = func(_ context.Context, _ *convex.Client, _, _ string, got cardUpdate) error {
 					called = true
 					if got.Question != "She felt ___." || got.Answer != "disheartened" {
 						t.Fatalf("study content changed: %+v", got)
@@ -366,7 +366,7 @@ func TestCardsReplace_HelperOnlyUpdates(t *testing.T) {
 					}
 					return nil
 				}
-				if err := runCardsCommand(newCardsReplaceCmd(), []string{"card-1", "--" + field, value}); err != nil {
+				if err := runCardsCommand(newCardsUpdateCmd(), []string{"card-1", "--" + field, value}); err != nil {
 					t.Fatal(err)
 				}
 				if !called {

@@ -1,7 +1,7 @@
 // @vitest-environment edge-runtime
 import { describe, expect, it } from "vitest";
 import { api } from "./_generated/api";
-import { setupReviewedCard } from "./cardReplacement.test-helpers";
+import { setupReviewedCard } from "./cardUpdate.test-helpers";
 
 describe("card content updates", () => {
   for (const state of [0, 1, 2, 3] as const) {
@@ -32,7 +32,7 @@ describe("card content updates", () => {
             explanation: before.card.explanation,
             ...change,
           };
-          await owner.mutation(api.learning.replaceCardContent, args);
+          await owner.mutation(api.learning.updateCardContent, args);
           const after = await read();
           expect(after.card).toEqual({ ...before.card, ...change });
           expect(after.history).toEqual(before.history);
@@ -56,21 +56,22 @@ describe("card content updates", () => {
       hint: "updated hint",
       explanation: before.card.explanation,
     };
-    expect(await owner.mutation(api.learning.replaceCardContent, args)).toEqual(
-      { updated: true, scheduleReset: false }
-    );
+    expect(await owner.mutation(api.learning.updateCardContent, args)).toEqual({
+      updated: true,
+      scheduleReset: false,
+    });
     expect((await read()).card).toEqual({
       ...before.card,
       hint: "updated hint",
     });
     expect(
-      await owner.mutation(api.learning.replaceCardContent, {
+      await owner.mutation(api.learning.updateCardContent, {
         ...args,
         answer: "changed",
       })
     ).toEqual({ updated: true, scheduleReset: false });
     expect(
-      await owner.mutation(api.learning.replaceCardContent, {
+      await owner.mutation(api.learning.updateCardContent, {
         ...args,
         answer: "changed",
       })

@@ -83,6 +83,23 @@ ep cards create "curriculum" --bag <bag-id> --question "교육과정" --hint "" 
 - Creation trims leading and trailing whitespace. Bag names, card questions, and card answers must be non-empty.
 - Bag and card creation are not idempotent: the backend permits duplicates and has no idempotency key. After a timeout, inspect existing bags or cards before retrying.
 
+## Updating bags and cards
+
+```bash
+ep bags update <bag-id> --name "TOEFL Speaking" --json ok,bagId,name
+ep cards update <card-id> --bag <bag-id> --hint "New hint" --json ok,cardId
+```
+
+- `ep bags update --json` discovers fields without logging in or changing data.
+- Bag title updates trim whitespace, reject blank names, and preserve cards and settings.
+- Repeating the same bag title update leaves its modification timestamp unchanged.
+- Card updates preserve scheduling and review history. Omitted CLI fields retain their values.
+- `cards update` replaces the former `cards replace` command. The frontend displays
+  **Description**; the stored field and CLI flag remain `explanation` and `--explanation`.
+- The API exposes `learning:updateBag` with `{ bagId, name }` and
+  `learning:updateCardContent`. Legacy card mutation names remain available for
+  previously deployed clients.
+
 ## Device login and credential storage
 
 Tracked in [#96](https://github.com/englishpunch/english-punch-app/issues/96)

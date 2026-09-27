@@ -764,6 +764,30 @@ export const createBag = mutation({
   },
 });
 
+/** Update a bag title without changing its cards or settings. */
+export const updateBag = mutation({
+  args: { bagId: v.id("bags"), name: v.string() },
+  returns: v.object({ bagId: v.id("bags"), name: v.string() }),
+  handler: async (ctx, args) => {
+    const userId = await requireAuthenticatedUserId(ctx);
+    const bag = await ctx.db.get("bags", args.bagId);
+    if (!bag || bag.userId !== userId || bag.deletedAt !== undefined) {
+      throw new ConvexError("Bag not found");
+    }
+    const name = args.name.trim();
+    if (!name) {
+      throw new ConvexError("Bag name must not be blank");
+    }
+    if (name !== bag.name) {
+      await ctx.db.patch("bags", args.bagId, {
+        name,
+        lastModified: new Date().toISOString(),
+      });
+    }
+    return { bagId: args.bagId, name };
+  },
+});
+
 const DELETE_BAG_CARD_BATCH_SIZE = 25;
 
 /** Soft-delete one bounded batch of cards belonging to a deleted bag. */
@@ -963,7 +987,7 @@ const initialSchedule = (now: number) => ({
   suspended: false,
 });
 
-const cardContentReplacementArgs = {
+const cardContentUpdateArgs = {
   bagId: v.id("bags"),
   cardId: v.id("cards"),
   question: v.string(),
@@ -975,7 +999,7 @@ const cardContentReplacementArgs = {
   expression: v.optional(v.string()),
 };
 
-type CardContentReplacementArgs = {
+type CardContentUpdateArgs = {
   bagId: Id<"bags">;
   cardId: Id<"cards">;
   question: string;
@@ -987,9 +1011,9 @@ type CardContentReplacementArgs = {
   expression?: string;
 };
 
-const replaceCardContentHandler = async (
+export const updateCardContentHandler = async (
   ctx: MutationCtx,
-  args: CardContentReplacementArgs
+  args: CardContentUpdateArgs
 ) => {
   const [card, bag] = await Promise.all([
     ctx.db.get("cards", args.cardId),
@@ -1027,12 +1051,6 @@ const replaceCardContentHandler = async (
 
   return { updated: true, scheduleReset: false };
 };
-
-// Preserve the boolean response expected by deployed frontend and CLI clients.
-export const replaceCardContentAndResetScheduleHandler = async (
-  ctx: MutationCtx,
-  args: CardContentReplacementArgs
-) => (await replaceCardContentHandler(ctx, args)).updated;
 
 /** Create a card. */
 export const createCard = mutation({
@@ -1079,9 +1097,9 @@ export const createCard = mutation({
   },
 });
 
-const replaceCardContentForOwner = async (
+const updateCardContentForOwner = async (
   ctx: MutationCtx,
-  args: CardContentReplacementArgs
+  args: CardContentUpdateArgs
 ) => {
   const userId = await requireAuthenticatedUserId(ctx);
   const [card, bag] = await Promise.all([
@@ -1099,28 +1117,35 @@ const replaceCardContentForOwner = async (
   ) {
     throw new ConvexError("Card not found");
   }
-  return await replaceCardContentHandler(ctx, args);
+  return await updateCardContentHandler(ctx, args);
 };
 
-/** Replace content while preserving review parameters and history. */
-export const replaceCardContent = mutation({
-  args: cardContentReplacementArgs,
+/** Update content while preserving review parameters and history. */
+export const updateCardContent = mutation({
+  args: cardContentUpdateArgs,
   returns: v.object({ updated: v.boolean(), scheduleReset: v.boolean() }),
-  handler: replaceCardContentForOwner,
+  handler: updateCardContentForOwner,
 });
 
-/** Compatibility endpoint: all edits preserve review state despite the legacy name. */
+/** @deprecated Use updateCardContent. Retained for deployed clients. */
+export const replaceCardContent = mutation({
+  args: cardContentUpdateArgs,
+  returns: v.object({ updated: v.boolean(), scheduleReset: v.boolean() }),
+  handler: updateCardContentForOwner,
+});
+
+/** @deprecated Use updateCardContent. Retained for deployed clients. */
 export const replaceCardContentAndResetSchedule = mutation({
-  args: cardContentReplacementArgs,
+  args: cardContentUpdateArgs,
   returns: v.boolean(),
   handler: async (ctx, args) =>
-    (await replaceCardContentForOwner(ctx, args)).updated,
+    (await updateCardContentForOwner(ctx, args)).updated,
 });
 
-/** @deprecated use replaceCardContent */
+/** @deprecated Use updateCardContent. */
 export const updateCard = mutation({
   args: {
-    ...cardContentReplacementArgs,
+    ...cardContentUpdateArgs,
     due: v.optional(v.number()),
     stability: v.optional(v.number()),
     difficulty: v.optional(v.number()),
@@ -1150,7 +1175,7 @@ export const updateCard = mutation({
     ) {
       throw new ConvexError("Card not found");
     }
-    return await replaceCardContentAndResetScheduleHandler(ctx, args);
+    return (await updateCardContentHandler(ctx, args)).updated;
   },
 });
 
