@@ -5,20 +5,6 @@ import { getGlobalLogger } from "../src/lib/globalLogger";
 import { z } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 
-const cardSchema = z.object({
-  question: z
-    .string()
-    .describe("The question text with a blank represented as ___."),
-  hint: z.string().describe("A short hint for the question."),
-  explanation: z.string().describe("An explanation of the answer."),
-  finalAnswer: z
-    .string()
-    .optional()
-    .describe(
-      "Optional: the inflected/changed answer to actually use when you adjusted the base-form input. Omit when unchanged."
-    ),
-});
-
 const hintAndExplanationSchema = z.object({
   hint: z.string().describe("A short hint for the question."),
   explanation: z
@@ -31,65 +17,15 @@ const hintAndExplanationSchema = z.object({
 const GEMINI_MODEL = "gemini-3.1-pro-preview";
 const logger = getGlobalLogger();
 
-type CardPromptVersion = "v1" | "v2";
-
 // TODO: Make the learner locale configurable.
 const systemInstructionPart = {
   role: `
 ### Role
 You are an expert English linguist specialized in creating high-quality vocabulary flashcards for learners.
 `.trim(),
-  question: `- question: fill-in-the-blank example consisting of 1-2 sentences with a blank (___) for the target word/phrase.
-  - Constraints
-    1. Context Clues: The blank (___) must be the only logical conclusion based on the preceding text.
-    2. Vocabulary: Keep language simple and accessible (CEFR B1-B2 level).
-    3. Diversity: Vary the speaker's persona significantly (e.g., a frustrated mechanic, a hopeful student, a strict grandmother).`,
   hint: `- hint: A simple definition or synonym under 12 words. Do not include the answer.`,
   explanation: `- explanation: total 10-70w; Specify scenario suitability(exclude situation description); differentiation - Contrast at least 2 synonyms (nuance/tone/intensity).`,
-  finalAnswer: `- finalAnswer: Only if you changed the input form, provide the updated form here.`,
   contextAwareness: `Context Awareness: If a context/situation is provided (e.g., "advising a friend", "making a suggestion in a meeting"), use it consistently across all generated content`,
-};
-
-/**
- * System Instruction for the AI model.
- */
-const generateAllSystemInstructionV1 = `
-${systemInstructionPart.role}
-
-### Task
-1. Inflection Rule: If changing the tense or number makes the sentence significantly more natural, update the form (e.g., "apply" -> "applied").
-2. ${systemInstructionPart.contextAwareness}
-3. **Generate Content**:
-   ${systemInstructionPart.question}
-   ${systemInstructionPart.hint}
-   ${systemInstructionPart.explanation}
-   ${systemInstructionPart.finalAnswer}
-`.trim();
-
-const generateAllSystemInstructionV2 = `
-${systemInstructionPart.role}
-
-### Task
-1. Inflection Rule: If changing the tense or number makes the sentence significantly more natural, update the form (e.g., "apply" -> "applied").
-2. ${systemInstructionPart.contextAwareness}
-3. **Generate Content**:
-   - question: a single fill-in-the-blank sentence with exactly one blank (___) for the target word/phrase.
-     - The target answer must be the most natural completion.
-     - Strongly prefer a real, high-frequency collocation or grammatical frame for the target word (e.g., verb+noun, adjective+noun, adverb+adjective, preposition pattern).
-     - Let the collocation make the answer feel inevitable; do not rely on a long explanation-like setup.
-     - Avoid rare, poetic, or awkward combinations even if they technically fit the meaning.
-     - Match the surrounding words' register and tone to the target word and context (formal/informal, academic, business, casual, emotional, etc.). Do not mix slang with a formal target, or stiff wording with a casual target, unless the context explicitly calls for that contrast.
-     - Keep the sentence simple (CEFR B1-B2), concise, and easy to memorize as a whole sentence.
-     - Do not add extra background just to make the sentence longer.
-     - If context/situation is provided, reflect the situation or tone naturally without explaining the context.
-   - hint: 2-3 high-priority synonyms or paraphrases, preferably comma-separated and under 12 words total. Do not include the answer.
-   - explanation: 10-50 words total. Briefly say when the word is appropriate and, when useful, contrast one close synonym by nuance, tone, or intensity. Do not repeat the hint.
-   ${systemInstructionPart.finalAnswer}
-`.trim();
-
-const generateAllSystemInstructions: Record<CardPromptVersion, string> = {
-  v1: generateAllSystemInstructionV1,
-  v2: generateAllSystemInstructionV2,
 };
 
 const regenerateHintAndExplanationSystemInstruction = `
@@ -101,113 +37,6 @@ ${systemInstructionPart.role}
    ${systemInstructionPart.hint}
    ${systemInstructionPart.explanation}
 `.trim();
-
-const buildPrompt = (answer: string, context?: string): string => {
-  let prompt = `Target Word/Phrase: "${answer.trim()}"`;
-  if (context && context.trim()) {
-    prompt += `\nContext/Situation: "${context.trim()}"`;
-  }
-  return prompt;
-};
-
-const requireSingleBlank = (question: string) => {
-  const blankCount = question.match(/___/g)?.length ?? 0;
-  if (blankCount !== 1) {
-    throw new Error("The question must contain exactly one ___ blank.");
-  }
-};
-
-export const generateCardDraft = action({
-  args: {
-    answer: v.string(),
-    context: v.optional(v.string()),
-    promptVersion: v.optional(v.union(v.literal("v1"), v.literal("v2"))),
-  },
-
-  returns: v.object({
-    question: v.string(),
-    hint: v.string(),
-    explanation: v.string(),
-    finalAnswer: v.optional(v.string()),
-  }),
-
-  handler: async (_ctx, args) => {
-    const answer = args.answer.trim();
-    const context = args.context?.trim();
-    const promptVersion = args.promptVersion ?? "v1";
-    const runId =
-      "ai:generateCardDraft:" + Math.random().toString(36).slice(2, 8);
-    if (!answer) {
-      throw new Error("Please enter the answer.");
-    }
-
-    requireApiKey();
-
-    logger.info(runId, {
-      stage: "start",
-      model: GEMINI_MODEL,
-      promptVersion,
-      answerLength: answer.length,
-      hasContext: !!context,
-    });
-
-    const prompt = buildPrompt(answer, context);
-
-    logger.info(runId, {
-      stage: "prompt_built",
-      promptPreview: prompt.slice(0, 120),
-    });
-
-    const ai = getAiClient();
-
-    const response = await ai.models.generateContent({
-      model: GEMINI_MODEL,
-      contents: prompt,
-      config: {
-        responseMimeType: "application/json",
-        responseJsonSchema: zodToJsonSchema(cardSchema),
-        thinkingConfig: {
-          thinkingLevel: ThinkingLevel.LOW,
-        },
-        systemInstruction: generateAllSystemInstructions[promptVersion],
-      },
-    });
-
-    logger.info(runId, {
-      stage: "response_received",
-      text: response.text,
-      usage: response.usageMetadata,
-    });
-
-    if (!response.text) {
-      throw new Error("Gemini returned an empty response.");
-    }
-
-    const cardResponse = cardSchema.parse(JSON.parse(response.text));
-
-    // Sanitize finalAnswer to handle string "null" or "undefined"
-    const card = {
-      ...cardResponse,
-      finalAnswer:
-        cardResponse.finalAnswer === "null" ||
-        cardResponse.finalAnswer === "undefined" ||
-        cardResponse.finalAnswer === ""
-          ? undefined
-          : cardResponse.finalAnswer,
-    };
-    requireSingleBlank(card.question);
-
-    logger.info(runId, {
-      stage: "card parsed",
-      promptVersion,
-      questionPreview: card.question.slice(0, 60),
-      hintPreview: card.hint.slice(0, 40),
-      finalAnswerApplied: card.finalAnswer,
-    });
-
-    return card;
-  },
-});
 
 const requireInputs = (question: string, answer: string) => {
   if (!question.trim()) {

@@ -141,7 +141,6 @@ export default function CardEditPage() {
           }}
           onSubmit={(data) => void handleSubmit(data)}
           submitLabel={t("cardEdit.submitLabel")}
-          showQuestionByDefault={true}
         />
       </div>
     </div>
