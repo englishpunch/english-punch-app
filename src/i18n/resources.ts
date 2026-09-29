@@ -263,16 +263,8 @@ const enTranslation = {
     contextPlaceholder:
       "e.g., advising a friend, making a suggestion in a meeting",
     contextHelp:
-      "Adding context tailors the question, hint, and description to that situation.",
-    generateButton: "Generate question, hint, and description with AI",
-    generating: "Generating with AI...",
-    generateAria: "Generate question, hint, and description with AI",
-    generationHelp:
-      "Enter the answer and context, then click above to auto-fill question, hint, and description. You can edit below afterwards.",
+      "Adding context tailors the regenerated hint and description to that situation.",
     questionLabel: "Question",
-    questionManualSuffix: "(manual)",
-    questionToggleOpen: "Write manually",
-    questionToggleClose: "Collapse",
     questionPlaceholder: "Enter a question (use ___ for blanks)",
     hintLabel: "Hint (optional)",
     regenerateButton: "Regenerate hint + description",
@@ -281,11 +273,7 @@ const enTranslation = {
     explanationLabel: "Description (optional)",
     explanationPlaceholder: "Description",
     toasts: {
-      answerRequired: "Please enter the answer first.",
       requestError: "Something went wrong during the request.",
-      answerUpdated:
-        'Changed answer from "{{prev}}" to "{{next}}". Review and save.',
-      generated: "Filled in the question and description. Review and save.",
       questionAnswerRequired: "Please enter both the question and answer.",
       helpersRegenerated: "Hint and description refreshed.",
     },
@@ -638,16 +626,8 @@ const jaTranslation = {
     contextLabel: "状況 / 文脈 (任意)",
     contextPlaceholder: "例: 友人に助言する場面、会議で提案する言い方",
     contextHelp:
-      "文脈を入れると、質問・ヒント・説明がその状況に合わせて生成されます。",
-    generateButton: "AIで質問・ヒント・説明を生成",
-    generating: "AI生成中...",
-    generateAria: "AIで質問・ヒント・説明を生成",
-    generationHelp:
-      "答えと文脈を入力してから上のボタンを押すと、質問・ヒント・説明が自動生成されます。生成後に下で編集できます。",
+      "文脈を入れると、ヒント・説明がその状況に合わせて再生成されます。",
     questionLabel: "質問",
-    questionManualSuffix: "(手動入力)",
-    questionToggleOpen: "手動入力",
-    questionToggleClose: "折りたたむ",
     questionPlaceholder: "質問を入力 (___ で空欄を表現)",
     hintLabel: "ヒント (任意)",
     regenerateButton: "ヒント + 説明を再生成",
@@ -656,11 +636,7 @@ const jaTranslation = {
     explanationLabel: "説明 (任意)",
     explanationPlaceholder: "説明",
     toasts: {
-      answerRequired: "答えを先に入力してください。",
       requestError: "リクエスト中に問題が発生しました。",
-      answerUpdated:
-        '答えを "{{prev}}" → "{{next}}" に変更しました。確認して保存してください。',
-      generated: "質問と説明を補完しました。確認して保存してください。",
       questionAnswerRequired: "質問と答えを入力してください。",
       helpersRegenerated: "ヒントと説明を再生成しました。",
     },

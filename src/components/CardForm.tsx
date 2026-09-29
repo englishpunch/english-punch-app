@@ -1,7 +1,7 @@
 import { useState, useRef, useImperativeHandle, type Ref } from "react";
 import { Button } from "./Button";
 import { Input, Textarea } from "./Input";
-import { Sparkles, RefreshCcw } from "lucide-react";
+import { RefreshCcw } from "lucide-react";
 import { toast } from "sonner";
 import { getGlobalLogger } from "@/lib/globalLogger";
 import { useAction } from "convex/react";
@@ -23,7 +23,6 @@ type CardFormProps = {
   initialData?: Partial<CardFormData>;
   onSubmit: (data: CardFormData) => void | Promise<void>;
   submitLabel?: string;
-  showQuestionByDefault?: boolean;
   autoFocus?: boolean;
   ref?: Ref<CardFormHandle>;
 };
@@ -36,13 +35,11 @@ export function CardForm({
   initialData,
   onSubmit,
   submitLabel,
-  showQuestionByDefault = false,
   autoFocus = false,
   ref,
 }: CardFormProps) {
   const { t } = useTranslation();
   const isMock = useIsMock();
-  const generateDraft = useAction(api.ai.generateCardDraft);
   const regenerateHintAndExplanation = useAction(
     api.ai.regenerateHintAndExplanation
   );
@@ -57,11 +54,7 @@ export function CardForm({
     context: initialData?.context || "",
   });
 
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isRegeneratingHelpers, setIsRegeneratingHelpers] = useState(false);
-  const [showQuestionInput, setShowQuestionInput] = useState(
-    showQuestionByDefault || !!initialData?.question
-  );
   const resolvedSubmitLabel = submitLabel ?? t("common.actions.save");
 
   // Expose reset method to parent
@@ -74,58 +67,12 @@ export function CardForm({
         explanation: "",
         context: "",
       });
-      setShowQuestionInput(showQuestionByDefault);
       // Focus on answer input after reset - use queueMicrotask for clarity
       queueMicrotask(() => {
         answerInputRef.current?.focus();
       });
     },
   }));
-
-  const handleGenerate = async () => {
-    if (!form.answer.trim()) {
-      toast.error(t("cardForm.toasts.answerRequired"));
-      return;
-    }
-
-    const previousAnswer = form.answer.trim();
-    setIsGenerating(true);
-    try {
-      const aiDraft = await generateDraft({
-        answer: form.answer,
-        context: form.context,
-      });
-      const nextAnswer = aiDraft.finalAnswer || previousAnswer;
-
-      setForm((current) => ({
-        ...current,
-        question: aiDraft.question,
-        hint: aiDraft.hint,
-        explanation: aiDraft.explanation,
-        answer: nextAnswer,
-      }));
-
-      if (aiDraft.finalAnswer && aiDraft.finalAnswer !== previousAnswer) {
-        toast.success(
-          t("cardForm.toasts.answerUpdated", {
-            prev: previousAnswer,
-            next: aiDraft.finalAnswer,
-          })
-        );
-      } else {
-        toast.success(t("cardForm.toasts.generated"));
-      }
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : t("cardForm.toasts.requestError");
-      logger.error("CardForm.handleGenerate", message);
-      toast.error(message);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const handleRegenerateHelpers = async () => {
     if (!form.question.trim() || !form.answer.trim()) {
@@ -203,58 +150,22 @@ export function CardForm({
         <p className="text-xs text-gray-500">{t("cardForm.contextHelp")}</p>
       </div>
 
-      {/* AI Generation button */}
-      <Button
-        variant="primary"
-        className="w-full gap-2"
-        onClick={() => void handleGenerate()}
-        loading={isGenerating}
-        disabled={isMock}
-        aria-label={t("cardForm.generateAria")}
-      >
-        <Sparkles className="h-4 w-4" aria-hidden />
-        {t("cardForm.generateButton")}
-      </Button>
-
-      <div className="border-t border-gray-200 pt-4">
-        <p className="mb-3 text-xs text-gray-600">
-          {t("cardForm.generationHelp")}
-        </p>
-      </div>
-
-      {/* Question input - toggleable */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-gray-700">
-            {t("cardForm.questionLabel")}{" "}
-            {showQuestionInput && t("cardForm.questionManualSuffix")}
-          </label>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowQuestionInput(!showQuestionInput)}
-            className="text-xs"
-          >
-            {showQuestionInput
-              ? t("cardForm.questionToggleClose")
-              : t("cardForm.questionToggleOpen")}
-          </Button>
-        </div>
-        {showQuestionInput && (
-          <Textarea
-            id="card-question"
-            placeholder={t("cardForm.questionPlaceholder")}
-            autoResize
-            minRows={1}
-            value={form.question}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, question: e.target.value }))
-            }
-          />
-        )}
-        {!showQuestionInput && form.question && (
-          <p className="text-sm text-gray-600 italic">{form.question}</p>
-        )}
+      {/* Question input */}
+      <div className="space-y-1">
+        <label
+          className="text-sm font-medium text-gray-700"
+          htmlFor="card-question"
+        >
+          {t("cardForm.questionLabel")}
+        </label>
+        <Textarea
+          id="card-question"
+          placeholder={t("cardForm.questionPlaceholder")}
+          autoResize
+          minRows={1}
+          value={form.question}
+          onChange={(e) => setForm((f) => ({ ...f, question: e.target.value }))}
+        />
       </div>
 
       {/* Hint and Explanation */}
@@ -310,7 +221,6 @@ export function CardForm({
       <Button
         onClick={handleSubmit}
         className="w-full"
-        disabled={isGenerating}
         aria-label={resolvedSubmitLabel}
       >
         {resolvedSubmitLabel}
