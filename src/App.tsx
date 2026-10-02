@@ -29,15 +29,17 @@ export default function App() {
   }
 
   if (window.location.pathname === "/device") {
-    return <DeviceAuthorizationPage email={loggedInUser.email} />;
+    return (
+      <DeviceAuthorizationPage email={loggedInUser.email} user={loggedInUser} />
+    );
   }
 
   if (window.location.pathname === "/oauth/authorize") {
-    return <OAuthConsentPage />;
+    return <OAuthConsentPage user={loggedInUser} />;
   }
 
   return (
-    <div className="sm: mx-auto min-h-screen overflow-hidden bg-white sm:w-160 sm:shadow">
+    <div className="mx-auto min-h-screen bg-white sm:w-160 sm:border-x sm:border-gray-200">
       <RouterProvider router={router} />
       {(import.meta.env?.MODE === "test" ||
         process.env.NODE_ENV === "test") && (

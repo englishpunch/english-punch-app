@@ -9,6 +9,19 @@ export const languageLabels: Record<SupportedLanguage, string> = {
 };
 
 const enTranslation = {
+  accounts: {
+    choose: "Use a saved account",
+    addDescription: "Your other accounts will stay signed in.",
+    title: "Accounts",
+    description: "Switch accounts or add another sign-in.",
+    current: "Current",
+    expired: "Sign in again",
+    add: "Add account",
+    signOut: "Sign out of this account",
+    storageError:
+      "Could not save or switch accounts. Check that browser storage is available and try again.",
+    signOutError: "Could not sign out. Please try again.",
+  },
   nav: {
     home: "Home",
     plans: "Plans",
@@ -44,7 +57,11 @@ const enTranslation = {
   },
   auth: {
     title: "Welcome to English Punch",
-    description: "Sign in to continue or create a new account.",
+    description: "Pick up where you left off with your vocabulary.",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    newHere: "New to English Punch?",
+    haveAccount: "Already have an account?",
     signInTitle: "Sign in",
     signUpTitle: "Create account",
     switchToSignUp: "Create account",
@@ -201,6 +218,7 @@ const enTranslation = {
     },
   },
   bagList: {
+    createFailed: "Could not create the bag. Please try again.",
     addTitle: "Add bag",
     newBagLabel: "New bag name",
     newBagPlaceholder: "New bag name",
@@ -371,6 +389,21 @@ type TranslationSchema = typeof enTranslation;
 const koTranslation: TranslationSchema = enTranslation;
 
 const jaTranslation = {
+  accounts: {
+    choose:
+      "\u4fdd\u5b58\u6e08\u307f\u306e\u30a2\u30ab\u30a6\u30f3\u30c8\u3092\u4f7f\u3046",
+    addDescription:
+      "\u307b\u304b\u306e\u30a2\u30ab\u30a6\u30f3\u30c8\u306f\u30ed\u30b0\u30a4\u30f3\u3057\u305f\u307e\u307e\u4fdd\u6301\u3055\u308c\u307e\u3059\u3002",
+    title: "アカウント",
+    description: "アカウントを切り替えるか、別のアカウントでログインします。",
+    current: "使用中",
+    expired: "再ログインが必要",
+    add: "アカウントを追加",
+    signOut: "このアカウントからログアウト",
+    storageError:
+      "アカウントの保存または切り替えができませんでした。ブラウザーのストレージ設定を確認して、もう一度お試しください。",
+    signOutError: "ログアウトできませんでした。もう一度お試しください。",
+  },
   nav: {
     home: "ホーム",
     plans: "プラン",
@@ -405,6 +438,11 @@ const jaTranslation = {
     },
   },
   auth: {
+    showPassword: "\u30d1\u30b9\u30ef\u30fc\u30c9\u3092\u8868\u793a",
+    hidePassword: "\u30d1\u30b9\u30ef\u30fc\u30c9\u3092\u96a0\u3059",
+    newHere: "\u521d\u3081\u3066\u3054\u5229\u7528\u3067\u3059\u304b\uff1f",
+    haveAccount:
+      "\u30a2\u30ab\u30a6\u30f3\u30c8\u3092\u304a\u6301\u3061\u3067\u3059\u304b\uff1f",
     title: "English Punchへようこそ",
     description: "続行するにはログインするか新規登録してください。",
     signInTitle: "ログイン",
@@ -564,6 +602,8 @@ const jaTranslation = {
     },
   },
   bagList: {
+    createFailed:
+      "\u30d0\u30c3\u30b0\u3092\u4f5c\u6210\u3067\u304d\u307e\u305b\u3093\u3067\u3057\u305f\u3002\u3082\u3046\u4e00\u5ea6\u304a\u8a66\u3057\u304f\u3060\u3055\u3044\u3002",
     addTitle: "サンドバッグを追加",
     newBagLabel: "新しいサンドバッグ名",
     newBagPlaceholder: "新しいサンドバッグ名",

@@ -46,8 +46,7 @@ func newBagsDefaultCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "default",
 		Short: "Manage the default bag used when --bag is omitted",
-		Long: `Read or write the default_bag_id stored in the viper config
-at ~/.config/english-punch/config.yaml. Card-scoped commands fall
+		Long: `Read or write the default bag stored with the active account. Card-scoped commands fall
 back to this value when --bag is not passed explicitly.`,
 	}
 	cmd.AddCommand(newBagsDefaultSetCmd())
@@ -61,8 +60,7 @@ func newBagsDefaultSetCmd() *cobra.Command {
 		Use:   "set <bag-id>",
 		Short: "Set the default bag",
 		Long: `Validate that <bag-id> belongs to the signed-in user via
-learning:getUserBags, then write it to default_bag_id in the config
-file. Subsequent card-scoped commands will use this id when --bag
+learning:getUserBags, then save it with that account. Subsequent card-scoped commands will use this id when --bag
 is omitted.
 
 Exits with BAG_NOT_FOUND if the id is not in your bag list.`,
@@ -81,13 +79,8 @@ Exits with BAG_NOT_FOUND if the id is not in your bag list.`,
 				return err
 			}
 
-			cfg, err := config.Load(configDir)
-			if err != nil {
-				return common.NewTokenError(common.TokenConfigReadFailed, "load config", err)
-			}
-			cfg.DefaultBagID = bagID
-			if err := config.Save(configDir, cfg); err != nil {
-				return common.NewTokenError(common.TokenConfigWriteFailed, "save config", err)
+			if err := saveAccountDefault(cmd.Context(), bagID, user.Email); err != nil {
+				return err
 			}
 
 			if handled, err := jsonFlag.HandleOKOutput(
@@ -106,30 +99,21 @@ func newBagsDefaultUnsetCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "unset",
 		Short: "Clear the default bag",
-		Long: `Clear default_bag_id in the config file. Idempotent —
-running unset on a config with no default bag succeeds quietly.`,
+		Long:  `Clear the active account's default bag. Repeating unset is safe.`,
 		Example: `  ep bags default unset
   ep bags default unset --json`,
 		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cfg, err := config.Load(configDir)
-			if err != nil {
-				return common.NewTokenError(common.TokenConfigReadFailed, "load config", err)
+			if done, err := prepareAuthOutput(nil, true); done || err != nil {
+				return err
 			}
-			if cfg.DefaultBagID == "" {
-				if handled, err := jsonFlag.HandleOKOutput(nil, nil); handled {
-					return err
-				}
-				fmt.Println("No default bag set.")
-				return nil
-			}
-			cfg.DefaultBagID = ""
-			if err := config.Save(configDir, cfg); err != nil {
-				return common.NewTokenError(common.TokenConfigWriteFailed, "save config", err)
+			if err := saveAccountDefault(cmd.Context(), "", ""); err != nil {
+				return err
 			}
 			if handled, err := jsonFlag.HandleOKOutput(nil, nil); handled {
 				return err
 			}
+
 			fmt.Println("Default bag cleared.")
 			return nil
 		},
@@ -140,7 +124,7 @@ func newBagsDefaultShowCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "show",
 		Short: "Show the current default bag",
-		Long: `Print the default_bag_id from the config file, or an
+		Long: `Print the active account's default bag, or an
 empty string / "No default bag set." message if unset.
 
 In --json mode the payload is {"defaultBagId": "<id>"} with an empty
@@ -161,6 +145,11 @@ prompt the user.`,
 				return common.NewTokenError(common.TokenConfigReadFailed, "load config", err)
 			}
 
+			cfg.DefaultBagID, err = accountDefaultBag(cfg)
+			if err != nil {
+				return err
+			}
+
 			payload := map[string]any{"defaultBagId": cfg.DefaultBagID}
 			if handled, err := jsonFlag.HandleOutput(payload, defaultBagShowFields); handled {
 				return err
@@ -178,7 +167,7 @@ prompt the user.`,
 
 // resolveBagID returns the bag id to use for card-scoped commands. If
 // flagValue is non-empty it wins. Otherwise the function falls back to
-// cfg.DefaultBagID from the viper config. Returns NO_DEFAULT_BAG if
+// the active account's saved default. Returns NO_DEFAULT_BAG if
 // neither source provides an id — this is a client-side validation so
 // card commands fail fast before spending a Convex round-trip.
 //
@@ -194,6 +183,11 @@ func resolveBagID(flagValue string) (string, error) {
 	if err != nil {
 		return "", common.NewTokenError(common.TokenConfigReadFailed, "load config", err)
 	}
+	cfg.DefaultBagID, err = accountDefaultBag(cfg)
+	if err != nil {
+		return "", err
+	}
+
 	if cfg.DefaultBagID == "" {
 		return "", common.NewTokenError(
 			common.TokenNoDefaultBag,

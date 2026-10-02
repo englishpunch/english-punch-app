@@ -173,3 +173,61 @@ func TestCredentialStorageSelection(t *testing.T) {
 func testCredentials(token string) *Credentials {
 	return &Credentials{Email: "user@example.test", AccessToken: token, RefreshToken: "refresh", ExpiresAt: 2000000000, Issuer: "https://ep.echoja.com", Resource: "https://ep-convex.echoja.com"}
 }
+
+func TestMultipleAccountsPreserveTokensAndLogoutOnlyActive(t *testing.T) {
+	for _, backend := range []string{"file", "keyring"} {
+		t.Run(backend, func(t *testing.T) {
+			keyring.MockInit()
+			t.Cleanup(keyring.MockInit)
+			store := testFileStore(t)
+			store.Storage = backend
+			first := testCredentials("first-token")
+			first.DefaultBagID, first.AccountManaged = "first-bag", true
+			second := testCredentials("second-token")
+			second.Email = "second@example.test"
+			second.DefaultBagID, second.AccountManaged = "second-bag", true
+			for _, credentials := range []*Credentials{first, second} {
+				if err := store.Save(credentials); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if err := store.Switch(first.Email); err != nil {
+				t.Fatal(err)
+			}
+			active, err := store.Load()
+			if err != nil || *active != *first {
+				t.Fatalf("switch lost credentials: %v", err)
+			}
+			active.AccessToken = "refreshed-first-token"
+			if err := store.Save(active); err != nil {
+				t.Fatal(err)
+			}
+			other, err := store.AccountCredentials(second.Email)
+			if err != nil || *other != *second {
+				t.Fatalf("refresh changed another account: %v", err)
+			}
+			if err := store.Switch("unknown@example.test"); !errors.Is(err, ErrCredentialsNotFound) {
+				t.Fatalf("unknown account: %v", err)
+			}
+			for range 2 {
+				if err := store.Delete(); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if _, err := store.Load(); !errors.Is(err, ErrCredentialsNotFound) {
+				t.Fatalf("logout activated another account: %v", err)
+			}
+			accounts, err := store.Accounts()
+			if err != nil || len(accounts) != 1 || accounts[0].Email != second.Email || accounts[0].Active {
+				t.Fatalf("logout removed wrong account: %+v %v", accounts, err)
+			}
+			if err := store.Switch(second.Email); err != nil {
+				t.Fatal(err)
+			}
+			active, err = store.Load()
+			if err != nil || *active != *second {
+				t.Fatalf("retained account cannot be restored: %v", err)
+			}
+		})
+	}
+}

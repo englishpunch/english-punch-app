@@ -25,8 +25,8 @@ func newConfigCmd() *cobra.Command {
 		Short: "Manage CLI configuration",
 		Long: `Inspect the viper config at ~/.config/english-punch/config.yaml
 (or the directory supplied via --config-dir). Most config keys are
-written indirectly by other commands — for example ep bags default
-set writes default_bag_id.`,
+written indirectly by other commands. The displayed default bag is resolved
+from the selected saved account (or legacy configuration before migration).`,
 	}
 
 	cmd.AddCommand(newConfigShowCmd())
@@ -60,6 +60,11 @@ placeholder string.`,
 			cfg, err := config.Load(configDir)
 			if err != nil {
 				return common.NewTokenError(common.TokenConfigReadFailed, "load config", err)
+			}
+
+			cfg.DefaultBagID, err = accountDefaultBag(cfg)
+			if err != nil {
+				return err
 			}
 
 			configFile := filepath.Join(dir, "config.yaml")

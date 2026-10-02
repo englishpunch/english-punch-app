@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"time"
 
 	"github.com/gofrs/flock"
@@ -22,12 +23,14 @@ var ErrCredentialsNotFound = errors.New("credentials not found")
 
 // Credentials contains OAuth tokens, never an account password.
 type Credentials struct {
-	Email        string `json:"email"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresAt    int64  `json:"expires_at"`
-	Issuer       string `json:"issuer"`
-	Resource     string `json:"resource"`
+	Email          string `json:"email"`
+	DefaultBagID   string `json:"default_bag_id,omitempty"`
+	AccountManaged bool   `json:"account_managed,omitempty"`
+	AccessToken    string `json:"access_token"`
+	RefreshToken   string `json:"refresh_token"`
+	ExpiresAt      int64  `json:"expires_at"`
+	Issuer         string `json:"issuer"`
+	Resource       string `json:"resource"`
 }
 
 func validCredentials(c *Credentials) bool {
@@ -61,61 +64,170 @@ func NewCredentialStore(configDir string, cfg *Config, override string) (*Creden
 	}, nil
 }
 
+// credentialData preserves the old top-level token format when migrating a
+// single login. Saved accounts stay in the same protected backend, never config.
+type credentialData struct {
+	Credentials
+	Accounts map[string]Credentials `json:"accounts,omitempty"`
+	Version  int                    `json:"version,omitempty"`
+}
+
+type Account struct {
+	Email  string `json:"email"`
+	Active bool   `json:"active"`
+}
+
 func (s *CredentialStore) Load() (*Credentials, error) {
-	if s.Storage == "file" {
-		return s.loadFile()
+	data, err := s.readData()
+	if err != nil {
+		return nil, err
 	}
-	data, err := keyring.Get(keychainService, keychainAccount)
-	if errors.Is(err, keyring.ErrNotFound) {
+	if !validCredentials(&data.Credentials) {
 		return nil, ErrCredentialsNotFound
 	}
-	if err != nil {
-		return nil, errors.New("could not read the system keyring")
+	return &data.Credentials, nil
+}
+
+func (s *CredentialStore) readData() (*credentialData, error) {
+	var raw []byte
+	if s.Storage == "file" {
+		var err error
+		raw, err = s.readFile()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		value, err := keyring.Get(keychainService, keychainAccount)
+		if errors.Is(err, keyring.ErrNotFound) {
+			return nil, ErrCredentialsNotFound
+		}
+		if err != nil {
+			return nil, errors.New("could not read the system keyring")
+		}
+		raw = []byte(value)
 	}
-	var creds Credentials
-	if json.Unmarshal([]byte(data), &creds) != nil || !validCredentials(&creds) {
-		return nil, errors.New("invalid OAuth credentials; run ep auth login")
+	var data credentialData
+	if len(raw) > 64*1024 || json.Unmarshal(raw, &data) != nil {
+		return nil, errors.New("invalid OAuth credential storage")
+	}
+	if data.Version != 0 && data.Version != 1 {
+		return nil, errors.New("unsupported credential storage version")
+	}
+	if !validCredentials(&data.Credentials) && (data.Version != 1 || data.Credentials != (Credentials{})) {
+		return nil, errors.New("invalid OAuth credentials; repair or remove the credential storage before signing in")
+	}
+	if data.Accounts == nil {
+		data.Accounts = map[string]Credentials{}
+	}
+	for email, creds := range data.Accounts {
+		if email == "" || email != creds.Email || !validCredentials(&creds) {
+			return nil, errors.New("invalid saved account")
+		}
+	}
+	if validCredentials(&data.Credentials) {
+		data.Accounts[data.Email] = data.Credentials
+	}
+	return &data, nil
+}
+
+// Save replaces only this account and selects it. Callers hold Lock across
+// read/modify/write, including token refresh, login, switching, and logout.
+func (s *CredentialStore) Save(creds *Credentials) error {
+	if !validCredentials(creds) || creds.Email == "" {
+		return errors.New("OAuth credentials and email are required")
+	}
+	data, err := s.readData()
+	if errors.Is(err, ErrCredentialsNotFound) {
+		data = &credentialData{Accounts: map[string]Credentials{}}
+	} else if err != nil {
+		return err
+	}
+	data.Accounts[creds.Email] = *creds
+	data.Credentials = *creds
+	data.Version = 1
+	return s.writeData(data)
+}
+
+func (s *CredentialStore) Accounts() ([]Account, error) {
+	data, err := s.readData()
+	if errors.Is(err, ErrCredentialsNotFound) {
+		return []Account{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	accounts := make([]Account, 0, len(data.Accounts))
+	for email := range data.Accounts {
+		accounts = append(accounts, Account{Email: email, Active: email == data.Email})
+	}
+	sort.Slice(accounts, func(i, j int) bool { return accounts[i].Email < accounts[j].Email })
+	return accounts, nil
+}
+
+func (s *CredentialStore) AccountCredentials(email string) (*Credentials, error) {
+	data, err := s.readData()
+	if err != nil {
+		return nil, err
+	}
+	creds, ok := data.Accounts[email]
+	if !ok {
+		return nil, ErrCredentialsNotFound
 	}
 	return &creds, nil
 }
 
-func (s *CredentialStore) Save(creds *Credentials) error {
-	if !validCredentials(creds) {
-		return errors.New("OAuth tokens and their issuer, resource, and expiry are required")
-	}
-	if s.Storage == "file" {
-		return s.saveFile(creds)
-	}
-	data, err := json.Marshal(creds)
+func (s *CredentialStore) Switch(email string) error {
+	data, err := s.readData()
 	if err != nil {
-		return errors.New("could not encode credentials")
+		return err
 	}
-	if err := keyring.Set(keychainService, keychainAccount, string(data)); err != nil {
-		// Some providers include command details in errors. Keep secrets out of
-		// diagnostics, even if a provider changes its error formatting.
-		return errors.New("could not write to the system keyring")
+	creds, ok := data.Accounts[email]
+	if !ok {
+		return ErrCredentialsNotFound
 	}
-	return nil
+	data.Credentials = creds
+	data.Version = 1
+	return s.writeData(data)
 }
 
-// Delete removes only the selected backend. It never exposes a second backend
-// as a fallback, and absence is success so logout can be retried safely.
+// Logout removes only the active account and never selects a fallback.
 func (s *CredentialStore) Delete() error {
+	data, err := s.readData()
+	if errors.Is(err, ErrCredentialsNotFound) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	delete(data.Accounts, data.Email)
+	if len(data.Accounts) > 0 {
+		data.Credentials = Credentials{}
+		data.Version = 1
+		return s.writeData(data)
+	}
 	if s.Storage == "file" {
-		if err := s.checkDirectory(false); err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				return nil
-			}
-			return err
-		}
 		err := os.Remove(s.Path)
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
 		return err
 	}
-	if err := keyring.DeleteAll(keychainService); err != nil && !errors.Is(err, keyring.ErrNotFound) {
+	if err := keyring.Delete(keychainService, keychainAccount); err != nil && !errors.Is(err, keyring.ErrNotFound) {
 		return errors.New("could not remove English Punch credentials from the system keyring")
+	}
+	return nil
+}
+
+func (s *CredentialStore) writeData(data *credentialData) error {
+	raw, err := json.Marshal(data)
+	if err != nil || len(raw) > 64*1024 {
+		return errors.New("credentials exceed the storage size limit")
+	}
+	if s.Storage == "file" {
+		return s.writeFile(raw)
+	}
+	if err := keyring.Set(keychainService, keychainAccount, string(raw)); err != nil {
+		return errors.New("could not write to the system keyring")
 	}
 	return nil
 }
@@ -142,7 +254,7 @@ func (s *CredentialStore) checkDirectory(create bool) error {
 	return nil
 }
 
-func (s *CredentialStore) loadFile() (*Credentials, error) {
+func (s *CredentialStore) readFile() ([]byte, error) {
 	if err := s.checkDirectory(false); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, ErrCredentialsNotFound
@@ -175,14 +287,10 @@ func (s *CredentialStore) loadFile() (*Credentials, error) {
 	if err != nil {
 		return nil, err
 	}
-	var creds Credentials
-	if len(data) > 64*1024 || json.Unmarshal(data, &creds) != nil || !validCredentials(&creds) {
-		return nil, errors.New("credentials file is invalid; run ep auth login --storage file to replace it")
-	}
-	return &creds, nil
+	return data, nil
 }
 
-func (s *CredentialStore) saveFile(creds *Credentials) error {
+func (s *CredentialStore) writeFile(data []byte) error {
 	if err := s.checkDirectory(true); err != nil {
 		return err
 	}
@@ -194,13 +302,6 @@ func (s *CredentialStore) saveFile(creds *Credentials) error {
 	}
 	if err == nil && !info.Mode().IsRegular() {
 		return errors.New("credentials file must be a regular file")
-	}
-	data, err := json.Marshal(creds)
-	if err != nil {
-		return errors.New("could not encode credentials")
-	}
-	if len(data) > 64*1024 {
-		return errors.New("credentials exceed the file size limit")
 	}
 	f, err := os.CreateTemp(filepath.Dir(s.Path), ".credentials-*")
 	if err != nil {

@@ -1,9 +1,16 @@
 import { useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../convex/_generated/api";
+import AccountSwitcher from "./AccountSwitcher";
 import DeviceAuthorizationView from "./DeviceAuthorizationView";
 
-export default function DeviceAuthorizationPage({ email }: { email?: string }) {
+export default function DeviceAuthorizationPage({
+  email,
+  user,
+}: {
+  email?: string;
+  user?: { _id: string; email?: string };
+}) {
   const decide = useMutation(api.oauthDevice.decide);
   const [code, setCode] = useState(() => {
     const values = new URLSearchParams(window.location.search).getAll(
@@ -38,9 +45,19 @@ export default function DeviceAuthorizationPage({ email }: { email?: string }) {
   };
   return (
     <DeviceAuthorizationView
+      accountSwitcher={
+        user && !result ? (
+          <AccountSwitcher user={user} disabled={pending} />
+        ) : undefined
+      }
       email={email}
       code={code}
-      onCodeChange={setCode}
+      onCodeChange={(value) => {
+        setCode(value);
+        const url = new URL(window.location.href);
+        url.searchParams.set("user_code", value);
+        window.history.replaceState({}, "", url);
+      }}
       pending={pending}
       result={result}
       error={error}

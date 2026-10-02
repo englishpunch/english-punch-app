@@ -1,6 +1,6 @@
+import ProfileDialog from "./ProfileDialog";
 import React, { useState } from "react";
 import { Button } from "./Button";
-import { Input, Select } from "./Input";
 import { cn } from "@/lib/utils";
 import {
   Activity,
@@ -8,18 +8,14 @@ import {
   ListChecks,
   LucideProps,
   PlayCircle,
+  ChevronDown,
   User2,
   Users,
-  X,
 } from "lucide-react";
-import { useAuthActions } from "@convex-dev/auth/react";
-import { toast } from "sonner";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import { useTranslation } from "react-i18next";
-import { languageOptions } from "@/i18n";
-import { AppVersion } from "./AppVersion";
 
 interface MobileShellProps {
   children?: React.ReactNode;
@@ -73,6 +69,7 @@ const tabConfig: Record<
 
 export default function MobileShell({ children }: MobileShellProps) {
   const { t } = useTranslation();
+  const user = useQuery(api.auth.loggedInUser);
   const { location } = useRouterState();
   const pathname = location.pathname;
 
@@ -82,26 +79,40 @@ export default function MobileShell({ children }: MobileShellProps) {
   const screenTitle = t(tabConfig[activeTab].titleKey);
 
   return (
-    <div className="min-h-screen pb-[calc(var(--shell-bottom-nav-height)+env(safe-area-inset-bottom))] [--shell-bottom-nav-height:5rem] [--shell-header-height:2.8125rem]">
-      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-gray-200 bg-white/90 px-2 py-1 backdrop-blur">
+    <div className="min-h-screen pb-[calc(var(--shell-bottom-nav-height)+env(safe-area-inset-bottom))] [--shell-bottom-nav-height:5rem] [--shell-header-height:4rem]">
+      <header className="sticky top-0 z-20 flex h-16 items-center justify-between gap-4 border-b border-gray-200 bg-white/95 px-4 backdrop-blur">
+        <h1 className="text-lg font-semibold tracking-tight text-gray-900">
+          {screenTitle}
+        </h1>
         <Button
-          variant="ghost"
+          variant="plain"
           size="sm"
-          className="z-10 px-2"
+          className="max-w-[65%] min-w-0 gap-2 rounded-full py-1.5 pr-2 pl-1.5 hover:bg-gray-50"
           aria-label={t("profileDrawer.openProfile")}
+          aria-haspopup="dialog"
           onClick={() => setShowProfile(true)}
         >
-          <User2 className="h-5 w-5 text-gray-700" aria-hidden />
+          <span
+            className="bg-primary-50 text-primary-700 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+            aria-hidden
+          >
+            {user?.email?.slice(0, 1).toUpperCase() ?? <User2 size={16} />}
+          </span>
+          <span className="truncate text-xs font-medium text-gray-600">
+            {user?.email ?? t("common.labels.profile")}
+          </span>
+          <ChevronDown
+            size={14}
+            className="shrink-0 text-gray-400"
+            aria-hidden
+          />
         </Button>
-        <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-sm font-semibold text-gray-800">
-          {screenTitle}
-        </span>
       </header>
 
       <main className={cn("mx-auto")}>{children}</main>
 
       <BottomNav activeTab={activeTab} />
-      <ProfileDrawer open={showProfile} onClose={() => setShowProfile(false)} />
+      {showProfile && <ProfileDialog onClose={() => setShowProfile(false)} />}
     </div>
   );
 }
@@ -112,7 +123,7 @@ function BottomNav({ activeTab }: { activeTab: TabKey }) {
   const navigateTo = (path: string) => router.navigate({ to: path });
 
   return (
-    <nav className="fixed bottom-0 left-1/2 z-30 w-full -translate-x-1/2 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] shadow-lg sm:w-160">
+    <nav className="fixed bottom-0 left-1/2 z-30 w-full -translate-x-1/2 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] sm:w-160">
       <div className="mx-auto flex max-w-5xl justify-around">
         {Object.values(tabConfig).map((tab) => {
           const Icon = tab.icon;
@@ -123,9 +134,9 @@ function BottomNav({ activeTab }: { activeTab: TabKey }) {
               key={tab.key}
               onClick={() => void navigateTo(tabPaths[tab.key])}
               className={cn(
-                "w-full flex-col items-center gap-0 py-2 text-xs font-medium",
+                "min-h-16 w-full flex-col items-center gap-0 rounded-none py-2 text-xs font-medium",
                 isActive
-                  ? "text-primary-700 font-bold"
+                  ? "text-primary-700 bg-primary-50/60 font-bold"
                   : "text-gray-500 hover:text-gray-700"
               )}
               variant="plain"
@@ -147,131 +158,6 @@ function BottomNav({ activeTab }: { activeTab: TabKey }) {
         })}
       </div>
     </nav>
-  );
-}
-
-function ProfileDrawer({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
-  const { t, i18n } = useTranslation();
-  const { signOut, signIn } = useAuthActions();
-  const [email, setEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
-  const user = useQuery(api.auth.loggedInUser);
-  const selectedLanguage = i18n.resolvedLanguage ?? i18n.language;
-
-  if (!open) {
-    return null;
-  }
-
-  return (
-    <div className="fixed inset-0 z-40">
-      {/* <div className="absolute inset-0 bg-black/40" onClick={onClose} /> */}
-      <div className="absolute inset-0 flex flex-col bg-white px-4 pt-4 pb-10">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-primary-100 text-primary-700 flex h-12 w-12 items-center justify-center rounded-full font-semibold">
-              {(user?.name || user?.email || "A").slice(0, 1).toUpperCase()}
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">
-                {t("profileDrawer.title")}
-              </p>
-              <p className="text-lg font-semibold text-gray-900">
-                {user?.name || "-"}
-              </p>
-              {user?.email && (
-                <p className="text-sm text-gray-600">{user.email}</p>
-              )}
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" className="px-2" onClick={onClose}>
-            <X className="h-5 w-5 text-gray-700" aria-hidden />
-          </Button>
-        </div>
-        <div className="space-y-3 text-sm text-gray-700">
-          <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <span className="text-gray-600">{t("common.labels.userId")}</span>
-            <span className="font-mono break-all text-gray-900">
-              {user?._id}
-            </span>
-          </div>
-          <form
-            className="space-y-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const fd = new FormData();
-              fd.set("email", email);
-              fd.set("password", password);
-              fd.set("flow", "signIn");
-              const signInResult = signIn("password", fd);
-              Promise.resolve(signInResult)
-                .then(() => {
-                  toast.success(t("profileDrawer.signInSuccess"));
-                  setEmail("");
-                  setPassword("");
-                  onClose();
-                })
-                .catch((error) => {
-                  console.error("Sign-in error:", error);
-                  toast.error(t("profileDrawer.signInError"));
-                });
-            }}
-          >
-            <Input
-              placeholder={t("common.labels.email")}
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <Input
-              placeholder={t("common.labels.password")}
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <Button
-              type="submit"
-              fullWidth
-              aria-label={t("common.actions.signIn")}
-            >
-              {t("common.actions.signIn")}
-            </Button>
-          </form>
-          <div className="space-y-2">
-            <label
-              className="text-xs font-medium text-gray-600"
-              htmlFor="language-select"
-            >
-              {t("settings.language.label")}
-            </label>
-            <Select
-              id="language-select"
-              value={selectedLanguage}
-              onChange={(event) => void i18n.changeLanguage(event.target.value)}
-            >
-              {languageOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </div>
-        </div>
-        <div className="mt-auto flex items-center justify-between">
-          <Button variant="secondary" size="sm" onClick={() => void signOut()}>
-            {t("common.actions.signOut")}
-          </Button>
-          <AppVersion />
-        </div>
-      </div>
-    </div>
   );
 }
 

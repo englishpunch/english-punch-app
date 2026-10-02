@@ -1,6 +1,8 @@
+import type { ReactNode } from "react";
 import { Button } from "./Button";
 
 export default function DeviceAuthorizationView({
+  accountSwitcher,
   email,
   code,
   onCodeChange,
@@ -9,6 +11,7 @@ export default function DeviceAuthorizationView({
   error,
   onDecision,
 }: {
+  accountSwitcher?: ReactNode;
   email?: string;
   code: string;
   onCodeChange: (code: string) => void;
@@ -43,6 +46,7 @@ export default function DeviceAuthorizationView({
           </p>
         ) : (
           <>
+            {accountSwitcher}
             <p className="text-sm leading-6 text-gray-600">
               Signed in as{" "}
               <strong>{email ?? "your English Punch account"}</strong>. The CLI
