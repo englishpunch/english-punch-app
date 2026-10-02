@@ -94,18 +94,16 @@ export default function OAuthConsentPage({
   };
 
   return (
-    <>
-      {user && (
-        <div className="p-4">
+    <OAuthConsentView
+      accountSwitcher={
+        user ? (
           <AccountSwitcher user={user} disabled={isSubmitting} />
-        </div>
-      )}
-      <OAuthConsentView
-        scopes={request.scope.split(/\s+/).filter(Boolean)}
-        isSubmitting={isSubmitting}
-        error={error}
-        onDecision={(approved) => void decide(approved)}
-      />
-    </>
+        ) : undefined
+      }
+      scopes={request.scope.split(/\s+/).filter(Boolean)}
+      isSubmitting={isSubmitting}
+      error={error}
+      onDecision={(approved) => void decide(approved)}
+    />
   );
 }

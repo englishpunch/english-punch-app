@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button } from "./Button";
 import { Check } from "lucide-react";
 
@@ -12,11 +13,13 @@ const SCOPE_LABELS: Record<string, string> = {
 };
 
 export default function OAuthConsentView({
+  accountSwitcher,
   scopes,
   isSubmitting,
   error,
   onDecision,
 }: {
+  accountSwitcher?: ReactNode;
   scopes: string[];
   isSubmitting: boolean;
   error: string | null;
@@ -36,6 +39,8 @@ export default function OAuthConsentView({
             ChatGPT is requesting access to your English Punch account.
           </p>
         </div>
+
+        {accountSwitcher}
 
         <ul className="space-y-3 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
           {scopes.map((scope) => (
