@@ -1,4 +1,7 @@
-import { useState, type FormEvent } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import AccountSwitcher from "./AccountSwitcher";
+import { useAccountSessions } from "@/lib/accountSessionsContext";
+import { useState, useSyncExternalStore, type FormEvent } from "react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -6,12 +9,25 @@ import { Button } from "./Button";
 import { Input } from "./Input";
 
 const PASSWORD_MIN_LENGTH = 8;
+const emptyAccounts: { session: string }[] = [];
+const emptySnapshot = () => emptyAccounts;
+const noSubscription = () => () => {};
 
 type AuthMode = "signIn" | "signUp";
 
 export default function AuthPage() {
   const { t } = useTranslation();
   const { signIn } = useAuthActions();
+  const sessions = useAccountSessions();
+  const savedAccounts = useSyncExternalStore<{ session: string }[]>(
+    sessions?.subscribe ?? noSubscription,
+    sessions?.getSnapshot ?? emptySnapshot
+  );
+  const hasSavedAccounts = savedAccounts.length > 0;
+  const addingAccount =
+    hasSavedAccounts &&
+    !savedAccounts.some((account) => account.session === sessions?.session);
+  const [showPassword, setShowPassword] = useState(false);
   const [mode, setMode] = useState<AuthMode>("signIn");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -54,7 +70,11 @@ export default function AuthPage() {
 
     setIsSubmitting(true);
     try {
-      await signIn("password", formData);
+      const result = await signIn("password", formData);
+      if (!result.signingIn) {
+        setError(t("auth.errors.signInFailed"));
+        return;
+      }
       toast.success(
         isSignUp ? t("auth.signUpSuccess") : t("auth.signInSuccess")
       );
@@ -70,42 +90,34 @@ export default function AuthPage() {
 
   const toggleMode = () => {
     setMode(isSignUp ? "signIn" : "signUp");
+    setShowPassword(false);
     setError(null);
     setPassword("");
     setPasswordConfirm("");
   };
 
   return (
-    <div className="min-h-screen bg-white px-4 py-16">
-      <div className="mx-auto w-full max-w-md space-y-8">
-        <div className="space-y-3 text-center">
-          <p className="text-primary-600 text-sm font-semibold tracking-wide uppercase">
-            English Punch
+    <main className="flex min-h-dvh items-center bg-gray-50 px-5 py-12 sm:py-16">
+      <div className="mx-auto w-full max-w-sm">
+        <div className="mb-8 space-y-3">
+          <p className="text-primary-700 mb-8 text-lg font-bold tracking-tight">
+            English Punch<span aria-hidden="true">.</span>
           </p>
-          <h1 className="text-3xl font-semibold text-gray-900">
-            {t("auth.title")}
+          <h1 className="text-3xl font-semibold tracking-tight text-gray-900">
+            {isSignUp
+              ? t("auth.signUpTitle")
+              : addingAccount
+                ? t("accounts.add")
+                : t("auth.signInTitle")}
           </h1>
-          <p className="text-base leading-6 text-gray-600">
-            {t("auth.description")}
+          <p className="text-sm leading-6 text-gray-600">
+            {addingAccount
+              ? t("accounts.addDescription")
+              : t("auth.description")}
           </p>
         </div>
 
-        <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {isSignUp ? t("auth.signUpTitle") : t("auth.signInTitle")}
-            </h2>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-11"
-              onClick={toggleMode}
-            >
-              {isSignUp ? t("auth.switchToSignIn") : t("auth.switchToSignUp")}
-            </Button>
-          </div>
-
+        <div>
           <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="space-y-2">
               <label
@@ -119,7 +131,7 @@ export default function AuthPage() {
                 name="email"
                 type="email"
                 autoComplete="email"
-                className="h-11"
+                className="h-12 bg-white"
                 value={email}
                 onChange={(event) => {
                   setEmail(event.target.value);
@@ -139,24 +151,46 @@ export default function AuthPage() {
               >
                 {t("common.labels.password")}
               </label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete={isSignUp ? "new-password" : "current-password"}
-                className="h-11"
-                minLength={isSignUp ? PASSWORD_MIN_LENGTH : undefined}
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  if (error) {
-                    setError(null);
-                  }
-                }}
-                required
-                disabled={isSubmitting}
-              />
-              <p className="text-xs text-gray-500">{t("auth.passwordHint")}</p>
+              <div className="relative">
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={isSignUp ? "new-password" : "current-password"}
+                  className="h-12 bg-white pr-12"
+                  minLength={isSignUp ? PASSWORD_MIN_LENGTH : undefined}
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    if (error) {
+                      setError(null);
+                    }
+                  }}
+                  required
+                  disabled={isSubmitting}
+                />
+                <button
+                  type="button"
+                  className="focus-visible:outline-primary-500 absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-md text-gray-500 hover:text-gray-900 focus-visible:outline-2"
+                  aria-label={t(
+                    showPassword ? "auth.hidePassword" : "auth.showPassword"
+                  )}
+                  aria-pressed={showPassword}
+                  disabled={isSubmitting}
+                  onClick={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? (
+                    <EyeOff size={18} aria-hidden />
+                  ) : (
+                    <Eye size={18} aria-hidden />
+                  )}
+                </button>
+              </div>
+              {isSignUp && (
+                <p className="text-xs text-gray-500">
+                  {t("auth.passwordHint")}
+                </p>
+              )}
             </div>
 
             {isSignUp && (
@@ -172,7 +206,7 @@ export default function AuthPage() {
                   name="passwordConfirm"
                   type="password"
                   autoComplete="new-password"
-                  className="h-11"
+                  className="h-12 bg-white"
                   minLength={PASSWORD_MIN_LENGTH}
                   value={passwordConfirm}
                   onChange={(event) => {
@@ -189,7 +223,7 @@ export default function AuthPage() {
             )}
 
             <p
-              className="min-h-6 text-sm text-red-600"
+              className="text-sm text-red-600 empty:hidden"
               role="alert"
               aria-live="polite"
             >
@@ -199,7 +233,7 @@ export default function AuthPage() {
             <Button
               type="submit"
               fullWidth
-              className="h-11"
+              className="h-12"
               loading={isSubmitting}
               disabled={!canSubmit}
             >
@@ -208,8 +242,25 @@ export default function AuthPage() {
                 : t("common.actions.signIn")}
             </Button>
           </form>
+          <div className="mt-5 flex items-center justify-center gap-1 text-sm text-gray-600">
+            <span>{t(isSignUp ? "auth.haveAccount" : "auth.newHere")}</span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              disabled={isSubmitting}
+              onClick={toggleMode}
+            >
+              {isSignUp ? t("auth.switchToSignIn") : t("auth.switchToSignUp")}
+            </Button>
+          </div>
+          {hasSavedAccounts && (
+            <div className="mt-8 border-t border-gray-200 pt-6">
+              <AccountSwitcher user={null} disabled={isSubmitting} />
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }

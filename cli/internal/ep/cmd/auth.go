@@ -49,7 +49,7 @@ EP_TOKEN overrides saved tokens for authenticated commands.
 File storage is plaintext, with owner-only POSIX permissions; it is not
 supported on Windows. Never share the credentials file or commit it to Git.`,
 	}
-	cmd.AddCommand(newAuthLoginCmd(), newAuthLogoutCmd(), newAuthStatusCmd())
+	cmd.AddCommand(newAuthLoginCmd(), newAuthLogoutCmd(), newAuthStatusCmd(), newAuthAccountsCmd(), newAuthSwitchCmd())
 	return cmd
 }
 
@@ -67,7 +67,9 @@ Works without a local callback server or a terminal. Instructions go to stderr;
 
 The OS keyring is the default. --storage file explicitly stores OAuth tokens in
 plaintext at <config-dir>/auth/credentials.json (0700 directory, 0600 file).
-Login remembers the storage selection. Other stored logins are retained.
+Login adds or refreshes an account and makes it active. Other accounts are retained.
+Use ep auth accounts to list accounts and ep auth switch <email> to select one.
+Login remembers the storage selection.
 Access tokens refresh automatically; the selected storage must then be writable.
 Legacy password logins require a new device login. No password is requested.
 Each invocation starts a new approval request; Ctrl-C cancels polling.`,
@@ -162,10 +164,8 @@ func newAuthLogoutCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "logout",
 		Short: "Log out of English Punch",
-		Long: `Remove credentials from the selected backend. Keyring logout removes
-the English Punch CLI OAuth session in the OS keyring; file logout removes only
-the credentials file under the current config directory. The other backend
-is untouched. The selection is retained, so logout never activates a fallback.
+		Long: `Remove only the active account from the selected backend. Other saved accounts
+and the other credential backend are untouched. No other account is activated. The selection is retained, so logout never activates a fallback.
 This removes local credentials; it does not revoke issued server sessions.
 
 Idempotent: succeeds if credentials are already absent.`,
@@ -297,12 +297,49 @@ func credentialStorageError(store *config.CredentialStore, action string, err er
 }
 
 func saveLogin(cfg *config.Config, store *config.CredentialStore, creds *config.Credentials) error {
+	if err := migrateAccountDefault(cfg, store); err != nil {
+		return err
+	}
+	// A repeated login keeps this account's bag, including when another account
+	// was active. Tokens are independent from every other stored account.
+	accounts, err := store.Accounts()
+	if err != nil {
+		return credentialStorageError(store, "read saved accounts", err)
+	}
+	for _, account := range accounts {
+		if account.Email == creds.Email {
+			previous, err := store.AccountCredentials(account.Email)
+			if err != nil {
+				return credentialStorageError(store, "read saved account", err)
+			}
+			creds.DefaultBagID = previous.DefaultBagID
+		}
+	}
+	creds.AccountManaged = true
 	if err := store.Save(creds); err != nil {
 		return credentialStorageError(store, "save credentials", err)
 	}
 	cfg.AuthStorage = store.Storage
 	if err := config.Save(configDir, cfg); err != nil {
 		return common.NewTokenError(common.TokenConfigWriteFailed, "credentials saved, but could not save storage selection", err)
+	}
+	return nil
+}
+
+func migrateAccountDefault(cfg *config.Config, store *config.CredentialStore) error {
+	previous, err := store.Load()
+	if errors.Is(err, config.ErrCredentialsNotFound) {
+		return nil
+	}
+	if err != nil {
+		return credentialStorageError(store, "read credentials", err)
+	}
+	if !previous.AccountManaged {
+		previous.DefaultBagID = cfg.DefaultBagID
+		previous.AccountManaged = true
+		if err := store.Save(previous); err != nil {
+			return credentialStorageError(store, "migrate account default", err)
+		}
 	}
 	return nil
 }
@@ -348,12 +385,13 @@ func authenticateFromStore(ctx context.Context, cfg *config.Config, store *confi
 				return nil, nil, credentialStorageError(store, "lock credentials", err)
 			}
 			defer unlock()
+			email := creds.Email
 			// Another command may have rotated the refresh token while we waited.
 			creds, err = store.Load()
 			if err != nil {
 				return nil, nil, credentialStorageError(store, "reload credentials", err)
 			}
-			if creds.Issuer != authIssuer || creds.Resource != cfg.ConvexURL {
+			if creds.Email != email || creds.Issuer != authIssuer || creds.Resource != cfg.ConvexURL {
 				return nil, nil, common.NewAuthTokenError(common.TokenInvalidCredentials, "credential binding changed; retry", nil)
 			}
 			if creds.ExpiresAt <= time.Now().Unix()+30 {

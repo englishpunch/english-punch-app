@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAction } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import AccountSwitcher from "./AccountSwitcher";
 import OAuthConsentView from "./OAuthConsentView";
 
 type AuthorizationRequest = {
@@ -57,7 +58,9 @@ const parseOAuthAuthorizationRequest = (
   };
 };
 
-export default function OAuthConsentPage() {
+export default function OAuthConsentPage({
+  user,
+}: { user?: { _id: string; email?: string } } = {}) {
   const completeAuthorization = useAction(
     api.oauthActions.completeAuthorization
   );
@@ -92,6 +95,11 @@ export default function OAuthConsentPage() {
 
   return (
     <OAuthConsentView
+      accountSwitcher={
+        user ? (
+          <AccountSwitcher user={user} disabled={isSubmitting} />
+        ) : undefined
+      }
       scopes={request.scope.split(/\s+/).filter(Boolean)}
       isSubmitting={isSubmitting}
       error={error}

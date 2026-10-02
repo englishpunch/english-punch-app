@@ -31,6 +31,7 @@ export default function BagListPage() {
   const deleteBag = useMutation(api.learning.deleteBag);
 
   const [newBagName, setNewBagName] = useState("");
+  const [isCreating, setIsCreating] = useState(false);
   const [pendingDeleteBag, setPendingDeleteBag] = useState<{
     id: Id<"bags">;
     name: string;
@@ -38,14 +39,21 @@ export default function BagListPage() {
 
   const handleAddBag = async () => {
     const name = newBagName.trim();
-    if (!name) {
+    if (!name || isCreating) {
       return;
     }
     if (!userId) {
       return;
     }
-    await createBag({ userId, name });
-    setNewBagName("");
+    setIsCreating(true);
+    try {
+      await createBag({ userId, name });
+      setNewBagName("");
+    } catch {
+      toast.error(t("bagList.createFailed"));
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const mockBags = useMemo(() => {
@@ -101,44 +109,58 @@ export default function BagListPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+    <div className="space-y-6 px-4 py-6">
+      <section>
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-base font-semibold text-gray-900">
             {t("bagList.addTitle")}
           </h2>
         </div>
-        <div className="mt-3 flex gap-2">
+        <form
+          className="mt-3 flex gap-2"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleAddBag();
+          }}
+        >
           <label className="sr-only" htmlFor="new-bag-name">
             {t("bagList.newBagLabel")}
           </label>
           <Input
             id="new-bag-name"
-            className="flex-1"
+            className="min-w-0 flex-1"
+            disabled={isCreating}
             fullWidth={false}
             placeholder={t("bagList.newBagPlaceholder")}
             value={newBagName}
             onChange={(e) => setNewBagName(e.target.value)}
           />
-          <Button onClick={() => void handleAddBag()} className="gap-2">
+          <Button
+            type="submit"
+            loading={isCreating}
+            disabled={!newBagName.trim() || !userId}
+            className="shrink-0 gap-2"
+          >
             <Plus className="h-4 w-4" aria-hidden /> {t("bagList.addButton")}
           </Button>
-        </div>
-      </div>
+        </form>
+      </section>
 
-      <div className="space-y-2">
+      <div className="divide-y divide-gray-100 border-t border-gray-200">
         {visibleBags.map((bag) => (
           <div
             key={bag._id}
-            className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 shadow-sm"
+            className="flex items-center justify-between gap-3 py-4"
           >
-            <div>
-              <p className="text-sm font-semibold text-gray-900">{bag.name}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold break-words text-gray-900">
+                {bag.name}
+              </p>
               <p className="text-xs text-gray-500">
                 {t("bagList.cardCount", { count: bag.totalCards })}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex shrink-0 gap-1">
               <Button
                 size="sm"
                 variant="secondary"
@@ -175,7 +197,7 @@ export default function BagListPage() {
                 count: bags.length,
               })}
             </span>
-            <div className="flex gap-2">
+            <div className="flex shrink-0 gap-1">
               <Button
                 variant="secondary"
                 size="sm"

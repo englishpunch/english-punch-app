@@ -158,8 +158,8 @@ reports `storage: environment`. Unset it before login/logout of saved credential
 Never print the variable's value. For example, configure it through the calling
 environment's secret mechanism, then run `ep bags list --json _id,name`.
 
-`ep auth logout` deletes only the selected backend and retains the selection.
-Other stored logins are retained; explicitly select each backend to remove it.
+`ep auth logout` deletes only the active account in the selected backend.
+Other saved accounts and the backend selection are retained.
 Logout removes local credentials, not already issued server sessions. It is
 idempotent when credentials are absent.
 
@@ -183,3 +183,44 @@ result on stdout, with device instructions on stderr.
 - Canonical token registry: `cli/internal/ep/common/errors.go`
 - JSON flag helper: `cli/internal/ep/common/jsonflag.go`
 - Existing commands as reference: `ep bags list` (good `--json` example), `ep auth login` (device flow)
+
+## Multiple accounts
+
+Tracked in [#111](https://github.com/englishpunch/english-punch-app/issues/111).
+
+```sh
+ep auth login --web                 # add another account or renew its login
+ep auth accounts --json accounts,storage,environmentOverride
+ep auth switch me@example.com --json ok,email,storage
+ep bags default set <bag-id>        # remembered for the active account
+ep auth logout                     # remove only the active account
+```
+
+Login retains other accounts in the selected credential backend. The existing
+single-account record is migrated in place, including its default bag. Account
+emails identify saved logins; each login keeps its own OAuth tokens and default
+bag in the same protected keyring entry or owner-only credentials file. No
+tokens are placed in configuration or command output. Re-authenticating an
+existing account retains its default bag.
+
+`auth accounts` returns an `accounts` array of `{email, active}` objects in
+email order. It lists locally saved sessions without checking their expiry.
+`auth switch <email>` is idempotent and selects a saved account without network
+access; the next authenticated command refreshes its access token if needed.
+Expired or revoked refresh tokens require login again. An unknown account fails
+with `NOT_LOGGED_IN` and leaves the active account unchanged. Both commands
+support field discovery before accessing storage. Switching while `EP_TOKEN`
+is set fails with `INVALID_CREDENTIALS`; use explicit `--bag` values with
+externally supplied tokens rather than another account's saved default.
+
+Logout does not automatically activate another account. Use `auth accounts`
+and `auth switch` to select a remaining login. Each credential backend retains
+its own accounts; `--storage` never falls back to another backend.
+
+The frontend provides an account menu in the profile dialog and authorization
+screens. Add account opens a separate Convex Auth storage namespace. The
+original browser login retains its existing namespace. Account selection is
+pinned per browser tab, so switching elsewhere cannot change an in-progress
+CLI approval. Switching reloads the app to clear account-specific client state;
+device and OAuth query parameters are retained. Signing out revokes the current
+web session and removes its chooser entry, leaving other accounts available.
