@@ -133,9 +133,17 @@ for each, so each has its own refresh-token family. `auth export` is not provide
 
 The CLI uses `zalando/go-keyring` by default. On macOS this still invokes
 `/usr/bin/security` and does not bypass Keychain sandbox restrictions. OAuth
-credentials use service `english-punch-cli-oauth`, account `session`. Legacy
-password entries under `english-punch-cli` are not read or migrated; sign in once
-with the new device flow. Those old entries can be removed through Keychain Access.
+credentials use service `english-punch-cli-oauth-accounts`: each account has its
+own `account:<SHA-256 of email>` entry. The `session` entry contains only account
+emails and the active selection. Login and refresh write only changed account
+credentials; switching updates the index. Logout deletes the active account's
+tokens before updating the index. Missing entries are ignored so an interrupted
+logout cannot restore a deleted login.
+
+There is no migration from the old combined `english-punch-cli-oauth` entry.
+Sign in again with each account after upgrading; old entries are left untouched.
+File storage is unchanged. Tracked in
+[#115](https://github.com/englishpunch/english-punch-app/issues/115).
 
 File mode writes plaintext to `~/.config/english-punch/auth/credentials.json`,
 or the corresponding location under `--config-dir`. The `auth` directory has
@@ -199,7 +207,7 @@ ep auth logout                     # remove only the active account
 Login retains other accounts in the selected credential backend. The existing
 single-account record is migrated in place, including its default bag. Account
 emails identify saved logins; each login keeps its own OAuth tokens and default
-bag in the same protected keyring entry or owner-only credentials file. No
+bag in its own protected keyring entry or the owner-only credentials file. No
 tokens are placed in configuration or command output. Re-authenticating an
 existing account retains its default bag.
 
@@ -224,3 +232,22 @@ pinned per browser tab, so switching elsewhere cannot change an in-progress
 CLI approval. Switching reloads the app to clear account-specific client state;
 device and OAuth query parameters are retained. Signing out revokes the current
 web session and removes its chooser entry, leaving other accounts available.
+
+### Safe Keychain failure diagnostics
+
+Tracked in [#114](https://github.com/englishpunch/english-punch-app/issues/114).
+
+Keyring failures retain the `KEYCHAIN_FAILED` token and include a safe `reason`:
+`DATA_TOO_BIG`, `PERMISSION_DENIED`, `HELPER_NOT_FOUND`, `HELPER_EXIT`, or `UNKNOWN`.
+Process failures include `exit_status`; on macOS this is the `security` process
+exit status, not a complete Keychain OSStatus. The provider discards underlying
+stderr, so the CLI cannot reliably infer whether an exit was caused by a locked
+keychain, denied interaction, or another Keychain failure. Unknown errors remain
+unclassified. Provider messages, stderr, command arguments, and credentials are
+never printed or retained as wrapped errors.
+
+`DATA_TOO_BIG` identifies the provider's per-item limit. The macOS provider
+caps each base64-encoded write command at 4096 bytes. Separate account entries
+avoid aggregating tokens, but one unusually large account or the account index
+can still exceed that limit. `ep auth login --web --storage file` selects
+owner-only plaintext storage instead; it does not migrate Keychain accounts.

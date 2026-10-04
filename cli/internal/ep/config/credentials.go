@@ -13,10 +13,9 @@ import (
 	"time"
 
 	"github.com/gofrs/flock"
-	"github.com/zalando/go-keyring"
 )
 
-const keychainService = "english-punch-cli-oauth"
+const keychainService = "english-punch-cli-oauth-accounts"
 const keychainAccount = "session"
 
 var ErrCredentialsNotFound = errors.New("credentials not found")
@@ -42,6 +41,7 @@ func validCredentials(c *Credentials) bool {
 type CredentialStore struct {
 	Storage string
 	Path    string
+	keyring keyringBackend
 }
 
 func NewCredentialStore(configDir string, cfg *Config, override string) (*CredentialStore, error) {
@@ -89,23 +89,17 @@ func (s *CredentialStore) Load() (*Credentials, error) {
 }
 
 func (s *CredentialStore) readData() (*credentialData, error) {
-	var raw []byte
-	if s.Storage == "file" {
-		var err error
-		raw, err = s.readFile()
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		value, err := keyring.Get(keychainService, keychainAccount)
-		if errors.Is(err, keyring.ErrNotFound) {
-			return nil, ErrCredentialsNotFound
-		}
-		if err != nil {
-			return nil, errors.New("could not read the system keyring")
-		}
-		raw = []byte(value)
+	if s.Storage != "file" {
+		return s.readKeyringData()
 	}
+	raw, err := s.readFile()
+	if err != nil {
+		return nil, err
+	}
+	return decodeCredentialData(raw)
+}
+
+func decodeCredentialData(raw []byte) (*credentialData, error) {
 	var data credentialData
 	if len(raw) > 64*1024 || json.Unmarshal(raw, &data) != nil {
 		return nil, errors.New("invalid OAuth credential storage")
@@ -200,36 +194,31 @@ func (s *CredentialStore) Delete() error {
 		return err
 	}
 	delete(data.Accounts, data.Email)
+	if s.Storage != "file" {
+		data.Credentials = Credentials{}
+		return s.writeKeyringData(data)
+	}
 	if len(data.Accounts) > 0 {
 		data.Credentials = Credentials{}
 		data.Version = 1
 		return s.writeData(data)
 	}
-	if s.Storage == "file" {
-		err := os.Remove(s.Path)
-		if errors.Is(err, os.ErrNotExist) {
-			return nil
-		}
-		return err
+	err = os.Remove(s.Path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
 	}
-	if err := keyring.Delete(keychainService, keychainAccount); err != nil && !errors.Is(err, keyring.ErrNotFound) {
-		return errors.New("could not remove English Punch credentials from the system keyring")
-	}
-	return nil
+	return err
 }
 
 func (s *CredentialStore) writeData(data *credentialData) error {
+	if s.Storage != "file" {
+		return s.writeKeyringData(data)
+	}
 	raw, err := json.Marshal(data)
 	if err != nil || len(raw) > 64*1024 {
 		return errors.New("credentials exceed the storage size limit")
 	}
-	if s.Storage == "file" {
-		return s.writeFile(raw)
-	}
-	if err := keyring.Set(keychainService, keychainAccount, string(raw)); err != nil {
-		return errors.New("could not write to the system keyring")
-	}
-	return nil
+	return s.writeFile(raw)
 }
 
 func (s *CredentialStore) checkDirectory(create bool) error {
@@ -326,8 +315,8 @@ func (s *CredentialStore) writeFile(data []byte) error {
 	return nil
 }
 
-// Lock serializes rotating refresh tokens across CLI processes. Keyring uses a
-// single account, so its lock is shared even across custom config directories.
+// Lock serializes token rotation and index updates across CLI processes.
+// Keyring entries are shared even across custom config directories.
 func (s *CredentialStore) Lock(ctx context.Context) (func(), error) {
 	path := s.Path + ".lock"
 	if s.Storage == "keyring" {
