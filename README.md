@@ -10,7 +10,7 @@ The project includes the web app, the **`ep` CLI**, and an **MCP server**. It is
 
 ## Card Format
 
-Cards use practical fill-in-the-blank English sentences:
+Cards contain a question and an answer:
 
 ```text
 Question: I'd like to ___ a table for two at 7 pm. (book in advance)

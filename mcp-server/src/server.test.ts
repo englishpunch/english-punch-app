@@ -32,7 +32,10 @@ describe("English Punch MCP tools", () => {
       description: "Create a vocabulary card from question and answer strings.",
       inputSchema: {
         properties: {
-          question: { type: "string", description: "Question text" },
+          question: {
+            type: "string",
+            description: "Question text",
+          },
           answer: { type: "string", description: "Answer text" },
         },
       },
@@ -40,7 +43,10 @@ describe("English Punch MCP tools", () => {
     expect(updateCard).toMatchObject({
       inputSchema: {
         properties: {
-          question: { type: "string", description: "Updated question text" },
+          question: {
+            type: "string",
+            description: "Updated question text",
+          },
           answer: { type: "string", description: "Updated answer text" },
         },
       },
@@ -50,7 +56,10 @@ describe("English Punch MCP tools", () => {
     await server.close();
   });
 
-  it("creates a card for the OAuth-authenticated user", async () => {
+  it.each([
+    "Which verb means to confirm that something is correct?",
+    "I need to ___ this OAuth flow.",
+  ])("creates a card preserving question text: %s", async (question) => {
     const mutation = vi.fn().mockResolvedValue("card_456");
     const convexClient = { mutation } as unknown as ConvexHttpClient;
     const server = createEnglishPunchServer(convexClient, ["cards:write"]);
@@ -67,14 +76,14 @@ describe("English Punch MCP tools", () => {
       name: "create-card",
       arguments: {
         bagId: "bag_123",
-        question: "I need to ___ this OAuth flow.",
+        question,
         answer: "verify",
       },
     });
 
     expect(mutation).toHaveBeenCalledWith(expect.anything(), {
       bagId: "bag_123",
-      question: "I need to ___ this OAuth flow.",
+      question,
       answer: "verify",
     });
     expect(result.structuredContent).toEqual({

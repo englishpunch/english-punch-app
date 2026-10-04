@@ -73,8 +73,8 @@ export const learningTables = {
     userId: v.id("users"),
     bagId: v.id("bags"),
 
-    // Card content in fill-in-the-blank format.
-    question: v.string(), // "I'd like to ___ a table for two at 7 pm."
+    // Caller-provided card content.
+    question: v.string(),
     answer: v.string(), // "reserve"
     hint: v.optional(v.string()), // "book in advance"
     explanation: v.optional(v.string()), // Additional explanation.

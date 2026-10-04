@@ -66,7 +66,7 @@ list/get-style commands before modifying it when that reduces ambiguity.
 ## Content Policy
 
 The CLI stores caller-provided card content; it does not define the
-user's learning style. Do not bake a specific question-writing style,
+user's learning style. Preserve supplied question text. Do not bake a specific question-writing style,
 vocabulary level, collocation policy, correction style, or tutoring
 persona into this repo skill. Use the user's explicit request or their
 personal/project-specific skill for learning-content policy.
