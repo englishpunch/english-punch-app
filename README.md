@@ -13,7 +13,7 @@ The project includes the web app, the **`ep` CLI**, and an **MCP server**. It is
 Cards contain a question and an answer:
 
 ```text
-Question: What verb means to book a table in advance?
+Question: I'd like to ___ a table for two at 7 pm. (book in advance)
 Answer: reserve
 ```
 
