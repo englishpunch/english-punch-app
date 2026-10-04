@@ -95,8 +95,8 @@ export const regenerateHintAndExplanation = action({
     // Build prompt with context awareness
     const prompt = [
       "You help me refine flashcard hints and explanations.",
-      `Question text (includes a blank as ___): "${question}"`,
-      `Correct answer to fit the blank: "${answer}"`,
+      `Question text: "${question}"`,
+      `Answer: "${answer}"`,
     ];
 
     if (context) {

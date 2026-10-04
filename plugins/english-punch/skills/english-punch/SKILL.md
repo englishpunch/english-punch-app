@@ -29,10 +29,10 @@ When the user clearly asks to save a word or expression:
 
 1. Use `list-bags` if the target bag is unknown. Ask the user to choose only
    when more than one plausible bag exists.
-2. Draft a question with one natural `___` blank, an answer that fills it, an
-   optional short hint that does not contain the answer, and a concise usage
-   explanation. Preserve a sentence supplied by the user except for replacing
-   the target expression with the blank.
+2. Use the question and answer format requested by the user. Preserve a supplied
+   question as written. If drafting content, write a useful question and its
+   answer, an optional short hint that does not contain the answer, and a concise
+   usage explanation. No blank markers or specific question format are required.
 3. Call `create-card` once. Do not call it speculatively or retry it after an
    uncertain transport failure without checking whether the card exists.
 4. Show the saved question and answer.

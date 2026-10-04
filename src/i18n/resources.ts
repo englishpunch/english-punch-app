@@ -283,7 +283,7 @@ const enTranslation = {
     contextHelp:
       "Adding context tailors the regenerated hint and description to that situation.",
     questionLabel: "Question",
-    questionPlaceholder: "Enter a question (use ___ for blanks)",
+    questionPlaceholder: "Enter a question",
     hintLabel: "Hint (optional)",
     regenerateButton: "Regenerate hint + description",
     regenerating: "Regenerating...",
@@ -668,7 +668,7 @@ const jaTranslation = {
     contextHelp:
       "文脈を入れると、ヒント・説明がその状況に合わせて再生成されます。",
     questionLabel: "質問",
-    questionPlaceholder: "質問を入力 (___ で空欄を表現)",
+    questionPlaceholder: "質問を入力",
     hintLabel: "ヒント (任意)",
     regenerateButton: "ヒント + 説明を再生成",
     regenerating: "再生成中...",
