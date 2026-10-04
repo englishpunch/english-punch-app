@@ -32,7 +32,7 @@ When the user clearly asks to save a word or expression:
 2. Use the question and answer format requested by the user. Preserve a supplied
    question as written. If drafting content, write a useful question and its
    answer, an optional short hint that does not contain the answer, and a concise
-   usage explanation. No blank markers or specific question format are required.
+   usage explanation.
 3. Call `create-card` once. Do not call it speculatively or retry it after an
    uncertain transport failure without checking whether the card exists.
 4. Show the saved question and answer.

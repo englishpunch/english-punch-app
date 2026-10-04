@@ -30,11 +30,7 @@ export function registerCardTools(
         },
         inputSchema: {
           bagId,
-          question: z
-            .string()
-            .describe(
-              "Question text in any format; blank markers are optional"
-            ),
+          question: z.string().describe("Question text"),
           answer: z.string().describe("Answer text"),
           hint: z
             .string()
@@ -150,11 +146,7 @@ export function registerCardTools(
         inputSchema: {
           cardId,
           bagId,
-          question: z
-            .string()
-            .describe(
-              "Updated question text in any format; blank markers are optional"
-            ),
+          question: z.string().describe("Updated question text"),
           answer: z.string().describe("Updated answer text"),
           hint: z.string().optional().describe("Updated hint"),
           explanation: z.string().optional().describe("Updated explanation"),

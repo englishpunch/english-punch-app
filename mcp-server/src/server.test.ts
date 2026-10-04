@@ -34,8 +34,7 @@ describe("English Punch MCP tools", () => {
         properties: {
           question: {
             type: "string",
-            description:
-              "Question text in any format; blank markers are optional",
+            description: "Question text",
           },
           answer: { type: "string", description: "Answer text" },
         },
@@ -46,8 +45,7 @@ describe("English Punch MCP tools", () => {
         properties: {
           question: {
             type: "string",
-            description:
-              "Updated question text in any format; blank markers are optional",
+            description: "Updated question text",
           },
           answer: { type: "string", description: "Updated answer text" },
         },

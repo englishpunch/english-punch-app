@@ -10,8 +10,7 @@ The project includes the web app, the **`ep` CLI**, and an **MCP server**. It is
 
 ## Card Format
 
-Cards contain a question and an answer in your chosen format. Blank markers are
-optional:
+Cards contain a question and an answer:
 
 ```text
 Question: What verb means to book a table in advance?
