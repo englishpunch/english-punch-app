@@ -8,6 +8,7 @@ ENV HUSKY=0
 RUN corepack enable
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY vendor/boxing-icons ./vendor/boxing-icons
 RUN pnpm install --frozen-lockfile
 
 FROM deps AS build

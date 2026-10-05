@@ -41,6 +41,9 @@ importers:
       '@tanstack/zod-adapter':
         specifier: ^1.167.0
         version: 1.167.0(@tanstack/react-router@1.170.30(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(zod@3.25.76)
+      boxing-icons:
+        specifier: link:vendor/boxing-icons
+        version: link:vendor/boxing-icons
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
