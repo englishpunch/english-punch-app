@@ -37,6 +37,7 @@
     "@tanstack/react-router": "^1.170.30",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/zod-adapter": "^1.167.0",
+    "boxing-icons": "link:vendor/boxing-icons",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "convex": "^1.44.0",

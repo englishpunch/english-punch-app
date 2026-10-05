@@ -1,0 +1,20 @@
+{
+  "name": "boxing-icons",
+  "version": "1.0.0",
+  "description": "SF Symbols 스타일 샌드백 · 복싱 글러브 아이콘 (Lucide 방식 사용)",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" },
+    "./react": { "types": "./dist/react.d.ts", "default": "./dist/react.js" },
+    "./icons/*": "./icons/*",
+    "./favicon/*": "./favicon/*"
+  },
+  "files": ["dist", "icons", "favicon"],
+  "sideEffects": false,
+  "peerDependencies": { "react": ">=18" },
+  "peerDependenciesMeta": { "react": { "optional": true } },
+  "scripts": { "build:assets": "node scripts/build-assets.mjs" },
+  "license": "UNLICENSED"
+}

@@ -2,16 +2,12 @@ import ProfileDialog from "./ProfileDialog";
 import React, { useState } from "react";
 import { Button } from "./Button";
 import { cn } from "@/lib/utils";
+import { Activity, ChevronDown, User2 } from "lucide-react";
 import {
-  Activity,
-  Home,
-  ListChecks,
-  LucideProps,
-  PlayCircle,
-  ChevronDown,
-  User2,
-  Users,
-} from "lucide-react";
+  BoxingGlove,
+  PunchingBag,
+  type BoxingIconProps,
+} from "boxing-icons/react";
 import { useRouter, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
@@ -21,13 +17,11 @@ interface MobileShellProps {
   children?: React.ReactNode;
 }
 
-type TabKey = "home" | "plans" | "run" | "club" | "activity";
+type TabKey = "plans" | "run" | "activity";
 
 const tabPaths: Record<TabKey, string> = {
-  home: "/home",
   plans: "/plans",
   run: "/run",
-  club: "/club",
   activity: "/activity",
 };
 
@@ -37,27 +31,20 @@ const tabConfig: Record<
     key: TabKey;
     labelKey: string;
     titleKey: string;
-    icon: React.ComponentType<LucideProps>;
+    icon: React.ComponentType<BoxingIconProps>;
   }
 > = {
-  home: { key: "home", labelKey: "nav.home", titleKey: "nav.home", icon: Home },
   plans: {
     key: "plans",
-    labelKey: "nav.plans",
-    titleKey: "nav.plans",
-    icon: ListChecks,
+    labelKey: "nav.bags",
+    titleKey: "nav.bags",
+    icon: PunchingBag,
   },
   run: {
     key: "run",
     labelKey: "nav.run",
     titleKey: "nav.run",
-    icon: PlayCircle,
-  },
-  club: {
-    key: "club",
-    labelKey: "nav.club",
-    titleKey: "nav.club",
-    icon: Users,
+    icon: BoxingGlove,
   },
   activity: {
     key: "activity",
@@ -76,7 +63,15 @@ export default function MobileShell({ children }: MobileShellProps) {
   const activeTab = deriveTabFromPath(pathname);
   const [showProfile, setShowProfile] = useState(false);
 
-  const screenTitle = t(tabConfig[activeTab].titleKey);
+  const screenTitle = t(
+    pathname.startsWith("/profile")
+      ? "common.labels.profile"
+      : pathname.startsWith("/home")
+        ? "nav.home"
+        : pathname.startsWith("/club")
+          ? "nav.club"
+          : tabConfig[activeTab].titleKey
+  );
 
   return (
     <div className="min-h-screen pb-[calc(var(--shell-bottom-nav-height)+env(safe-area-inset-bottom))] [--shell-bottom-nav-height:5rem] [--shell-header-height:4rem]">
@@ -168,17 +163,8 @@ function deriveTabFromPath(pathname: string): TabKey {
   if (pathname.startsWith("/activity")) {
     return "activity";
   }
-  if (pathname.startsWith("/profile")) {
-    return "home";
-  }
   if (pathname.startsWith("/run")) {
     return "run";
-  }
-  if (pathname.startsWith("/club")) {
-    return "club";
-  }
-  if (pathname.startsWith("/home")) {
-    return "home";
   }
   return "run";
 }

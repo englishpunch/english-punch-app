@@ -24,7 +24,7 @@ const enTranslation = {
   },
   nav: {
     home: "Home",
-    plans: "Plans",
+    bags: "Bags",
     run: "Run",
     club: "Club",
     activity: "Activity",
@@ -406,7 +406,7 @@ const jaTranslation = {
   },
   nav: {
     home: "ホーム",
-    plans: "プラン",
+    bags: "バッグ",
     run: "学習",
     club: "クラブ",
     activity: "履歴",

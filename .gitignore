@@ -36,3 +36,7 @@ mcp-server/dist
 *.njsproj
 *.sln
 *.sw?
+
+# Checked-in runtime for the supplied boxing icon package
+!vendor/boxing-icons/dist/
+!vendor/boxing-icons/dist/**
