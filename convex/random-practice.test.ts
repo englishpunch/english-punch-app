@@ -39,17 +39,15 @@ it("selects across the entire eligible bag and records practice without changing
       await trackUpdatedCard(ctx, card);
     }
   });
-  expect(await user.query(api.learning.getOneDueCard, { bagId, now })).toBe(
+  expect(await user.query(api.learning.getOneDueCard, { bagId })).toBe(
     "NO_CARD_AVAILABLE"
   );
   const first = await user.query(api.learning.getOneDueCard, {
     bagId,
-    now,
     practiceSeed: 0,
   });
   const last = await user.query(api.learning.getOneDueCard, {
     bagId,
-    now,
     practiceSeed: 0.999,
   });
   expect(first).toMatchObject({ _id: ids[0], practice: true });
@@ -80,7 +78,6 @@ it("selects across the entire eligible bag and records practice without changing
   expect(
     await user.query(api.learning.getOneDueCard, {
       bagId,
-      now,
       practiceSeed: 0,
     })
   ).toMatchObject({ _id: ids[1], practice: false });
@@ -90,7 +87,6 @@ it("selects across the entire eligible bag and records practice without changing
   expect(
     await user.query(api.learning.getOneDueCard, {
       bagId: emptyBag,
-      now,
       practiceSeed: 0,
     })
   ).toBe("NO_CARD_AVAILABLE");
@@ -98,6 +94,6 @@ it("selects across the entire eligible bag and records practice without changing
   expect(
     await t
       .withIdentity({ subject: strangerId })
-      .query(api.learning.getOneDueCard, { bagId, now, practiceSeed: 0 })
+      .query(api.learning.getOneDueCard, { bagId, practiceSeed: 0 })
   ).toBe("NO_CARD_AVAILABLE");
 });

@@ -325,10 +325,9 @@ export const getOneDueCard = query({
   args: {
     bagId: v.id("bags"),
     practiceSeed: v.optional(v.number()),
-    now: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const nowTimestamp = args.now ?? Date.now();
+    const nowTimestamp = Date.now();
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError("Unauthorized");

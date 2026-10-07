@@ -33,7 +33,6 @@ export default function FSRSStudySession({
   const dueCard = useQuery(api.learning.getOneDueCard, {
     bagId,
     practiceSeed,
-    now: dueCountAsOf,
   });
 
   const bags = useQuery(api.learning.getUserBags, userId ? { userId } : "skip");
