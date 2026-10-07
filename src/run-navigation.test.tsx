@@ -10,7 +10,10 @@ import { getFunctionName } from "convex/server";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 
-const mocks = vi.hoisted(() => ({ mutation: vi.fn().mockResolvedValue(null) }));
+const mocks = vi.hoisted(() => ({
+  mutation: vi.fn().mockResolvedValue(null),
+  practice: false,
+}));
 vi.mock("convex/react", () => ({
   useMutation: () => mocks.mutation,
   useQuery: (
@@ -49,12 +52,13 @@ vi.mock("convex/react", () => ({
       case "learning:getOneDueCard":
         return {
           _id: `card-${args?.bagId}`,
+          practice: mocks.practice,
           reps: 0,
           question: "Study this card",
           answer: "answer",
         };
       case "learning:getDueCardCount":
-        return args?.bagId === "bag-1" ? 1234 : 7;
+        return mocks.practice ? 0 : args?.bagId === "bag-1" ? 1234 : 7;
       default:
         return undefined;
     }
@@ -63,7 +67,13 @@ vi.mock("convex/react", () => ({
 vi.mock("./components/MobileShell", () => ({
   default: ({ children }: { children: ReactNode }) => <>{children}</>,
 }));
-vi.mock("./components/StudyCard", () => ({ default: () => <p>Study card</p> }));
+vi.mock("./components/StudyCard", () => ({
+  default: ({
+    onGrade,
+  }: {
+    onGrade: (rating: 3, duration: number) => void;
+  }) => <button onClick={() => onGrade(3, 100)}>Study card</button>,
+}));
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({
     i18n: { language: "en", resolvedLanguage: "en" },
@@ -82,6 +92,8 @@ vi.mock("react-i18next", () => ({
 
 let originalStorage: PropertyDescriptor | undefined;
 beforeEach(() => {
+  mocks.practice = false;
+  mocks.mutation.mockClear();
   originalStorage = Object.getOwnPropertyDescriptor(window, "localStorage");
   Object.defineProperty(window, "localStorage", {
     configurable: true,
@@ -130,4 +142,21 @@ it("opens a bag directly and provides a path back to the bag list", async () => 
   fireEvent.click(screen.getByRole("button", { name: "common.actions.back" }));
   await waitFor(() => expect(router.state.location.pathname).toBe("/run"));
   await screen.findByRole("link", { name: "Study 1234" });
+});
+
+it("shows the random-practice notice, preserves scheduling, and finishes after one rating", async () => {
+  mocks.practice = true;
+  const { createAppRouter } = await import("./router");
+  const router = createAppRouter(
+    createMemoryHistory({ initialEntries: ["/run/bag-1"] })
+  );
+  render(<RouterProvider router={router} />);
+  expect(await screen.findByRole("status")).toHaveTextContent(
+    "studySession.randomPractice"
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Study card" }));
+  await waitFor(() => expect(router.state.location.pathname).toBe("/run"));
+  expect(mocks.mutation).toHaveBeenCalledWith(
+    expect.objectContaining({ cardId: "card-bag-1", practice: true, rating: 3 })
+  );
 });

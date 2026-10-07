@@ -26,10 +26,14 @@ export default function FSRSStudySession({
   const userId = loggedInUser?._id;
   const [isReviewing, setIsReviewing] = useState(false);
   const dueCountAsOf = useDueCountAsOf();
+  const [practiceSeed] = useState(() => Math.random());
+  const [practiceAttemptId] = useState(() => crypto.randomUUID());
 
   // Convex queries and mutations.
   const dueCard = useQuery(api.learning.getOneDueCard, {
     bagId,
+    practiceSeed,
+    now: dueCountAsOf,
   });
 
   const bags = useQuery(api.learning.getUserBags, userId ? { userId } : "skip");
@@ -62,11 +66,13 @@ export default function FSRSStudySession({
 
   const reviewCardForAttempt =
     dueCard && dueCard !== "NO_CARD_AVAILABLE" ? dueCard : null;
-  const attemptId = reviewCardForAttempt
-    ? `${reviewCardForAttempt._id}:${reviewCardForAttempt.reps}:${
-        reviewCardForAttempt.last_review ?? "new"
-      }:${dayjs().format("YYYYMMDDHH")}`
-    : "none";
+  const attemptId = reviewCardForAttempt?.practice
+    ? `${practiceAttemptId}:${reviewCardForAttempt._id}`
+    : reviewCardForAttempt
+      ? `${reviewCardForAttempt._id}:${reviewCardForAttempt.reps}:${
+          reviewCardForAttempt.last_review ?? "new"
+        }:${dayjs().format("YYYYMMDDHH")}`
+      : "none";
   const reviewCardId = reviewCardForAttempt?._id;
 
   useEffect(() => {
@@ -111,7 +117,11 @@ export default function FSRSStudySession({
         duration,
         attemptId,
         source: "web",
+        practice: dueCard.practice,
       });
+      if (dueCard.practice) {
+        onComplete();
+      }
     } catch (error) {
       console.error("Failed to review card:", error);
     }
@@ -221,6 +231,11 @@ export default function FSRSStudySession({
           </div>
         </div>
       </div>
+      {dueCard.practice && (
+        <p role="status" className="px-4 pb-4 text-sm text-gray-600">
+          {t("studySession.randomPractice")}
+        </p>
+      )}
       {/* Study card */}
       {dueCard && (
         <StudyCard

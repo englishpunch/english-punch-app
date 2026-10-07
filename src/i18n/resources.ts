@@ -170,6 +170,8 @@ const enTranslation = {
   studySession: {
     completeTitle: "Session complete!",
     completeSummary: "You studied {{count}} cards.",
+    randomPractice:
+      "No cards are due, so one was selected at random. Your schedule will stay unchanged.",
     noCardsTitle: "No cards to study",
     noCardsDescription: "You've finished all cards or none are due yet.",
     backToHome: "Back to home",
@@ -553,6 +555,8 @@ const jaTranslation = {
   studySession: {
     completeTitle: "学習完了!",
     completeSummary: "合計 {{count}} 枚のカードを学習しました。",
+    randomPractice:
+      "復習予定のカードがないため、ランダムに1枚選びました。復習スケジュールは変更されません。",
     noCardsTitle: "学習するカードがありません",
     noCardsDescription:
       "すべてのカードを学習済みか、まだ復習時間になっていません。",

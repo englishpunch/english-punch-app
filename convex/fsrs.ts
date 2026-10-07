@@ -15,6 +15,7 @@ type ReviewCardArgs = {
   sessionId?: string;
   attemptId?: string;
   source?: ActivitySource;
+  practice?: boolean;
 };
 
 type ReviewCardResult = {
@@ -49,6 +50,51 @@ export const reviewCardHandler = async (
     const error = "Card not found";
     logger.error(runId, { m: "❌ ReviewCard error:", error });
     throw new Error(error);
+  }
+
+  if (args.practice) {
+    if (card.suspended) {
+      throw new Error("Card is suspended");
+    }
+    const now = Date.now();
+    const reviewLog = await ctx.db.insert("reviewLogs", {
+      userId: args.userId,
+      cardId: card._id,
+      rating: args.rating,
+      state: card.state,
+      due: card.due,
+      stability: card.stability,
+      difficulty: card.difficulty,
+      scheduled_days: card.scheduled_days,
+      learning_steps: card.learning_steps,
+      review: now,
+      duration: args.duration,
+      sessionId: args.sessionId,
+      reviewType: "cramming",
+    });
+    const attemptId = args.attemptId ?? args.sessionId ?? reviewLog;
+    await logReviewRated(ctx, {
+      userId: args.userId,
+      cardId: card._id,
+      bagId: card.bagId,
+      source: args.source ?? "web",
+      attemptId,
+      dedupeKey: `${args.source ?? "web"}:${attemptId}:rated`,
+      occurredAt: now,
+      payload: {
+        rating: args.rating,
+        durationMs: args.duration,
+        reviewType: "cramming",
+        legacyReviewLogId: reviewLog,
+      },
+    });
+    return {
+      nextReviewDate: new Date(card.due).toISOString(),
+      nextReviewTimestamp: card.due,
+      newState: card.state,
+      newStability: card.stability,
+      newDifficulty: card.difficulty,
+    };
   }
 
   const userSettings = await ctx.db
@@ -272,6 +318,7 @@ export const reviewCard = mutation({
     sessionId: v.optional(v.string()),
     attemptId: v.optional(v.string()),
     source: v.optional(v.union(v.literal("web"), v.literal("cli"))),
+    practice: v.optional(v.boolean()),
   },
   returns: v.object({
     nextReviewDate: v.string(),

@@ -12,6 +12,7 @@ import { getAuthUserId } from "@convex-dev/auth/server";
 import { requireAuthenticatedUserId } from "./authUser";
 import {
   countDueCards,
+  dueCards,
   trackInsertedCard,
   trackUpdatedCard,
 } from "./cardAggregate";
@@ -323,9 +324,11 @@ export const getStudyBags = query({
 export const getOneDueCard = query({
   args: {
     bagId: v.id("bags"),
+    practiceSeed: v.optional(v.number()),
+    now: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
-    const nowTimestamp = Date.now();
+    const nowTimestamp = args.now ?? Date.now();
     const userId = await getAuthUserId(ctx);
     if (!userId) {
       throw new ConvexError("Unauthorized");
@@ -344,11 +347,45 @@ export const getOneDueCard = query({
       .take(1);
     const card = cards[0];
 
-    if (!card) {
+    if (card) {
+      return { ...card, practice: false };
+    }
+    if (args.practiceSeed === undefined) {
       return "NO_CARD_AVAILABLE";
     }
-
-    return card;
+    if (
+      !Number.isFinite(args.practiceSeed) ||
+      args.practiceSeed < 0 ||
+      args.practiceSeed >= 1
+    ) {
+      throw new ConvexError("Invalid practice seed");
+    }
+    const options = {
+      namespace: [userId, args.bagId] as [Id<"users">, Id<"bags">],
+      bounds: {
+        lower: {
+          key: [0, Number.MIN_SAFE_INTEGER] as [number, number],
+          inclusive: true,
+        },
+        upper: {
+          key: [0, Number.MAX_SAFE_INTEGER] as [number, number],
+          inclusive: true,
+        },
+      },
+    };
+    const count = await dueCards.count(ctx, options);
+    if (!count) {
+      return "NO_CARD_AVAILABLE";
+    }
+    const selected = await dueCards.at(
+      ctx,
+      Math.floor(args.practiceSeed * count),
+      options
+    );
+    const practiceCard = await ctx.db.get("cards", selected.id);
+    return practiceCard
+      ? { ...practiceCard, practice: true }
+      : "NO_CARD_AVAILABLE";
   },
 });
 
