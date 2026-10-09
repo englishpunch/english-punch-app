@@ -4,6 +4,7 @@ import aggregateTest from "@convex-dev/aggregate/test";
 import { convexTest } from "convex-test";
 import { expect, it } from "vitest";
 import { api } from "./_generated/api";
+import type { Id } from "./_generated/dataModel";
 import { trackUpdatedCard } from "./cardAggregate";
 import schema from "./schema";
 
@@ -17,7 +18,7 @@ it("selects across the entire eligible bag and records practice without changing
   const bagId = await user.mutation(api.learning.createBag, {
     name: "Practice",
   });
-  const ids = [];
+  const ids: Id<"cards">[] = [];
   for (const answer of ["first", "second", "suspended", "deleted"]) {
     ids.push(
       await user.mutation(api.learning.createCard, {
